@@ -15,7 +15,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
   return (
     <div className="flex flex-col gap-4">
       {/* Main Image Showcase */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 shadow-2xl">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-950 shadow-sm dark:shadow-2xl">
         <Image
           src={activeImage}
           alt={`${productName} - Görsel ${selected + 1}`}
@@ -36,8 +36,8 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
               onClick={() => setSelected(idx)}
               className={`relative aspect-square w-20 shrink-0 overflow-hidden rounded-xl border transition-all ${
                 selected === idx
-                  ? "border-white ring-2 ring-white/20"
-                  : "border-neutral-800 opacity-60 hover:opacity-100"
+                  ? "border-neutral-950 dark:border-white ring-2 ring-amber-400/40"
+                  : "border-neutral-300 dark:border-neutral-800 opacity-60 hover:opacity-100"
               }`}
             >
               <Image

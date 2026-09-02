@@ -15,7 +15,7 @@ export default function HomeCtaBanner() {
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
   return (
-    <section className="bg-black py-20 relative overflow-hidden">
+    <section className="bg-neutral-50 dark:bg-black py-20 relative overflow-hidden transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-r from-neutral-900 via-neutral-950 to-black p-8 sm:p-14 shadow-2xl">
           {/* Subtle gold / ambient accent */}

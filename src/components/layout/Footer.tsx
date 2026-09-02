@@ -19,13 +19,13 @@ export default function Footer() {
   const categories = getAllCategories();
 
   return (
-    <footer className="border-t border-neutral-800 bg-black text-neutral-400">
+    <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-950 text-neutral-300 transition-colors">
       {/* Top Banner: Statutory compliance notice */}
-      <div className="border-b border-neutral-800/80 bg-neutral-950 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl items-start gap-3 text-xs text-neutral-400">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-          <p className="leading-relaxed">
-            <strong className="text-white">{t("legalWarningTitle")}</strong>{" "}
+      <div className="border-b border-neutral-200 dark:border-neutral-800/80 bg-neutral-100 dark:bg-neutral-950 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-start gap-3 text-xs text-neutral-800 dark:text-neutral-400">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
+          <p className="leading-relaxed font-medium">
+            <strong className="text-neutral-950 dark:text-white font-black">{t("legalWarningTitle")}</strong>{" "}
             {t("legalWarningText")}
           </p>
         </div>

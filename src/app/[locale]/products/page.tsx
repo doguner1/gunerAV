@@ -54,17 +54,17 @@ export default function ProductsPage({
   const categories = getAllCategories();
 
   return (
-    <div className="min-h-screen bg-black pt-28 pb-20">
+    <div className="min-h-screen bg-neutral-50 dark:bg-black pt-28 pb-20 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <div className="mb-10 max-w-3xl">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#d4af37]">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
             Katalog &amp; Teşhir
           </span>
-          <h1 className="font-heading text-3xl font-extrabold uppercase tracking-tight text-white sm:text-5xl mt-2">
+          <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-5xl mt-2">
             Av &amp; Doğa Ekipmanları
           </h1>
-          <p className="mt-3 text-sm text-neutral-400 leading-relaxed">
+          <p className="mt-3 text-sm text-neutral-700 dark:text-neutral-400 leading-relaxed font-medium">
             Mağazamızda sergilenen ve temin edebileceğiniz tüm profesyonel av, taktik optik,
             kamp ve doğa kıyafetlerini inceleyin. Beğendiğiniz ürün için WhatsApp üzerinden
             veya mağazamıza gelerek anında bilgi alabilirsiniz.

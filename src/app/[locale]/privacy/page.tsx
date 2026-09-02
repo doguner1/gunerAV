@@ -38,25 +38,25 @@ export default function PrivacyPage({
 }) {
   setRequestLocale(locale);
   return (
-    <div className="min-h-screen bg-black pt-28 pb-20">
+    <div className="min-h-screen bg-neutral-50 dark:bg-black pt-28 pb-20 transition-colors">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#d4af37]">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
             Yasal Bilgilendirme
           </span>
-          <h1 className="font-heading text-3xl font-extrabold uppercase tracking-tight text-white sm:text-5xl mt-2">
+          <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-5xl mt-2">
             Gizlilik &amp; KVKK Politikası
           </h1>
-          <p className="mt-2 text-xs text-neutral-400">
+          <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 font-medium">
             Son Güncelleme: Eylül 2026 · {STORE_INFO.name}
           </p>
         </div>
 
-        <div className="space-y-8 text-xs sm:text-sm leading-relaxed text-neutral-300">
+        <div className="space-y-8 text-xs sm:text-sm leading-relaxed text-neutral-700 dark:text-neutral-300 font-medium">
           {/* Section 1 */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-6 sm:p-8 space-y-4">
-            <div className="flex items-center gap-2.5 text-white">
-              <ShieldCheck className="h-5 w-5 text-[#d4af37]" />
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
+            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
+              <ShieldCheck className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
               <h2 className="font-heading text-lg font-bold uppercase">
                 1. Genel Bilgilendirme ve Veri Sorumlusu
               </h2>
@@ -77,9 +77,9 @@ export default function PrivacyPage({
           </div>
 
           {/* Section 2 */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-6 sm:p-8 space-y-4">
-            <div className="flex items-center gap-2.5 text-white">
-              <Lock className="h-5 w-5 text-[#d4af37]" />
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
+            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
+              <Lock className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
               <h2 className="font-heading text-lg font-bold uppercase">
                 2. Toplanan Kişisel Veriler ve İşlenme Amaçları
               </h2>
@@ -88,7 +88,7 @@ export default function PrivacyPage({
               Web sitemiz bir vitrin ve tanıtım platformudur. Kullanıcı kaydı, sepet veya online
               ödeme işlemleri yapılmamaktadır. Sitemiz üzerinden yalnızca:
             </p>
-            <ul className="list-disc pl-5 space-y-2 text-neutral-400">
+            <ul className="list-disc pl-5 space-y-2 text-neutral-600 dark:text-neutral-400">
               <li>İletişim formu aracılığıyla ilettiğiniz ad, soyad, telefon ve e-posta bilgileri,</li>
               <li>WhatsApp bağlantısı üzerinden başlattığınız doğrudan yazışmalar,</li>
               <li>Dil tercihinizin (TR / EN) hatırlanması için kullanılan temel oturum çerezleri işlenmektedir.</li>
@@ -100,9 +100,9 @@ export default function PrivacyPage({
           </div>
 
           {/* Section 3 */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-6 sm:p-8 space-y-4">
-            <div className="flex items-center gap-2.5 text-white">
-              <FileText className="h-5 w-5 text-[#d4af37]" />
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
+            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
+              <FileText className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
               <h2 className="font-heading text-lg font-bold uppercase">
                 3. Çerez (Cookie) Kullanımı ve Tercihleriniz
               </h2>
@@ -119,9 +119,9 @@ export default function PrivacyPage({
           </div>
 
           {/* Section 4 */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-6 sm:p-8 space-y-4">
-            <div className="flex items-center gap-2.5 text-white">
-              <CheckCircle2 className="h-5 w-5 text-[#d4af37]" />
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
+            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
+              <CheckCircle2 className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
               <h2 className="font-heading text-lg font-bold uppercase">
                 4. KVKK Kapsamındaki Haklarınız
               </h2>

@@ -83,9 +83,9 @@ export default function CatalogClient({
       />
 
       {/* Results Count */}
-      <div className="flex items-center justify-between text-xs text-neutral-400 px-1">
+      <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400 px-1 font-medium">
         <span>
-          Toplam <strong className="text-white">{filteredProducts.length}</strong> ürün listeleniyor
+          Toplam <strong className="text-neutral-950 dark:text-white font-bold">{filteredProducts.length}</strong> ürün listeleniyor
         </span>
       </div>
 
@@ -104,12 +104,12 @@ export default function CatalogClient({
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-800 bg-neutral-950 p-12 text-center">
-          <AlertCircle className="h-10 w-10 text-neutral-500 mb-3" />
-          <h3 className="font-heading text-lg font-bold text-white">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-12 text-center shadow-sm">
+          <AlertCircle className="h-10 w-10 text-neutral-400 dark:text-neutral-500 mb-3" />
+          <h3 className="font-heading text-lg font-bold text-neutral-950 dark:text-white">
             {t("noProductsFound")}
           </h3>
-          <p className="mt-1 text-xs text-neutral-400 max-w-sm">
+          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 max-w-sm font-medium">
             Farklı bir arama terimi deneyebilir veya filtreleri sıfırlayabilirsiniz.
           </p>
           <button
@@ -120,7 +120,7 @@ export default function CatalogClient({
               setLicenseOnly(false);
               setDealsOnly(false);
             }}
-            className="mt-5 rounded-xl bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-black hover:bg-neutral-200"
+            className="mt-5 rounded-xl bg-neutral-950 dark:bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-sm"
           >
             Filtreleri Temizle
           </button>

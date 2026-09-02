@@ -100,11 +100,27 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <html lang={locale} className={`${inter.variable} ${heading.variable} dark`}>
+    <html lang={locale} className={`${inter.variable} ${heading.variable} dark`} suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem('gunerav_theme');
+                if (t === 'light') {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.classList.add('light');
+                } else {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.remove('light');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
         <StoreJsonLd />
       </head>
-      <body className="min-h-screen bg-black text-neutral-100 flex flex-col antialiased selection:bg-[#d4af37]/30 selection:text-white">
+      <body className="min-h-screen bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-100 flex flex-col antialiased selection:bg-[#d4af37]/30 selection:text-black dark:selection:text-white transition-colors duration-200">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Header />
           <main className="flex-1">{children}</main>

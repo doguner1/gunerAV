@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import { getDealsProducts, getAllCategories } from "@/lib/products";
 import ProductCard from "@/components/product/ProductCard";
-import { Tag, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export default function CampaignSection() {
   const t = useTranslations("Products");
@@ -11,19 +11,19 @@ export default function CampaignSection() {
   if (deals.length === 0) return null;
 
   return (
-    <section className="border-b border-neutral-800/80 bg-gradient-to-b from-neutral-950 via-black to-neutral-950 py-20">
+    <section className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-gradient-to-b from-neutral-100/60 via-white to-neutral-100/60 dark:from-neutral-950 dark:via-black dark:to-neutral-950 py-20 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-[#d4af37]/30 bg-[#d4af37]/10 px-3 py-1 text-xs font-bold text-[#d4af37] uppercase tracking-wider mb-2">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-amber-300 dark:border-[#d4af37]/30 bg-amber-50 dark:bg-[#d4af37]/10 px-3 py-1 text-xs font-bold text-amber-800 dark:text-[#d4af37] uppercase tracking-wider mb-2">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Avantajlı Fırsatlar</span>
             </div>
-            <h2 className="font-heading text-3xl font-extrabold uppercase tracking-tight text-white sm:text-4xl">
+            <h2 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl">
               {t("dealsTitle")}
             </h2>
-            <p className="mt-2 text-sm text-neutral-400 max-w-xl">
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 max-w-xl">
               {t("dealsSubtitle")}
             </p>
           </div>

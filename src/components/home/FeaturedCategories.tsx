@@ -11,24 +11,24 @@ export default function FeaturedCategories() {
   const categories = getAllCategories();
 
   return (
-    <section className="border-b border-neutral-800/80 bg-neutral-950 py-20">
+    <section className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 py-20 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#d4af37]">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
               Koleksiyonlar
             </span>
-            <h2 className="font-heading text-3xl font-extrabold uppercase tracking-tight text-white sm:text-4xl mt-1">
+            <h2 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl mt-1">
               {t("sectionTitle")}
             </h2>
-            <p className="mt-2 text-sm text-neutral-400 max-w-xl">
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 max-w-xl">
               {t("sectionSubtitle")}
             </p>
           </div>
           <Link
             href="/products"
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-300 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-300 hover:text-black dark:hover:text-white transition-colors"
           >
             <span>Tüm Ekipmanlar</span>
             <ArrowUpRight className="h-4 w-4" />
@@ -47,7 +47,7 @@ export default function FeaturedCategories() {
               <Link
                 key={category.id}
                 href={`/products?category=${category.id}`}
-                className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 transition-all duration-300 hover:border-neutral-700 hover:shadow-2xl"
+                className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-950 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-neutral-400 dark:hover:border-neutral-700"
               >
                 {/* Background Image with Overlay */}
                 <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-950">
@@ -61,7 +61,7 @@ export default function FeaturedCategories() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
                 </div>
 
-                {/* Card Content */}
+                {/* Card Content (Always white and high-contrast inside image card) */}
                 <div className="absolute inset-0 p-6 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     {isLicenseReq ? (
@@ -70,12 +70,12 @@ export default function FeaturedCategories() {
                         Ruhsatlı Kategori
                       </span>
                     ) : (
-                      <span className="rounded-md border border-neutral-800 bg-black/60 px-2.5 py-1 text-[10px] font-semibold text-neutral-300 backdrop-blur-md">
+                      <span className="rounded-md border border-neutral-800 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-neutral-300 backdrop-blur-md">
                         {count} {t("itemCount")}
                       </span>
                     )}
 
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-all group-hover:bg-white group-hover:text-black">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all group-hover:bg-white group-hover:text-black">
                       <ArrowUpRight className="h-4 w-4" />
                     </div>
                   </div>
@@ -84,7 +84,7 @@ export default function FeaturedCategories() {
                     <h3 className="font-heading text-xl font-bold uppercase tracking-wide text-white group-hover:text-[#d4af37] transition-colors">
                       {name}
                     </h3>
-                    <p className="mt-1.5 text-xs text-neutral-400 line-clamp-2">
+                    <p className="mt-1.5 text-xs text-neutral-300 line-clamp-2">
                       {desc}
                     </p>
                   </div>

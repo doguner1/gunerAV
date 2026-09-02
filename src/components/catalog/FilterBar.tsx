@@ -1,7 +1,7 @@
 "use client";
 
 import { Category } from "@/types/product";
-import { Search, Filter, X, ShieldAlert, Tag } from "lucide-react";
+import { Search, X, ShieldAlert, Tag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 interface FilterBarProps {
@@ -44,23 +44,23 @@ export default function FilterBar({
   };
 
   return (
-    <div className="space-y-6 rounded-2xl border border-neutral-800 bg-neutral-950 p-6 shadow-xl">
+    <div className="space-y-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 shadow-sm dark:shadow-xl transition-colors">
       {/* Top row: Search input & quick summary */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+          <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-xl border border-neutral-800 bg-neutral-900/90 py-2.5 pr-4 pl-10 text-sm text-white placeholder-neutral-500 transition-colors focus:border-white focus:outline-none"
+            className="w-full rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/90 py-2.5 pr-4 pl-10 text-sm text-neutral-950 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 transition-colors focus:border-black dark:focus:border-white focus:outline-none focus:bg-white"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => onSearchChange("")}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-500 hover:text-white"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-400 hover:text-black dark:hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
@@ -73,10 +73,10 @@ export default function FilterBar({
           <button
             type="button"
             onClick={onToggleLicense}
-            className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all ${
               licenseOnly
-                ? "border-red-500/50 bg-red-950/80 text-red-400"
-                : "border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white"
+                ? "border-red-500/60 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-400"
+                : "border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/60 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
             }`}
           >
             <ShieldAlert className="h-3.5 w-3.5" />
@@ -87,10 +87,10 @@ export default function FilterBar({
           <button
             type="button"
             onClick={onToggleDeals}
-            className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all ${
               dealsOnly
-                ? "border-[#d4af37]/50 bg-[#d4af37]/20 text-[#d4af37]"
-                : "border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white"
+                ? "border-amber-400 bg-amber-100 dark:bg-[#d4af37]/20 text-amber-900 dark:text-[#d4af37]"
+                : "border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/60 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
             }`}
           >
             <Tag className="h-3.5 w-3.5" />
@@ -101,7 +101,7 @@ export default function FilterBar({
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-1 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-neutral-400 transition-colors hover:text-white"
+              className="inline-flex items-center gap-1 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-700 dark:text-neutral-400 transition-colors hover:text-black dark:hover:text-white"
             >
               <X className="h-3.5 w-3.5" />
               <span>Sıfırla</span>
@@ -115,10 +115,10 @@ export default function FilterBar({
         <button
           type="button"
           onClick={() => onSelectCategory("all")}
-          className={`shrink-0 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
+          className={`shrink-0 rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-wider transition-all ${
             selectedCategory === "all"
-              ? "bg-white text-black shadow-md"
-              : "border border-neutral-800 bg-neutral-900/80 text-neutral-400 hover:bg-neutral-800 hover:text-white"
+              ? "bg-neutral-950 dark:bg-white text-white dark:text-black shadow-md"
+              : "border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/80 text-neutral-700 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white"
           }`}
         >
           {t("filterAll")} ({totalCount})
@@ -132,10 +132,10 @@ export default function FilterBar({
               key={cat.id}
               type="button"
               onClick={() => onSelectCategory(cat.id)}
-              className={`shrink-0 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`shrink-0 rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-wider transition-all ${
                 isSelected
-                  ? "bg-white text-black shadow-md"
-                  : "border border-neutral-800 bg-neutral-900/80 text-neutral-400 hover:bg-neutral-800 hover:text-white"
+                  ? "bg-neutral-950 dark:bg-white text-white dark:text-black shadow-md"
+                  : "border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/80 text-neutral-700 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white"
               }`}
             >
               {label}

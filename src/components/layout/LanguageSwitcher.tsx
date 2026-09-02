@@ -19,18 +19,18 @@ export default function LanguageSwitcher() {
   };
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-neutral-800 bg-neutral-900/80 p-1 text-xs backdrop-blur-md">
-      <div className="flex items-center px-1.5 text-neutral-400">
+    <div className="inline-flex items-center gap-1 rounded-full border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/80 p-1 text-xs backdrop-blur-md">
+      <div className="flex items-center px-1.5 text-neutral-500 dark:text-neutral-400">
         <Globe className="h-3.5 w-3.5" />
       </div>
       <button
         type="button"
         disabled={isPending}
         onClick={() => handleToggle("tr")}
-        className={`rounded-full px-2.5 py-1 font-semibold uppercase tracking-wider transition-all ${
+        className={`rounded-full px-2.5 py-1 font-bold uppercase tracking-wider transition-all ${
           locale === "tr"
-            ? "bg-white text-black shadow-sm"
-            : "text-neutral-400 hover:text-white"
+            ? "bg-neutral-950 dark:bg-white text-white dark:text-black shadow-sm"
+            : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
         }`}
         aria-label="TR - Türkçe Dil Seçeneği"
       >
@@ -40,10 +40,10 @@ export default function LanguageSwitcher() {
         type="button"
         disabled={isPending}
         onClick={() => handleToggle("en")}
-        className={`rounded-full px-2.5 py-1 font-semibold uppercase tracking-wider transition-all ${
+        className={`rounded-full px-2.5 py-1 font-bold uppercase tracking-wider transition-all ${
           locale === "en"
-            ? "bg-white text-black shadow-sm"
-            : "text-neutral-400 hover:text-white"
+            ? "bg-neutral-950 dark:bg-white text-white dark:text-black shadow-sm"
+            : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
         }`}
         aria-label="EN - English Language Option"
       >
