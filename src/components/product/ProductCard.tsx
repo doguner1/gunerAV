@@ -14,6 +14,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, categoryName }: ProductCardProps) {
   const locale = useLocale();
   const t = useTranslations("Products");
+  const tCommon = useTranslations("Common");
 
   const isTr = locale === "tr";
   const name = isTr ? product.name_tr : product.name_en;
@@ -60,7 +61,7 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
             {/* Discount Badge */}
             {product.discount_percent && (
               <span className="rounded-md border border-[#d4af37]/50 bg-[#d4af37]/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#d4af37] backdrop-blur-md">
-                %{product.discount_percent} İNDİRİM
+                %{product.discount_percent} {tCommon("discount")}
               </span>
             )}
           </div>
@@ -94,7 +95,7 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
       <div className="border-t border-neutral-100 dark:border-neutral-900 bg-neutral-50/90 dark:bg-neutral-950/80 p-5 pt-4">
         <div className="mb-3 flex items-baseline justify-between">
           <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-            {product.requires_license ? "Yasal Durum" : "Tavsiye Fiyat"}
+            {product.requires_license ? tCommon("legalStatus") : tCommon("msrpShort")}
           </span>
           <div className="text-right">
             {product.price ? (
@@ -133,7 +134,7 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
             className="flex items-center justify-center gap-1.5 rounded-xl bg-neutral-950 dark:bg-white px-3 py-2 text-xs font-extrabold text-white dark:text-black transition-all hover:bg-neutral-800 dark:hover:bg-neutral-200 active:scale-95 shadow-sm"
           >
             <MessageCircle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500" />
-            <span>Sor</span>
+            <span>{tCommon("inquire")}</span>
           </a>
         </div>
       </div>

@@ -15,7 +15,6 @@ export async function generateMetadata({
 }: {
   params: { locale: string };
 }): Promise<Metadata> {
-  const t = await getTranslations({ locale, namespace: "Navigation" });
   const isTr = locale === "tr";
 
   const title = isTr
@@ -44,12 +43,13 @@ export async function generateMetadata({
   };
 }
 
-export default function ProductsPage({
+export default async function ProductsPage({
   params: { locale },
 }: {
   params: { locale: string };
 }) {
   setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "CatalogPage" });
   const products = getAllProducts();
   const categories = getAllCategories();
 
@@ -59,15 +59,13 @@ export default function ProductsPage({
         {/* Page Header */}
         <div className="mb-10 max-w-3xl">
           <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
-            Katalog &amp; Teşhir
+            {t("tagline")}
           </span>
           <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-5xl mt-2">
-            Av &amp; Doğa Ekipmanları
+            {t("heading")}
           </h1>
           <p className="mt-3 text-sm text-neutral-700 dark:text-neutral-400 leading-relaxed font-medium">
-            Mağazamızda sergilenen ve temin edebileceğiniz tüm profesyonel av, taktik optik,
-            kamp ve doğa kıyafetlerini inceleyin. Beğendiğiniz ürün için WhatsApp üzerinden
-            veya mağazamıza gelerek anında bilgi alabilirsiniz.
+            {t("description")}
           </p>
         </div>
 
@@ -75,7 +73,7 @@ export default function ProductsPage({
         <Suspense
           fallback={
             <div className="h-96 flex items-center justify-center text-xs text-neutral-500">
-              Katalog yükleniyor...
+              {t("loading")}
             </div>
           }
         >

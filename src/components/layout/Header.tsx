@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, usePathname } from "@/i18n/routing";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import { STORE_INFO } from "@/lib/store";
@@ -11,6 +11,9 @@ import { getAllCategories } from "@/lib/products";
 
 export default function Header() {
   const t = useTranslations("Navigation");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+  const isTr = locale === "tr";
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -56,7 +59,7 @@ export default function Header() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
                 </span>
-                {STORE_INFO.hours.summary}
+                {tCommon("openSummary")}
               </span>
               <span className="text-neutral-300 dark:text-neutral-700">|</span>
               <span className="hidden md:inline text-neutral-600 dark:text-neutral-400 font-medium">
@@ -66,7 +69,7 @@ export default function Header() {
             <div className="flex items-center gap-3">
               <span className="text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5 font-semibold">
                 <ShieldCheck className="h-3.5 w-3.5 text-[#d4af37]" />
-                Google 5.0 ★ Malatya Resmi Av Bayii
+                {tCommon("officialDealerBadge")}
               </span>
             </div>
           </div>
@@ -124,21 +127,24 @@ export default function Header() {
                   onMouseLeave={() => setCategoriesOpen(false)}
                   className="absolute top-full left-0 mt-2 w-64 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-2 shadow-2xl backdrop-blur-2xl"
                 >
-                  {categories.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      href={`/products?category=${cat.id}`}
-                      onClick={() => setCategoriesOpen(false)}
-                      className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-800 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
-                    >
-                      <span>{cat.name_tr}</span>
-                      {cat.id === "silah-muhimmat" && (
-                        <span className="rounded bg-red-100 dark:bg-red-950/80 px-1.5 py-0.5 text-[9px] font-bold text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/40">
-                          Ruhsatlı
-                        </span>
-                      )}
-                    </Link>
-                  ))}
+                  {categories.map((cat) => {
+                    const categoryName = isTr ? cat.name_tr : cat.name_en;
+                    return (
+                      <Link
+                        key={cat.id}
+                        href={`/products?category=${cat.id}`}
+                        onClick={() => setCategoriesOpen(false)}
+                        className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-800 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
+                      >
+                        <span>{categoryName}</span>
+                        {cat.id === "silah-muhimmat" && (
+                          <span className="rounded bg-red-100 dark:bg-red-950/80 px-1.5 py-0.5 text-[9px] font-bold text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/40">
+                            {tCommon("licensed")}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -178,7 +184,7 @@ export default function Header() {
               type="button"
               onClick={() => setIsOpen(!isOpen)}
               className="rounded-lg border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:text-white focus:outline-none"
-              aria-label="Menüyü Aç/Kapat"
+              aria-label={tCommon("toggleMenu")}
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -210,7 +216,7 @@ export default function Header() {
               {/* Navigation Links */}
               <div className="flex flex-col gap-1">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 px-3 py-1">
-                  Menü
+                  {tCommon("menu")}
                 </span>
                 {navLinks.map((link) => (
                   <Link
@@ -232,20 +238,23 @@ export default function Header() {
                 <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 px-3 py-1">
                   {t("categories")}
                 </span>
-                {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/products?category=${cat.id}`}
-                    className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
-                  >
-                    <span>{cat.name_tr}</span>
-                    {cat.id === "silah-muhimmat" && (
-                      <span className="rounded bg-red-100 dark:bg-red-950 px-1.5 py-0.5 text-[9px] font-bold text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/40">
-                        Ruhsatlı
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                {categories.map((cat) => {
+                  const categoryName = isTr ? cat.name_tr : cat.name_en;
+                  return (
+                    <Link
+                      key={cat.id}
+                      href={`/products?category=${cat.id}`}
+                      className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
+                    >
+                      <span>{categoryName}</span>
+                      {cat.id === "silah-muhimmat" && (
+                        <span className="rounded bg-red-100 dark:bg-red-950 px-1.5 py-0.5 text-[9px] font-bold text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/40">
+                          {tCommon("licensed")}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
 
               {/* Store Address & Hours info */}
@@ -255,7 +264,7 @@ export default function Header() {
                 </div>
                 <div>{STORE_INFO.address}</div>
                 <div className="text-emerald-600 dark:text-emerald-400 font-bold">
-                  {STORE_INFO.hours.summary}
+                  {tCommon("openSummary")}
                 </div>
               </div>
             </div>

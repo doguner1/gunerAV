@@ -1,10 +1,13 @@
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { getDealsProducts, getAllCategories } from "@/lib/products";
 import ProductCard from "@/components/product/ProductCard";
 import { Sparkles } from "lucide-react";
 
 export default function CampaignSection() {
   const t = useTranslations("Products");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+  const isTr = locale === "tr";
   const deals = getDealsProducts();
   const categories = getAllCategories();
 
@@ -18,7 +21,7 @@ export default function CampaignSection() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-lg border border-amber-300 dark:border-[#d4af37]/30 bg-amber-50 dark:bg-[#d4af37]/10 px-3 py-1 text-xs font-bold text-amber-800 dark:text-[#d4af37] uppercase tracking-wider mb-2">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Avantajlı Fırsatlar</span>
+              <span>{tCommon("specialOffers")}</span>
             </div>
             <h2 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl">
               {t("dealsTitle")}
@@ -37,7 +40,7 @@ export default function CampaignSection() {
               <ProductCard
                 key={product.id}
                 product={product}
-                categoryName={cat?.name_tr}
+                categoryName={isTr ? cat?.name_tr : cat?.name_en}
               />
             );
           })}

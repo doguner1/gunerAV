@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useLocale } from "next-intl";
 
 interface ProductGalleryProps {
   images: string[];
@@ -9,6 +10,8 @@ interface ProductGalleryProps {
 }
 
 export default function ProductGallery({ images, productName }: ProductGalleryProps) {
+  const locale = useLocale();
+  const isTr = locale === "tr";
   const [selected, setSelected] = useState(0);
   const activeImage = images[selected] || images[0] || "/images/products/optics-1.webp";
 
@@ -18,7 +21,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-950 shadow-sm dark:shadow-2xl">
         <Image
           src={activeImage}
-          alt={`${productName} - Görsel ${selected + 1}`}
+          alt={`${productName} - ${isTr ? "Görsel" : "Image"} ${selected + 1}`}
           fill
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"

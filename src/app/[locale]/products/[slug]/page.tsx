@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { Link } from "@/i18n/routing";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Metadata } from "next";
 import {
   getProductBySlug,
@@ -71,7 +70,7 @@ export async function generateMetadata({
   };
 }
 
-export default function ProductDetailPage({
+export default async function ProductDetailPage({
   params: { locale, slug },
 }: {
   params: { locale: string; slug: string };
@@ -82,6 +81,9 @@ export default function ProductDetailPage({
   if (!product) {
     notFound();
   }
+
+  const t = await getTranslations({ locale, namespace: "Products" });
+  const tCommon = await getTranslations({ locale, namespace: "Common" });
 
   const isTr = locale === "tr";
   const name = isTr ? product.name_tr : product.name_en;
@@ -108,11 +110,11 @@ export default function ProductDetailPage({
           className="mb-8 flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400 font-medium flex-wrap"
         >
           <Link href="/" className="hover:text-black dark:hover:text-white transition-colors">
-            Ana Sayfa
+            {tCommon("home")}
           </Link>
           <ChevronRight className="h-3 w-3 text-neutral-400 dark:text-neutral-600" />
           <Link href="/products" className="hover:text-black dark:hover:text-white transition-colors">
-            Katalog
+            {tCommon("catalog")}
           </Link>
           {category && (
             <>
@@ -153,7 +155,7 @@ export default function ProductDetailPage({
                 {product.in_stock && (
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/40">
                     <CheckCircle2 className="h-3 w-3" />
-                    Mağazada Stokta
+                    {tCommon("inStockAtStore")}
                   </span>
                 )}
               </div>
@@ -168,7 +170,7 @@ export default function ProductDetailPage({
                 {product.price ? (
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                      Tavsiye Edilen Satış Fiyatı
+                      {tCommon("msrpTitle")}
                     </span>
                     <div className="mt-1 flex items-baseline gap-3">
                       <span className="font-heading text-2xl sm:text-3xl font-black text-neutral-950 dark:text-white">
@@ -176,24 +178,24 @@ export default function ProductDetailPage({
                       </span>
                       {product.discount_percent && (
                         <span className="rounded bg-amber-100 dark:bg-[#d4af37]/20 px-2 py-0.5 text-xs font-extrabold text-amber-800 dark:text-[#d4af37] border border-amber-300 dark:border-[#d4af37]/40">
-                          %{product.discount_percent} Fırsat
+                          %{product.discount_percent} {tCommon("specialOffers")}
                         </span>
                       )}
                     </div>
                     <p className="mt-1 text-[11px] text-neutral-500 font-medium">
-                      * Fiyatlar ve stok durumu mağazamızda anlık olarak teyit edilir.
+                      {tCommon("msrpNotice")}
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-1">
                     <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-[#d4af37]">
-                      Ruhsatlı Ürün Fiyat Politikası
+                      {tCommon("pricingPolicyTitle")}
                     </span>
                     <div className="text-lg font-bold text-neutral-950 dark:text-white">
-                      Fiyat Bilgisi İçin Mağazamızla İletişime Geçin
+                      {tCommon("pricingPolicyDesc")}
                     </div>
                     <p className="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium">
-                      Mevzuat gereği ateşli silah ve mühimmat fiyatları telefon veya mağaza ziyareti ile paylaşılmaktadır.
+                      {tCommon("pricingPolicyNotice")}
                     </p>
                   </div>
                 )}
@@ -221,7 +223,7 @@ export default function ProductDetailPage({
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3.5 text-sm font-black uppercase tracking-wider text-neutral-950 shadow-xl transition-all hover:bg-[#20ba59] active:scale-98"
               >
                 <MessageCircle className="h-5 w-5 fill-neutral-950 text-neutral-950" />
-                <span>WhatsApp ile Bilgi Al</span>
+                <span>{t("askOnWhatsapp")}</span>
               </a>
 
               <div className="grid grid-cols-2 gap-3">
@@ -230,7 +232,7 @@ export default function ProductDetailPage({
                   className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 py-3 text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 shadow-sm"
                 >
                   <Phone className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />
-                  <span>Mağazayı Ara</span>
+                  <span>{tCommon("callStore")}</span>
                 </a>
 
                 <Link
@@ -238,7 +240,7 @@ export default function ProductDetailPage({
                   className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-black py-3 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-300 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white shadow-sm"
                 >
                   <MapPin className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />
-                  <span>Mağaza Konumu</span>
+                  <span>{tCommon("storeDirections")}</span>
                 </Link>
               </div>
 
@@ -246,11 +248,11 @@ export default function ProductDetailPage({
               <div className="flex items-center justify-between pt-3 text-[11px] text-neutral-600 dark:text-neutral-400 font-medium">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="h-3.5 w-3.5 text-[#b45309] dark:text-[#d4af37]" />
-                  %100 Orijinal Ürün
+                  {tCommon("genuine100")}
                 </span>
                 <span className="flex items-center gap-1">
                   <HelpCircle className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" />
-                  Ücretsiz Teknik Danışmanlık
+                  {tCommon("freeTechnicalGuidance")}
                 </span>
               </div>
             </div>
@@ -261,7 +263,7 @@ export default function ProductDetailPage({
         {specs && Object.keys(specs).length > 0 && (
           <div className="mt-16 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 shadow-sm dark:shadow-xl">
             <h2 className="font-heading text-xl font-bold uppercase tracking-wide text-neutral-950 dark:text-white mb-6">
-              Teknik Özellikler
+              {tCommon("technicalSpecs")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Object.entries(specs).map(([key, value]) => (
@@ -281,7 +283,7 @@ export default function ProductDetailPage({
         {related.length > 0 && (
           <div className="mt-20 border-t border-neutral-200 dark:border-neutral-900 pt-14">
             <h2 className="font-heading text-2xl font-black uppercase tracking-tight text-neutral-950 dark:text-white mb-8">
-              Benzer Ekipmanlar
+              {tCommon("relatedGear")}
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (

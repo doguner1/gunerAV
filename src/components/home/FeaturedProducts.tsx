@@ -1,11 +1,14 @@
 import { Link } from "@/i18n/routing";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { getFeaturedProducts, getAllCategories } from "@/lib/products";
 import ProductCard from "@/components/product/ProductCard";
 import { ArrowRight } from "lucide-react";
 
 export default function FeaturedProducts() {
   const t = useTranslations("Products");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+  const isTr = locale === "tr";
   const products = getFeaturedProducts();
   const categories = getAllCategories();
 
@@ -16,7 +19,7 @@ export default function FeaturedProducts() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
-              Vitrin
+              {tCommon("catalog")}
             </span>
             <h2 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl mt-1">
               {t("sectionTitle")}
@@ -43,7 +46,7 @@ export default function FeaturedProducts() {
               <ProductCard
                 key={product.id}
                 product={product}
-                categoryName={cat?.name_tr}
+                categoryName={isTr ? cat?.name_tr : cat?.name_en}
               />
             );
           })}

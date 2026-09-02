@@ -31,6 +31,7 @@ export default function FilterBar({
 }: FilterBarProps) {
   const locale = useLocale();
   const t = useTranslations("Products");
+  const tCommon = useTranslations("Common");
   const isTr = locale === "tr";
 
   const hasActiveFilters =
@@ -104,7 +105,7 @@ export default function FilterBar({
               className="inline-flex items-center gap-1 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-700 dark:text-neutral-400 transition-colors hover:text-black dark:hover:text-white"
             >
               <X className="h-3.5 w-3.5" />
-              <span>Sıfırla</span>
+              <span>{tCommon("reset")}</span>
             </button>
           )}
         </div>

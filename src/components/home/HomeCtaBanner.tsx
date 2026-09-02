@@ -1,11 +1,12 @@
 import { Link } from "@/i18n/routing";
 import { STORE_INFO } from "@/lib/store";
 import { generateWhatsAppLink } from "@/lib/utils";
-import { MessageCircle, Phone, MapPin, ArrowRight } from "lucide-react";
-import { useLocale } from "next-intl";
+import { MessageCircle, Phone, MapPin } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function HomeCtaBanner() {
   const locale = useLocale();
+  const tCommon = useTranslations("Common");
 
   const waMsg =
     locale === "tr"
@@ -23,17 +24,15 @@ export default function HomeCtaBanner() {
 
           <div className="relative z-10 max-w-2xl space-y-6">
             <span className="inline-block text-xs font-extrabold uppercase tracking-widest text-[#d4af37]">
-              Hemen İletişime Geçin
+              {tCommon("contactUsToday")}
             </span>
 
             <h2 className="font-heading text-3xl font-extrabold uppercase tracking-tight text-white sm:text-5xl">
-              Doğru Ekipmanı Birlikte Seçelim
+              {tCommon("chooseGearTogether")}
             </h2>
 
             <p className="text-sm sm:text-base leading-relaxed text-neutral-300">
-              Malatya'daki mağazamızı ziyaret edebilir ya da WhatsApp hattımız üzerinden
-              tüm av tüfekleri, taktik optikler ve outdoor donanımları hakkında uzman ekibimizden
-              anında bilgi alabilirsiniz.
+              {tCommon("ctaBannerDesc")}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -44,7 +43,7 @@ export default function HomeCtaBanner() {
                 className="inline-flex items-center gap-2.5 rounded-xl bg-[#25D366] px-6 py-3.5 text-xs font-black uppercase tracking-wider text-neutral-950 shadow-xl transition-all hover:bg-[#20ba59] active:scale-95"
               >
                 <MessageCircle className="h-4 w-4 fill-neutral-950 text-neutral-950" />
-                <span>WhatsApp ile Sorun</span>
+                <span>{tCommon("askOnWhatsapp")}</span>
               </a>
 
               <a
@@ -60,7 +59,7 @@ export default function HomeCtaBanner() {
                 className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-800 px-5 py-3.5 text-xs font-semibold text-neutral-300 hover:text-white transition-colors"
               >
                 <MapPin className="h-4 w-4 text-[#d4af37]" />
-                <span>Mağaza Yol Tarifi</span>
+                <span>{tCommon("storeDirections")}</span>
               </Link>
             </div>
           </div>

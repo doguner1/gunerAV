@@ -4,24 +4,25 @@ import { STORE_INFO } from "@/lib/store";
 
 export default function TestimonialsSection() {
   const t = useTranslations("Testimonials");
+  const tCommon = useTranslations("Common");
 
   const reviews = [
     {
       name: t("review1Name"),
       text: t("review1Text"),
-      date: "3 hafta önce",
+      date: t("review1Date"),
       stars: 5,
     },
     {
       name: t("review2Name"),
       text: t("review2Text"),
-      date: "1 ay önce",
+      date: t("review2Date"),
       stars: 5,
     },
     {
       name: t("review3Name"),
       text: t("review3Text"),
-      date: "2 ay önce",
+      date: t("review3Date"),
       stars: 5,
     },
   ];
@@ -34,7 +35,7 @@ export default function TestimonialsSection() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="font-bold text-xs tracking-wider uppercase text-neutral-600 dark:text-neutral-400">
-                Google Haritalar
+                {tCommon("googleMaps")}
               </span>
               <div className="flex items-center text-amber-500 dark:text-amber-400">
                 {[...Array(5)].map((_, i) => (
@@ -57,7 +58,7 @@ export default function TestimonialsSection() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-2.5 text-xs font-bold text-neutral-800 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:border-neutral-700 hover:text-black dark:hover:text-white shadow-sm"
           >
-            <span>Google'da Tüm Yorumları Gör</span>
+            <span>{tCommon("viewAllGoogleReviews")}</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>

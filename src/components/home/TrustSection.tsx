@@ -3,31 +3,32 @@ import { ShieldCheck, Star, Award, Compass } from "lucide-react";
 
 export default function TrustSection() {
   const t = useTranslations("Trust");
+  const tCommon = useTranslations("Common");
 
   const pillars = [
     {
       icon: ShieldCheck,
       title: t("card1Title"),
       desc: t("card1Desc"),
-      highlight: "RESMİ LİSANSLI",
+      highlight: tCommon("officialLicensed"),
     },
     {
       icon: Star,
       title: t("card2Title"),
       desc: t("card2Desc"),
-      highlight: "5.0 GOOGLE PUANI",
+      highlight: tCommon("googleScore"),
     },
     {
       icon: Award,
       title: t("card3Title"),
       desc: t("card3Desc"),
-      highlight: "%100 DİSTRİBÜTÖR",
+      highlight: tCommon("distributor100"),
     },
     {
       icon: Compass,
       title: t("card4Title"),
       desc: t("card4Desc"),
-      highlight: "30+ YIL TECRÜBE",
+      highlight: tCommon("experience30"),
     },
   ];
 
@@ -36,7 +37,7 @@ export default function TrustSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
-            Güvenilirlik &amp; Tecrübe
+            {tCommon("reliabilityAndExperience")}
           </span>
           <h2 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl mt-2">
             {t("sectionTitle")}

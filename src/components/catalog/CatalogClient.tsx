@@ -20,6 +20,7 @@ export default function CatalogClient({
   const searchParams = useSearchParams();
   const locale = useLocale();
   const t = useTranslations("Products");
+  const tCommon = useTranslations("Common");
   const isTr = locale === "tr";
 
   const categoryParam = searchParams.get("category") || "all";
@@ -28,11 +29,14 @@ export default function CatalogClient({
   const [licenseOnly, setLicenseOnly] = useState<boolean>(false);
   const [dealsOnly, setDealsOnly] = useState<boolean>(false);
 
+  // Sync state if URL query param changes
   useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) setSelectedCategory(cat);
-  }, [searchParams]);
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [categoryParam]);
 
+  // Real-time filtering logic
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
       // Category filter
@@ -40,31 +44,38 @@ export default function CatalogClient({
         return false;
       }
 
-      // License filter
+      // License toggle
       if (licenseOnly && !product.requires_license) {
         return false;
       }
 
-      // Deals filter
-      if (dealsOnly && (!product.discount_percent || product.discount_percent <= 0)) {
+      // Deals toggle
+      if (dealsOnly && !product.discount_percent) {
         return false;
       }
 
-      // Search query filter
+      // Search query
       if (searchQuery.trim() !== "") {
-        const q = searchQuery.toLowerCase();
-        const name = isTr ? product.name_tr.toLowerCase() : product.name_en.toLowerCase();
-        const desc = isTr ? product.description_tr.toLowerCase() : product.description_en.toLowerCase();
-        const matchesName = name.includes(q);
-        const matchesDesc = desc.includes(q);
-        const matchesCat = product.category.toLowerCase().includes(q);
+        const query = searchQuery.toLowerCase();
+        const nameMatch =
+          product.name_tr.toLowerCase().includes(query) ||
+          product.name_en.toLowerCase().includes(query);
+        const descMatch =
+          product.description_tr.toLowerCase().includes(query) ||
+          product.description_en.toLowerCase().includes(query);
+        const specMatch = Object.entries(product.specs_tr || {}).some(
+          ([k, v]) =>
+            k.toLowerCase().includes(query) || (v ? v.toLowerCase().includes(query) : false)
+        );
 
-        return matchesName || matchesDesc || matchesCat;
+        if (!nameMatch && !descMatch && !specMatch) {
+          return false;
+        }
       }
 
       return true;
     });
-  }, [initialProducts, selectedCategory, licenseOnly, dealsOnly, searchQuery, isTr]);
+  }, [initialProducts, selectedCategory, licenseOnly, dealsOnly, searchQuery]);
 
   return (
     <div className="space-y-8">
@@ -85,7 +96,7 @@ export default function CatalogClient({
       {/* Results Count */}
       <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400 px-1 font-medium">
         <span>
-          Toplam <strong className="text-neutral-950 dark:text-white font-bold">{filteredProducts.length}</strong> ürün listeleniyor
+          {tCommon("showingProducts", { count: filteredProducts.length })}
         </span>
       </div>
 
@@ -110,7 +121,7 @@ export default function CatalogClient({
             {t("noProductsFound")}
           </h3>
           <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 max-w-sm font-medium">
-            Farklı bir arama terimi deneyebilir veya filtreleri sıfırlayabilirsiniz.
+            {tCommon("resetSearchHint")}
           </p>
           <button
             type="button"
@@ -122,7 +133,7 @@ export default function CatalogClient({
             }}
             className="mt-5 rounded-xl bg-neutral-950 dark:bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-sm"
           >
-            Filtreleri Temizle
+            {tCommon("clearFilters")}
           </button>
         </div>
       )}

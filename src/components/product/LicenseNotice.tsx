@@ -10,6 +10,7 @@ interface LicenseNoticeProps {
 export default function LicenseNotice({ productName }: LicenseNoticeProps) {
   const locale = useLocale();
   const t = useTranslations("Products");
+  const tCommon = useTranslations("Common");
 
   const waMsg =
     locale === "tr"
@@ -30,7 +31,7 @@ export default function LicenseNotice({ productName }: LicenseNoticeProps) {
               {t("licenseRequired")}
             </span>
             <span className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">
-              5188 / 2521 Sayılı Kanun Hükümleri
+              {tCommon("permitRequiredNotice")}
             </span>
           </div>
 
@@ -63,7 +64,7 @@ export default function LicenseNotice({ productName }: LicenseNoticeProps) {
 
             <div className="flex items-center gap-1.5 text-[11px] text-neutral-600 dark:text-neutral-400 font-medium">
               <FileText className="h-3.5 w-3.5 text-neutral-500" />
-              <span>Satın Alma Belgesi ile Mağaza Teslimi</span>
+              <span>{tCommon("inStoreDeliveryPermit")}</span>
             </div>
           </div>
         </div>

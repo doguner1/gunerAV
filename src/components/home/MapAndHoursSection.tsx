@@ -11,13 +11,14 @@ import {
 
 export default function MapAndHoursSection() {
   const t = useTranslations("StoreInfo");
+  const tCommon = useTranslations("Common");
 
   return (
     <section id="magaza-konum" className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 py-24 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
           <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
-            Fiziki Mağaza &amp; Ulaşım
+            {tCommon("physicalStoreAndDirections")}
           </span>
           <h2 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl mt-1">
             {t("sectionTitle")}
@@ -41,14 +42,14 @@ export default function MapAndHoursSection() {
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="h-3.5 w-3.5 fill-current" />
                     ))}
-                    <span className="ml-1 text-xs font-bold text-neutral-900 dark:text-white">5.0</span>
+                    <span className="ml-1 text-xs font-bold text-neutral-950 dark:text-white">5.0</span>
                   </div>
                 </div>
                 <h3 className="font-heading text-2xl font-black text-neutral-950 dark:text-white">
                   {STORE_INFO.name}
                 </h3>
                 <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                  {STORE_INFO.category}
+                  {t("category")}
                 </span>
               </div>
 
@@ -80,15 +81,15 @@ export default function MapAndHoursSection() {
                     </span>
                     <div className="mt-2 space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300 font-medium">
                       <div className="flex items-center justify-between">
-                        <span>Hafta İçi (Pzt - Cum):</span>
+                        <span>{tCommon("weekdaysSchedule")}</span>
                         <span className="font-bold text-neutral-950 dark:text-white">08:30 - 20:00</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Cumartesi:</span>
+                        <span>{tCommon("saturdaySchedule")}</span>
                         <span className="font-bold text-neutral-950 dark:text-white">08:30 - 20:00</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Pazar:</span>
+                        <span>{tCommon("sundaySchedule")}</span>
                         <span className="font-bold text-neutral-950 dark:text-white">10:00 - 18:00</span>
                       </div>
                     </div>
@@ -121,7 +122,7 @@ export default function MapAndHoursSection() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-950 dark:bg-white px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-white dark:text-black transition-all hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-md"
               >
                 <Navigation className="h-4 w-4" />
-                <span>Yol Tarifi Al</span>
+                <span>{t("getDirections")}</span>
               </a>
 
               <a
@@ -129,7 +130,7 @@ export default function MapAndHoursSection() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-3 text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white transition-all hover:bg-neutral-100 dark:hover:bg-neutral-750"
               >
                 <Phone className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />
-                <span>Hemen Ara</span>
+                <span>{tCommon("callDirect")}</span>
               </a>
             </div>
           </div>
@@ -137,7 +138,7 @@ export default function MapAndHoursSection() {
           {/* Interactive Map Embed */}
           <div className="relative min-h-[420px] overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-lg lg:col-span-7">
             <iframe
-              title="Malatya Av Güner Av Bayii Konumu"
+              title={STORE_INFO.name}
               src={`https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=tr&z=17&output=embed`}
               width="100%"
               height="100%"

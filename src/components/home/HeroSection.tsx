@@ -14,6 +14,7 @@ import {
 
 export default function HeroSection() {
   const t = useTranslations("Hero");
+  const tCommon = useTranslations("Common");
   const locale = useLocale();
 
   const waMsg =
@@ -29,7 +30,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 -z-10 opacity-10 dark:opacity-30">
         <Image
           src="/images/hero-bg.webp"
-          alt="Güner Av Malatya Arka Plan"
+          alt={tCommon("bgAlt")}
           fill
           sizes="100vw"
           className="object-cover object-center"
@@ -51,7 +52,7 @@ export default function HeroSection() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
               </span>
-              <span>AÇIK</span>
+              <span>{tCommon("open")}</span>
             </div>
             <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400">
               <Star className="h-3.5 w-3.5 fill-current" />
@@ -93,7 +94,7 @@ export default function HeroSection() {
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white/90 dark:bg-neutral-900/90 px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-neutral-950 dark:text-white backdrop-blur-md transition-all hover:border-[#25D366] hover:bg-white dark:hover:bg-neutral-850 active:scale-95 shadow-sm"
             >
               <MessageCircle className="h-4 w-4 text-[#25D366]" />
-              <span>WhatsApp Bilgi Hattı</span>
+              <span>{tCommon("whatsappInfoLine")}</span>
             </a>
 
             <Link

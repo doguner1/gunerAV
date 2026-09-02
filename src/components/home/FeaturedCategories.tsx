@@ -6,6 +6,7 @@ import { ArrowUpRight, ShieldAlert } from "lucide-react";
 
 export default function FeaturedCategories() {
   const t = useTranslations("Categories");
+  const tCommon = useTranslations("Common");
   const locale = useLocale();
   const isTr = locale === "tr";
   const categories = getAllCategories();
@@ -17,7 +18,7 @@ export default function FeaturedCategories() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
-              Koleksiyonlar
+              {tCommon("collections")}
             </span>
             <h2 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl mt-1">
               {t("sectionTitle")}
@@ -30,7 +31,7 @@ export default function FeaturedCategories() {
             href="/products"
             className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-300 hover:text-black dark:hover:text-white transition-colors"
           >
-            <span>Tüm Ekipmanlar</span>
+            <span>{tCommon("allGear")}</span>
             <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
@@ -67,7 +68,7 @@ export default function FeaturedCategories() {
                     {isLicenseReq ? (
                       <span className="inline-flex items-center gap-1 rounded-md border border-red-500/50 bg-red-950/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 backdrop-blur-md">
                         <ShieldAlert className="h-3 w-3" />
-                        Ruhsatlı Kategori
+                        {tCommon("licensedCategory")}
                       </span>
                     ) : (
                       <span className="rounded-md border border-neutral-800 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-neutral-300 backdrop-blur-md">

@@ -1,11 +1,10 @@
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
-import { routing } from "@/i18n/routing";
 import { STORE_INFO } from "@/lib/store";
-import { ShieldCheck, Lock, FileText, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, Lock, Cookie, Scale } from "lucide-react";
 
 export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
+  return [{ locale: "tr" }, { locale: "en" }];
 }
 
 export async function generateMetadata({
@@ -16,13 +15,13 @@ export async function generateMetadata({
   const isTr = locale === "tr";
   return {
     title: isTr
-      ? "Gizlilik Politikası & KVKK | Malatya Av Güner Av Bayii"
-      : "Privacy Policy & GDPR | Guner AV Hunting Dealer",
+      ? `Gizlilik Politikası & KVKK | ${STORE_INFO.name}`
+      : `Privacy Policy & GDPR | ${STORE_INFO.name}`,
     description: isTr
-      ? "Malatya Av Güner Av Bayii 6698 Sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve Çerez Politikası bilgilendirme metni."
-      : "Privacy Policy and personal data protection information for Guner AV Hunting Dealer.",
+      ? "Malatya Av Güner Av Bayii 6698 Sayılı KVKK ve Gizlilik Politikası Aydınlatma Metni."
+      : "Privacy and Personal Data Protection Policy of Guner AV Hunting Store in Malatya.",
     alternates: {
-      canonical: `/${locale}/privacy`,
+      canonical: `${STORE_INFO.siteUrl}/${locale}/privacy`,
       languages: {
         tr: "/tr/privacy",
         en: "/en/privacy",
@@ -31,107 +30,92 @@ export async function generateMetadata({
   };
 }
 
-export default function PrivacyPage({
+export default async function PrivacyPage({
   params: { locale },
 }: {
   params: { locale: string };
 }) {
   setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Privacy" });
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-28 pb-20 transition-colors">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12">
+        {/* Header */}
+        <div className="mb-12 border-b border-neutral-200 dark:border-neutral-800/80 pb-8">
           <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
-            Yasal Bilgilendirme
+            {t("tagline")}
           </span>
-          <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-5xl mt-2">
-            Gizlilik &amp; KVKK Politikası
+          <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl mt-2">
+            {t("mainHeading")}
           </h1>
-          <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 font-medium">
-            Son Güncelleme: Eylül 2026 · {STORE_INFO.name}
+          <p className="mt-2 text-xs text-neutral-500 font-medium">
+            {t("updated")}
           </p>
         </div>
 
-        <div className="space-y-8 text-xs sm:text-sm leading-relaxed text-neutral-700 dark:text-neutral-300 font-medium">
+        {/* Content Sections */}
+        <div className="space-y-8 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300 font-medium">
           {/* Section 1 */}
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
-            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
-              <ShieldCheck className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
-              <h2 className="font-heading text-lg font-bold uppercase">
-                1. Genel Bilgilendirme ve Veri Sorumlusu
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-900 text-[#b45309] dark:text-[#d4af37]">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <h2 className="font-heading text-lg font-bold text-neutral-950 dark:text-white uppercase">
+                {t("sec1Title")}
               </h2>
             </div>
-            <p>
-              {STORE_INFO.name} (“Güner AV”) olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu
-              (“KVKK”) ve ilgili mevzuat uyarınca, müşterilerimizin ve web sitemizi ziyaret eden
-              tüm kullanıcılarımızın kişisel verilerinin gizliliğine ve güvenliğine en üst düzeyde
-              önem veriyoruz.
-            </p>
-            <p>
-              Veri Sorumlusu: <strong>{STORE_INFO.name}</strong>
-              <br />
-              Adres: {STORE_INFO.address}
-              <br />
-              İletişim: {STORE_INFO.phone} | {STORE_INFO.email}
-            </p>
+            <p className="text-xs sm:text-sm">{t("sec1P1")}</p>
+            <div className="mt-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/60 p-4 text-xs text-neutral-600 dark:text-neutral-400 whitespace-pre-line font-mono">
+              {t("sec1DataController")}
+            </div>
           </div>
 
           {/* Section 2 */}
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
-            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
-              <Lock className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
-              <h2 className="font-heading text-lg font-bold uppercase">
-                2. Toplanan Kişisel Veriler ve İşlenme Amaçları
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-900 text-[#b45309] dark:text-[#d4af37]">
+                <Lock className="h-5 w-5" />
+              </div>
+              <h2 className="font-heading text-lg font-bold text-neutral-950 dark:text-white uppercase">
+                {t("sec2Title")}
               </h2>
             </div>
-            <p>
-              Web sitemiz bir vitrin ve tanıtım platformudur. Kullanıcı kaydı, sepet veya online
-              ödeme işlemleri yapılmamaktadır. Sitemiz üzerinden yalnızca:
-            </p>
-            <ul className="list-disc pl-5 space-y-2 text-neutral-600 dark:text-neutral-400">
-              <li>İletişim formu aracılığıyla ilettiğiniz ad, soyad, telefon ve e-posta bilgileri,</li>
-              <li>WhatsApp bağlantısı üzerinden başlattığınız doğrudan yazışmalar,</li>
-              <li>Dil tercihinizin (TR / EN) hatırlanması için kullanılan temel oturum çerezleri işlenmektedir.</li>
+            <p className="text-xs sm:text-sm">{t("sec2P1")}</p>
+            <ul className="mt-3 list-inside list-disc space-y-1.5 text-xs sm:text-sm text-neutral-800 dark:text-neutral-300 font-semibold pl-2">
+              <li>{t("sec2Li1")}</li>
+              <li>{t("sec2Li2")}</li>
+              <li>{t("sec2Li3")}</li>
             </ul>
-            <p>
-              Bu veriler yalnızca taleplerinize cevap verilmesi, ürün bilgi taleplerinizin
-              karşılanması ve müşteri ilişkilerinin yürütülmesi amacıyla sınırlı olarak işlenir.
-            </p>
+            <p className="mt-3 text-xs sm:text-sm">{t("sec2P2")}</p>
           </div>
 
           {/* Section 3 */}
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
-            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
-              <FileText className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
-              <h2 className="font-heading text-lg font-bold uppercase">
-                3. Çerez (Cookie) Kullanımı ve Tercihleriniz
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-900 text-[#b45309] dark:text-[#d4af37]">
+                <Cookie className="h-5 w-5" />
+              </div>
+              <h2 className="font-heading text-lg font-bold text-neutral-950 dark:text-white uppercase">
+                {t("sec3Title")}
               </h2>
             </div>
-            <p>
-              Web sitemizde ziyaretçilerimizin gezinme deneyimini geliştirmek amacıyla zorunlu ve
-              tercih çerezleri kullanılmaktadır. Bu çerezler cihazınıza zarar vermez ve kişisel
-              bilgilerinizi depolamaz.
-            </p>
-            <p>
-              Tarayıcınızın ayarlarından çerezleri dilediğiniz zaman engelleyebilir, silebilir veya
-              çerez gönderildiğinde uyarı alacak şekilde ayarlayabilirsiniz.
-            </p>
+            <p className="text-xs sm:text-sm">{t("sec3P1")}</p>
+            <p className="mt-3 text-xs sm:text-sm">{t("sec3P2")}</p>
           </div>
 
           {/* Section 4 */}
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4 shadow-sm">
-            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white">
-              <CheckCircle2 className="h-5 w-5 text-[#b45309] dark:text-[#d4af37]" />
-              <h2 className="font-heading text-lg font-bold uppercase">
-                4. KVKK Kapsamındaki Haklarınız
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-900 text-[#b45309] dark:text-[#d4af37]">
+                <Scale className="h-5 w-5" />
+              </div>
+              <h2 className="font-heading text-lg font-bold text-neutral-950 dark:text-white uppercase">
+                {t("sec4Title")}
               </h2>
             </div>
-            <p>
-              KVKK'nın 11. maddesi uyarınca veri sahipleri; kişisel verilerinin işlenip işlenmediğini
-              öğrenme, işlenmişse bilgi talep etme, silinmesini veya düzeltilmesini isteme haklarına
-              sahiptir. Bu kapsamdaki taleplerinizi {STORE_INFO.email} adresimize veya mağazamıza
-              şahsen başvurarak iletebilirsiniz.
-            </p>
+            <p className="text-xs sm:text-sm">{t("sec4P")}</p>
           </div>
         </div>
       </div>
