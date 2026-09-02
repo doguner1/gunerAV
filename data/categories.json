@@ -1,0 +1,52 @@
+[
+  {
+    "id": "optik",
+    "slug": "optik",
+    "name_tr": "Optik & Dürbün",
+    "name_en": "Optics & Scopes",
+    "description_tr": "Taktik tüfek dürbünleri, kırmızı nokta (red-dot) nişangahlar, termal kameralar ve el dürbünleri.",
+    "description_en": "Tactical rifle scopes, red-dot sights, thermal optics, and high-performance binoculars.",
+    "icon": "Crosshair",
+    "image": "/images/categories/optics.webp"
+  },
+  {
+    "id": "giyim",
+    "slug": "giyim",
+    "name_tr": "Av & Doğa Giyimi",
+    "name_en": "Hunting & Outdoor Apparel",
+    "description_tr": "Zorlu hava koşullarına dayanıklı su geçirmez montlar, kamuflaj takımlar, av yelekleri ve botlar.",
+    "description_en": "Weatherproof waterproof jackets, camouflage suits, hunting vests, and durable trekking boots.",
+    "icon": "Shield",
+    "image": "/images/categories/apparel.webp"
+  },
+  {
+    "id": "kamp",
+    "slug": "kamp",
+    "name_tr": "Kamp & Taktik Ekipman",
+    "name_en": "Camping & Tactical Gear",
+    "description_tr": "Profesyonel kamp çadırları, taktik sırt çantaları, yüksek lümenli fenerler ve hayatta kalma kitleri.",
+    "description_en": "Professional tents, tactical backpacks, high-lumen flashlights, and survival gear.",
+    "icon": "Compass",
+    "image": "/images/categories/camping.webp"
+  },
+  {
+    "id": "aksesuar",
+    "slug": "aksesuar",
+    "name_tr": "Bıçak & Aksesuar",
+    "name_en": "Knives & Accessories",
+    "description_tr": "Dövme çelik av bıçakları, çok amaçlı çakılar, silah bakım yağları ve deri kılıflar.",
+    "description_en": "Forged hunting knives, multi-tools, gun maintenance kits, and leather holsters.",
+    "icon": "Layers",
+    "image": "/images/categories/knives.webp"
+  },
+  {
+    "id": "silah-muhimmat",
+    "slug": "silah-muhimmat",
+    "name_tr": "Tüfek & Mühimmat (Ruhsatlı)",
+    "name_en": "Shotguns & Ammo (Licensed)",
+    "description_tr": "Yivsiz av tüfekleri, havalı tüfekler ve orijinal fişek çeşitleri. Sadece mağazamızda ruhsat ibrazıyla satılır.",
+    "description_en": "Shotguns, air rifles, and certified ammunition. Sold exclusively in-store with legal permit verification.",
+    "icon": "AlertTriangle",
+    "image": "/images/categories/firearms.webp"
+  }
+]

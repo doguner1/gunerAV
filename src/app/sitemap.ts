@@ -1,0 +1,82 @@
+import { MetadataRoute } from "next";
+import { getAllProducts } from "@/lib/products";
+import { STORE_INFO } from "@/lib/store";
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const siteUrl = STORE_INFO.siteUrl;
+  const products = getAllProducts();
+  const currentDate = new Date();
+
+  const staticRoutes = [
+    "",
+    "/products",
+    "/about",
+    "/contact",
+    "/privacy",
+  ];
+
+  const sitemapEntries: MetadataRoute.Sitemap = [];
+
+  // Static pages for TR and EN
+  staticRoutes.forEach((route) => {
+    sitemapEntries.push({
+      url: `${siteUrl}/tr${route}`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: route === "" ? 1.0 : 0.8,
+      alternates: {
+        languages: {
+          tr: `${siteUrl}/tr${route}`,
+          en: `${siteUrl}/en${route}`,
+        },
+      },
+    });
+
+    sitemapEntries.push({
+      url: `${siteUrl}/en${route}`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: route === "" ? 1.0 : 0.8,
+      alternates: {
+        languages: {
+          tr: `${siteUrl}/tr${route}`,
+          en: `${siteUrl}/en${route}`,
+        },
+      },
+    });
+  });
+
+  // Dynamic product pages
+  products.forEach((product) => {
+    const slugTr = product.slug_tr || product.id;
+    const slugEn = product.slug_en || product.id;
+
+    sitemapEntries.push({
+      url: `${siteUrl}/tr/products/${slugTr}`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.7,
+      alternates: {
+        languages: {
+          tr: `${siteUrl}/tr/products/${slugTr}`,
+          en: `${siteUrl}/en/products/${slugEn}`,
+        },
+      },
+    });
+
+    sitemapEntries.push({
+      url: `${siteUrl}/en/products/${slugEn}`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.7,
+      alternates: {
+        languages: {
+          tr: `${siteUrl}/tr/products/${slugTr}`,
+          en: `${siteUrl}/en/products/${slugEn}`,
+        },
+      },
+    });
+  });
+
+  return sitemapEntries;
+}

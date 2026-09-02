@@ -1,0 +1,54 @@
+import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
+import { getFeaturedProducts, getAllCategories } from "@/lib/products";
+import ProductCard from "@/components/product/ProductCard";
+import { ArrowRight } from "lucide-react";
+
+export default function FeaturedProducts() {
+  const t = useTranslations("Products");
+  const products = getFeaturedProducts();
+  const categories = getAllCategories();
+
+  return (
+    <section className="border-b border-neutral-800/80 bg-black py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#d4af37]">
+              Vitrin
+            </span>
+            <h2 className="font-heading text-3xl font-extrabold uppercase tracking-tight text-white sm:text-4xl mt-1">
+              {t("sectionTitle")}
+            </h2>
+            <p className="mt-2 text-sm text-neutral-400 max-w-xl">
+              {t("sectionSubtitle")}
+            </p>
+          </div>
+
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:border-neutral-700 hover:bg-neutral-800"
+          >
+            <span>{t("allCatalog")}</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {products.map((product) => {
+            const cat = categories.find((c) => c.id === product.category);
+            return (
+              <ProductCard
+                key={product.id}
+                product={product}
+                categoryName={cat?.name_tr}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
