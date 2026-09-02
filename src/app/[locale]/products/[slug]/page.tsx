@@ -57,8 +57,8 @@ export async function generateMetadata({
     alternates: {
       canonical: `${STORE_INFO.siteUrl}/${locale}/products/${slug}`,
       languages: {
-        tr: `/tr/products/${product.slug_tr || product.id}`,
-        en: `/en/products/${product.slug_en || product.id}`,
+        tr: `${STORE_INFO.siteUrl}/tr/products/${product.slug_tr || product.id}`,
+        en: `${STORE_INFO.siteUrl}/en/products/${product.slug_en || product.id}`,
       },
     },
     openGraph: {

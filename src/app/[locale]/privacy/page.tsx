@@ -23,9 +23,19 @@ export async function generateMetadata({
     alternates: {
       canonical: `${STORE_INFO.siteUrl}/${locale}/privacy`,
       languages: {
-        tr: "/tr/privacy",
-        en: "/en/privacy",
+        tr: `${STORE_INFO.siteUrl}/tr/privacy`,
+        en: `${STORE_INFO.siteUrl}/en/privacy`,
       },
+    },
+    openGraph: {
+      title: isTr
+        ? `Gizlilik Politikası & KVKK | ${STORE_INFO.name}`
+        : `Privacy Policy & GDPR | ${STORE_INFO.name}`,
+      description: isTr
+        ? "Malatya Av Güner Av Bayii 6698 Sayılı KVKK ve Gizlilik Politikası Aydınlatma Metni."
+        : "Privacy and Personal Data Protection Policy of Guner AV Hunting Store in Malatya.",
+      url: `${STORE_INFO.siteUrl}/${locale}/privacy`,
+      images: ["/images/og-image.jpg"],
     },
   };
 }

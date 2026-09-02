@@ -32,11 +32,21 @@ export async function generateMetadata({
       ? "Malatya Av Güner Av Bayii adres, telefon, WhatsApp ve Google Haritalar konumu. Yeşilyurt Malatya av malzemeleri dükkanı."
       : "Contact details, address, phone, WhatsApp and Google Maps coordinates for Guner AV Hunting Dealer in Malatya.",
     alternates: {
-      canonical: `/${locale}/contact`,
+      canonical: `${STORE_INFO.siteUrl}/${locale}/contact`,
       languages: {
-        tr: "/tr/contact",
-        en: "/en/contact",
+        tr: `${STORE_INFO.siteUrl}/tr/contact`,
+        en: `${STORE_INFO.siteUrl}/en/contact`,
       },
+    },
+    openGraph: {
+      title: isTr
+        ? "İletişim & Mağaza Konumu | Malatya Av Güner Av Bayii"
+        : "Contact & Store Location | Guner AV Hunting Dealer",
+      description: isTr
+        ? "Malatya Av Güner Av Bayii adres, telefon, WhatsApp ve Google Haritalar konumu. Yeşilyurt Malatya av malzemeleri dükkanı."
+        : "Contact details, address, phone, WhatsApp and Google Maps coordinates for Guner AV Hunting Dealer in Malatya.",
+      url: `${STORE_INFO.siteUrl}/${locale}/contact`,
+      images: ["/images/og-image.jpg"],
     },
   };
 }

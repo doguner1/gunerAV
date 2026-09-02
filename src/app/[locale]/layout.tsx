@@ -42,10 +42,10 @@ export async function generateMetadata({
     keywords: t("keywords"),
     metadataBase: new URL(siteUrl),
     alternates: {
-      canonical: `/${locale}`,
+      canonical: `${siteUrl}/${locale}`,
       languages: {
-        tr: "/tr",
-        en: "/en",
+        tr: `${siteUrl}/tr`,
+        en: `${siteUrl}/en`,
       },
     },
     openGraph: {

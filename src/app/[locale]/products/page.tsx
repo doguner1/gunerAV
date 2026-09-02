@@ -28,10 +28,10 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `/${locale}/products`,
+      canonical: `${STORE_INFO.siteUrl}/${locale}/products`,
       languages: {
-        tr: "/tr/products",
-        en: "/en/products",
+        tr: `${STORE_INFO.siteUrl}/tr/products`,
+        en: `${STORE_INFO.siteUrl}/en/products`,
       },
     },
     openGraph: {
