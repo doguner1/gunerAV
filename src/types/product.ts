@@ -11,6 +11,9 @@ export interface Product {
   featured: boolean;
   in_stock: boolean;
   requires_license: boolean;
+  is_hero_spotlight?: boolean;
+  brand?: string;
+  model?: string;
   slug_tr?: string;
   slug_en?: string;
   specs_tr?: Record<string, string | undefined>;

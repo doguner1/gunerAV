@@ -17,6 +17,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { getHeroSpotlightProduct } from "@/lib/products";
+
 export default function HeroSection() {
   const t = useTranslations("Hero");
   const tCommon = useTranslations("Common");
@@ -29,9 +31,13 @@ export default function HeroSection() {
 
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
+  const spotlightProduct = getHeroSpotlightProduct();
   const featuredProductSlug = isTr
-    ? "/products/steiner-ranger-8-3-24x56-tufek-durbunu"
-    : "/products/steiner-ranger-8-3-24x56-rifle-scope";
+    ? `/products/${spotlightProduct?.slug_tr || spotlightProduct?.id || "steiner-ranger-8-3-24x56-tufek-durbunu"}`
+    : `/products/${spotlightProduct?.slug_en || spotlightProduct?.id || "steiner-ranger-8-3-24x56-rifle-scope"}`;
+
+  const spotlightTitle = (isTr ? spotlightProduct?.name_tr : spotlightProduct?.name_en) || t("spotlightTitle");
+  const spotlightImage = spotlightProduct?.images?.[0] || "/images/products/optics-1.webp";
 
   const quickCategories = [
     {
@@ -220,8 +226,8 @@ export default function HeroSection() {
                   className="group block relative my-4 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800/80 overflow-hidden aspect-[4/3]"
                 >
                   <Image
-                    src="/images/products/optics-1.webp"
-                    alt={t("spotlightTitle")}
+                    src={spotlightImage}
+                    alt={spotlightTitle}
                     fill
                     sizes="(max-width: 768px) 100vw, 500px"
                     className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
@@ -230,10 +236,10 @@ export default function HeroSection() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
                     <div className="text-white">
                       <div className="text-xs font-mono font-bold tracking-widest text-[#d4af37] uppercase">
-                        [ + ] STEINER OPTICS GERMANY
+                        [ + ] ÖNE ÇIKAN MODEL
                       </div>
                       <div className="text-base font-heading font-black">
-                        {t("spotlightTitle")}
+                        {spotlightTitle}
                       </div>
                     </div>
                   </div>

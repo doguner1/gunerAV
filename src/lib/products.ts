@@ -17,6 +17,14 @@ export function getFeaturedProducts(): Product[] {
   return products.filter((product) => product.featured);
 }
 
+export function getHeroSpotlightProduct(): Product | undefined {
+  return (
+    products.find((p) => p.is_hero_spotlight) ||
+    products.find((p) => p.featured) ||
+    products[0]
+  );
+}
+
 export function getDealsProducts(): Product[] {
   return products.filter(
     (product) => product.discount_percent && product.discount_percent > 0

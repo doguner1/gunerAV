@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Güner AV Ürün Aktarıcı</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { width: 440px; max-height: 590px; overflow-y: auto; background: #0f1115; color: #e2e8f0; font-size: 13px; padding-bottom: 20px; }
+    
+    /* Header */
+    .header { background: #161a22; padding: 12px 16px; border-bottom: 1px solid #272d38; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .header-logo { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 14px; letter-spacing: 0.5px; }
+    .header-logo span { color: #d4af37; }
+    .header-actions { display: flex; gap: 6px; }
+    .icon-btn { background: #222733; border: 1px solid #323b4c; color: #94a3b8; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+    .icon-btn:hover { background: #2d3545; color: #fff; border-color: #d4af37; }
+
+    /* Tabs */
+    .tabs { display: flex; background: #12151c; border-bottom: 1px solid #272d38; }
+    .tab { flex: 1; padding: 9px 4px; text-align: center; font-size: 11px; font-weight: 700; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab:hover { color: #fff; background: #181d26; }
+    .tab.active { color: #d4af37; border-bottom-color: #d4af37; background: #181d26; }
+
+    .content { padding: 14px 16px; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Form Styles */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; background: #181d26; border: 1px solid #2e3646; border-radius: 8px; padding: 8px 10px; color: #fff; font-size: 12px; outline: none; transition: border 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #d4af37; }
+    textarea { min-height: 55px; resize: vertical; }
+
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+
+    /* Tactical Toggle Ticks (Kullanıcının İstediği Özel Seçenekler) */
+    .toggles-card { background: #151922; border: 1px solid #28303f; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+    .toggles-title { font-size: 11px; font-weight: 800; color: #d4af37; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    
+    .toggle-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #202735; }
+    .toggle-item:last-child { border-bottom: none; }
+    .toggle-label { font-size: 11px; font-weight: 600; color: #cbd5e1; }
+    .toggle-desc { font-size: 10px; color: #64748b; margin-top: 1px; }
+
+    /* Custom Switch */
+    .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2b3547; transition: .3s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: #d4af37; }
+    input:checked + .slider:before { transform: translateX(16px); background-color: #0f1115; }
+
+    /* Action Buttons */
+    .btn-primary { width: 100%; background: #d4af37; color: #000; border: none; padding: 11px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; margin-top: 8px; }
+    .btn-primary:hover { background: #e5be42; transform: translateY(-1px); }
+    .btn-secondary { width: 100%; background: #222733; color: #fff; border: 1px solid #323b4c; padding: 9px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; margin-bottom: 10px; }
+    .btn-secondary:hover { background: #2b3344; border-color: #d4af37; }
+
+    /* Status Banner */
+    .status-banner { margin-top: 10px; padding: 8px 10px; border-radius: 6px; font-size: 11px; display: none; text-align: center; font-weight: bold; }
+    .status-banner.success { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #4ade80; display: block; }
+    .status-banner.error { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; display: block; }
+
+    /* JSON Box */
+    .json-box { width: 100%; min-height: 120px; font-family: monospace; font-size: 11px; background: #0c0e12; border: 1px solid #28303f; border-radius: 8px; padding: 8px; color: #a5f3fc; }
+
+    .images-preview { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0; margin-bottom: 8px; }
+    .image-thumb { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #323b4c; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      GÜNER <span>AV</span> &bull; Ürün Yöneticisi
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btnSettingsToggle" title="Supabase Bağlantısı">⚙️ Ayarlar</button>
+    </div>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="tabScrape">⚡ Sayfadan Çek</div>
+    <div class="tab" data-tab="tabManual">📋 Manuel / JSON</div>
+    <div class="tab" data-tab="tabSettings">⚙️ Supabase</div>
+  </div>
+
+  <div class="content">
+    <!-- TAB 1: Sayfadan Çek (Scraper) -->
+    <div class="tab-pane active" id="tabScrape">
+      <button class="btn-secondary" id="btnScrapePage">
+        🔍 Açık Olan Tedarikçi Sayfasını Tara
+      </button>
+      <div id="scrapeResultWrapper"></div>
+    </div>
+
+    <!-- TAB 2: Manuel / JSON Modu -->
+    <div class="tab-pane" id="tabManual">
+      <div class="form-group">
+        <label>Yapay Zeka (AI) JSON Yapıştır:</label>
+        <textarea class="json-box" id="rawJsonInput" placeholder='{"title": "Castello MOD-505", "price": 28500, "specs": {"Kalibre": "12"}}'></textarea>
+        <button class="btn-secondary" id="btnParseJson" style="margin-top: 6px;">
+          ⚡ JSON'u Forma Aktar
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 3: Supabase Ayarları -->
+    <div class="tab-pane" id="tabSettings">
+      <div class="form-group">
+        <label>Supabase Project URL:</label>
+        <input type="text" id="cfgSupabaseUrl" placeholder="https://xyzcompany.supabase.co">
+      </div>
+      <div class="form-group">
+        <label>Supabase Anon Key (veya Service Key):</label>
+        <input type="text" id="cfgSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
+      </div>
+      <button class="btn-primary" id="btnSaveConfig">Ayarları Kaydet</button>
+      <div style="font-size: 10px; color: #64748b; margin-top: 10px; line-height: 1.4;">
+        * Bilgileriniz tarayıcınızın yerel hafızasında güvenle saklanır, dışarıyla paylaşılmaz.
+      </div>
+    </div>
+
+    <!-- ORTAK ÜRÜN DÜZENLEME VE GÖNDERME FORMU -->
+    <div id="sharedProductForm" style="margin-top: 10px;">
+      <div class="form-group">
+        <label>Ürün Adı (TR):</label>
+        <input type="text" id="fldNameTr" placeholder="Örn: Castello MOD-505 Yarı Otomatik Av Tüfeği">
+      </div>
+
+      <div class="row">
+        <div class="col form-group">
+          <label>Kategori:</label>
+          <select id="fldCategory">
+            <option value="silah-muhimmat">🎯 Av Tüfekleri & Mühimmat</option>
+            <option value="optik">🔭 Taktik Optik & Dürbün</option>
+            <option value="bicak">🗡️ Av & Taktik Bıçaklar</option>
+            <option value="kamp">🏕️ Kamp & Fener & Outdoor</option>
+            <option value="giyim">👕 Avcı & Taktik Giyim</option>
+            <option value="diger">📦 Diğer / Aksesuar</option>
+          </select>
+        </div>
+        <div class="col form-group">
+          <label>Fiyat (TL) (Boş = Sorun):</label>
+          <input type="number" id="fldPrice" placeholder="₺ Boş bırakabilirsiniz">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col form-group">
+          <label>Marka:</label>
+          <input type="text" id="fldBrand" placeholder="Örn: Castello / Steiner">
+        </div>
+        <div class="col form-group">
+          <label>Model:</label>
+          <input type="text" id="fldModel" placeholder="Örn: MOD-505">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Görsel URL'leri (Virgülle veya alt alta):</label>
+        <textarea id="fldImages" rows="2" placeholder="https://.../resim1.webp, https://.../resim2.webp"></textarea>
+        <div class="images-preview" id="imagesPreviewBox"></div>
+      </div>
+
+      <!-- KULLANICININ İSTEDİĞİ ÖZEL VİTRİN VE GÖSTERİM TİKLERİ -->
+      <div class="toggles-card">
+        <div class="toggles-title">🎯 Sitede Gösterim & Vitrin Ayarları</div>
+
+        <!-- 1. Vitrin Ürünü -->
+        <div class="toggle-item">
+          <div>
+            <div class="toggle-label">Vitrin Ekipmanı (Öne Çıkan)</div>
+            <div class="toggle-desc">Katalogda ve ana sayfa vitrininde ilk sıralarda sergilenir.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkFeatured" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 2. Ana Sayfa Amiral Gemisi Spotlight (Tek Ürün Yeri) -->
+        <div class="toggle-item">
+          <div>
+            <div class="toggle-label" style="color: #d4af37;">Ana Sayfa Amiral Gemisi (Hero Spotlight)</div>
+            <div class="toggle-desc">Ana sayfanın en üstündeki dev taktik vitrinde tek olarak bu ürün sergilensin mi?</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkHeroSpotlight">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 3. İndirim ve Yüzdesi -->
+        <div class="toggle-item" style="flex-wrap: wrap;">
+          <div style="flex: 1;">
+            <div class="toggle-label">İndirim / Kampanyalı Ürün</div>
+            <div class="toggle-desc">İndirim etiketi ve kırmızı kampanya rozeti basılır.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkHasDiscount">
+            <span class="slider"></span>
+          </label>
+          <div id="discountPercentRow" style="width: 100%; display: none; margin-top: 8px;">
+            <div class="row" style="align-items: center;">
+              <span style="font-size: 11px; color: #94a3b8;">İndirim Oranı (%):</span>
+              <input type="number" id="fldDiscountPercent" placeholder="15" style="width: 80px; padding: 4px 8px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Yasal Ruhsat Gerektirir -->
+        <div class="toggle-item">
+          <div>
+            <div class="toggle-label">Ruhsat Gerektirir (Yasal Mevzuat)</div>
+            <div class="toggle-desc">2521 sayılı kanun gereği 'Sadece Mağaza Teslimi' uyarısı ekler.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkRequiresLicense">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 5. Stokta Var mı? -->
+        <div class="toggle-item">
+          <div>
+            <div class="toggle-label">Mağazada Stokta</div>
+            <div class="toggle-desc">Yeşil canlı stok göstergesi yanar.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkInStock" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Dinamik Teknik Özellikler Kutusu -->
+      <div class="form-group">
+        <label>Teknik Özellikler (JSON formatında otomatik saklanır):</label>
+        <textarea class="json-box" id="fldSpecsJson" rows="4" placeholder='{"Kalibre": "12", "Namlu": "71 cm", "Sistem": "Gazlı Yarı Otomatik"}'></textarea>
+      </div>
+
+      <button class="btn-primary" id="btnSubmitToSupabase">
+        🚀 Supabase'e Aktar & Sitede Yayınla
+      </button>
+
+      <div class="status-banner" id="statusBanner"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
