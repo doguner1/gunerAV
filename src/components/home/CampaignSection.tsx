@@ -1,14 +1,15 @@
 import { useTranslations, useLocale } from "next-intl";
 import { getDealsProducts, getAllCategories } from "@/lib/products";
+import { Product } from "@/types/product";
 import ProductCard from "@/components/product/ProductCard";
 import { Sparkles } from "lucide-react";
 
-export default function CampaignSection() {
+export default function CampaignSection({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Products");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
   const isTr = locale === "tr";
-  const deals = getDealsProducts();
+  const deals = getDealsProducts(products);
   const categories = getAllCategories();
 
   if (deals.length === 0) return null;

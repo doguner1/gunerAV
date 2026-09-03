@@ -1,5 +1,6 @@
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { getAllProducts } from "@/lib/products";
 import HeroSection from "@/components/home/HeroSection";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
@@ -13,19 +14,22 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export default function HomePage({
+export const revalidate = 30;
+
+export default async function HomePage({
   params: { locale },
 }: {
   params: { locale: string };
 }) {
   setRequestLocale(locale);
+  const products = await getAllProducts();
 
   return (
     <>
-      <HeroSection />
-      <FeaturedCategories />
-      <FeaturedProducts />
-      <CampaignSection />
+      <HeroSection products={products} />
+      <FeaturedCategories products={products} />
+      <FeaturedProducts products={products} />
+      <CampaignSection products={products} />
       <TrustSection />
       <TestimonialsSection />
       <MapAndHoursSection />

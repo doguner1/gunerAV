@@ -18,8 +18,9 @@ import {
 } from "lucide-react";
 
 import { getHeroSpotlightProduct } from "@/lib/products";
+import { Product } from "@/types/product";
 
-export default function HeroSection() {
+export default function HeroSection({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Hero");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
@@ -31,7 +32,7 @@ export default function HeroSection() {
 
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
-  const spotlightProduct = getHeroSpotlightProduct();
+  const spotlightProduct = getHeroSpotlightProduct(products);
   const featuredProductSlug = isTr
     ? `/products/${spotlightProduct?.slug_tr || spotlightProduct?.id || "steiner-ranger-8-3-24x56-tufek-durbunu"}`
     : `/products/${spotlightProduct?.slug_en || spotlightProduct?.id || "steiner-ranger-8-3-24x56-rifle-scope"}`;

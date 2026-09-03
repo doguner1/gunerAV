@@ -24,8 +24,11 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-export function generateStaticParams() {
-  const products = getAllProducts();
+export const dynamicParams = true;
+export const revalidate = 30;
+
+export async function generateStaticParams() {
+  const products = await getAllProducts();
   const params: { locale: string; slug: string }[] = [];
 
   products.forEach((p) => {
@@ -43,7 +46,7 @@ export async function generateMetadata({
 }: {
   params: { locale: string; slug: string };
 }): Promise<Metadata> {
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug, locale);
   if (!product) return {};
 
   const isTr = locale === "tr";
@@ -76,7 +79,7 @@ export default async function ProductDetailPage({
   params: { locale: string; slug: string };
 }) {
   setRequestLocale(locale);
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug, locale);
 
   if (!product) {
     notFound();
@@ -91,7 +94,7 @@ export default async function ProductDetailPage({
   const category = getCategoryById(product.category);
   const categoryName = isTr ? category?.name_tr : category?.name_en;
   const specs = isTr ? product.specs_tr : product.specs_en;
-  const related = getRelatedProducts(product.id, product.category, 3);
+  const related = await getRelatedProducts(product.id, product.category, 3);
 
   const waMsg = isTr
     ? `Merhaba Güner Av Bayii, ${name} ürünü hakkında mağazanızdan bilgi almak istiyorum.`

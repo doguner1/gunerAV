@@ -1,10 +1,11 @@
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
-import { getAllCategories, getProductsByCategory } from "@/lib/products";
+import { getAllCategories, getAllProducts } from "@/lib/products";
+import { Product } from "@/types/product";
 import { ArrowUpRight, ShieldAlert } from "lucide-react";
 
-export default function FeaturedCategories() {
+export default function FeaturedCategories({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Categories");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
@@ -39,7 +40,7 @@ export default function FeaturedCategories() {
         {/* Categories Grid */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => {
-            const count = getProductsByCategory(category.id).length;
+            const count = products.filter((p: Product) => p.category === category.id).length;
             const name = isTr ? category.name_tr : category.name_en;
             const desc = isTr ? category.description_tr : category.description_en;
             const isLicenseReq = category.id === "silah-muhimmat";
@@ -72,7 +73,7 @@ export default function FeaturedCategories() {
                       </span>
                     ) : (
                       <span className="rounded-md border border-neutral-800 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-neutral-300 backdrop-blur-md">
-                        {count} {t("itemCount")}
+                        {count > 0 ? `${count} ${t("itemCount")}` : tCommon("collections")}
                       </span>
                     )}
 

@@ -2,9 +2,9 @@ import { MetadataRoute } from "next";
 import { getAllProducts } from "@/lib/products";
 import { STORE_INFO } from "@/lib/store";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = STORE_INFO.siteUrl;
-  const products = getAllProducts();
+  const products = await getAllProducts();
   const currentDate = new Date();
 
   const staticRoutes = [
