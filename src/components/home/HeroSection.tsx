@@ -25,7 +25,7 @@ export default function HeroSection() {
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden border-b border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-black pt-24 pb-16 transition-colors">
+    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden border-b border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-black pt-16 pb-16 transition-colors">
       {/* Background Graphic */}
       <div className="absolute inset-0 -z-10 opacity-10 dark:opacity-30">
         <Image

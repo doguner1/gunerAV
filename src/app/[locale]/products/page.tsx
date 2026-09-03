@@ -54,7 +54,7 @@ export default async function ProductsPage({
   const categories = getAllCategories();
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-black pt-28 pb-20 transition-colors">
+    <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <div className="mb-10 max-w-3xl">

@@ -70,7 +70,7 @@ export default async function ContactPage({
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-black pt-28 pb-20 transition-colors">
+    <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-14 max-w-3xl">
