@@ -8,10 +8,12 @@ import {
   Star,
   MapPin,
   PhoneCall,
-  Compass,
+  Sparkles,
+  Headphones,
   Crosshair,
 } from "lucide-react";
 
+import StoreStatusBadge from "@/components/common/StoreStatusBadge";
 import { getHeroSpotlightProduct } from "@/lib/products";
 import { Product } from "@/types/product";
 
@@ -56,25 +58,9 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
           <div className="lg:col-span-7 space-y-6 sm:space-y-8">
-            {/* Live Status & Authority Badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/40 px-3.5 py-1.5 text-xs text-white backdrop-blur-md shadow-lg">
-                <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-emerald-400 font-bold border border-emerald-500/30">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                  </span>
-                  <span>{tCommon("open")}</span>
-                </div>
-                <div className="flex items-center gap-1 text-amber-400 font-extrabold">
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                  <span>5.0</span>
-                </div>
-                <span className="text-white/30">|</span>
-                <span className="font-bold text-neutral-200 tracking-wide uppercase text-[11px]">
-                  {t("badge")}
-                </span>
-              </div>
+            {/* Live Store Hours Status Badge */}
+            <div className="flex items-center gap-2">
+              <StoreStatusBadge />
             </div>
 
             {/* Main Headline - High contrast, powerful, balanced */}
@@ -103,21 +89,21 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               </Link>
             </div>
 
-            {/* Clean Trust Strip */}
-            <div className="flex flex-wrap items-center gap-6 pt-2 text-xs text-neutral-300 font-medium">
+            {/* Clean Authority Trust Strip */}
+            <div className="flex flex-wrap items-center gap-y-2 gap-x-4 sm:gap-6 pt-2 text-xs text-neutral-300 font-medium">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-[#d4af37]" />
-                <span>{t("licensedDealer")}</span>
+                <ShieldCheck className="h-4 w-4 text-[#d4af37] shrink-0" />
+                <span className="font-semibold text-neutral-100">{t("dealerExclusive")}</span>
               </div>
-              <span className="text-white/20">&bull;</span>
+              <span className="text-white/20 hidden sm:inline">&bull;</span>
               <div className="flex items-center gap-2">
-                <Compass className="h-4 w-4 text-[#d4af37]" />
-                <span>{t("yearsExp")}</span>
+                <Sparkles className="h-4 w-4 text-[#d4af37] shrink-0" />
+                <span>{t("priceAndQuality")}</span>
               </div>
-              <span className="text-white/20">&bull;</span>
+              <span className="text-white/20 hidden sm:inline">&bull;</span>
               <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                <span>{t("originalProducts")}</span>
+                <Headphones className="h-4 w-4 text-amber-400 shrink-0" />
+                <span>{t("afterSalesSupport")}</span>
               </div>
             </div>
           </div>
