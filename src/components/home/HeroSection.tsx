@@ -84,11 +84,13 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               </div>
             </div>
 
-            {/* Main Headline - High contrast, powerful */}
+            {/* Main Headline - High contrast, powerful, balanced */}
             <div className="space-y-4">
-              <h1 className="font-heading text-4xl font-black tracking-tight text-white uppercase sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.06] drop-shadow-md">
-                {t("titlePrefix")}{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-[#d4af37] to-amber-400">
+              <h1 className="font-heading text-4xl font-black tracking-tight uppercase sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.08] drop-shadow-md">
+                <span className="block text-white tracking-tight">
+                  {t("titlePrefix")}
+                </span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-[#d4af37] to-amber-400 mt-1">
                   {t("titleHighlight")}
                 </span>
               </h1>
