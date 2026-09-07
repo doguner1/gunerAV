@@ -9,7 +9,6 @@ import {
   MapPin,
   PhoneCall,
   Sparkles,
-  Headphones,
   Crosshair,
 } from "lucide-react";
 
@@ -84,11 +83,22 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
             <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <Link
                 href="/products"
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-neutral-100 text-black px-8 py-4 text-sm font-extrabold uppercase tracking-wider shadow-[0_12px_32px_rgba(255,255,255,0.25)] transition-all hover:scale-[1.02] active:scale-95 group"
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-neutral-100 text-black px-7 sm:px-8 py-4 text-sm font-extrabold uppercase tracking-wider shadow-[0_12px_32px_rgba(255,255,255,0.25)] transition-all hover:scale-[1.02] active:scale-95 group"
               >
                 <span>{t("catalogCta")}</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1.5" />
               </Link>
+
+              {/* PC / Masaüstü ve Tablet Yatay Modda: Sadece Mağaza Konum Butonu */}
+              <a
+                href={STORE_INFO.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden lg:inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-black/40 hover:bg-black/60 px-6 py-4 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:border-[#d4af37] hover:scale-[1.02] active:scale-95 shadow-lg"
+              >
+                <MapPin className="h-4 w-4 text-[#d4af37]" />
+                <span>{t("storeCta")}</span>
+              </a>
             </div>
 
             {/* Clean Authority Trust Strip */}
@@ -102,10 +112,50 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 <Sparkles className="h-4 w-4 text-[#d4af37] shrink-0" />
                 <span>{t("priceAndQuality")}</span>
               </div>
-              <span className="text-white/20 hidden sm:inline">&bull;</span>
-              <div className="flex items-center gap-2">
-                <Headphones className="h-4 w-4 text-amber-400 shrink-0" />
-                <span>{t("afterSalesSupport")}</span>
+            </div>
+
+            {/* TABLET DİKEY MOD: Ürünün Üstünde Yer Alan Prestijli Konum & Arama Butonları */}
+            <div className="hidden sm:flex lg:hidden items-center pt-2">
+              <div className="inline-flex items-center p-2 rounded-2xl bg-neutral-950/90 dark:bg-black/90 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.25)] gap-3 w-full sm:w-auto">
+                {/* Konuma Git Butonu */}
+                <a
+                  href={STORE_INFO.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex-1 sm:flex-initial flex items-center gap-3.5 px-5 sm:px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] group-hover:scale-110 transition-transform shadow-inner shrink-0">
+                    <MapPin className="h-5 w-5 fill-[#d4af37]/30 text-[#d4af37]" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#d4af37]">
+                      {t("heroDirections")}
+                    </div>
+                    <div className="text-sm font-heading font-black text-white tracking-wide">
+                      {t("heroDirectionsDesc")}
+                    </div>
+                  </div>
+                </a>
+
+                <div className="h-8 w-[1px] bg-white/15" />
+
+                {/* Hemen Ara Butonu */}
+                <a
+                  href={`tel:${STORE_INFO.phoneIntl || STORE_INFO.phone}`}
+                  className="group flex-1 sm:flex-initial flex items-center gap-3.5 px-5 sm:px-6 py-3.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 text-white group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30 shrink-0">
+                    <PhoneCall className="h-5 w-5 animate-pulse" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
+                      {t("heroCall")}
+                    </div>
+                    <div className="text-sm font-heading font-black text-white tracking-wide">
+                      {STORE_INFO.phone} · {t("directCall")}
+                    </div>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
@@ -240,51 +290,6 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 </span>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* BOTTOM COMMAND DOCK: Prestigious Google Maps Navigation & Direct Phone Call */}
-        <div className="hidden sm:flex items-center justify-center pt-6 lg:pt-8">
-          <div className="inline-flex items-center p-2 rounded-2xl bg-neutral-950/85 dark:bg-black/85 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.25)] gap-3">
-            {/* Konuma Git Butonu */}
-            <a
-              href={STORE_INFO.mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-3.5 px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] group-hover:scale-110 transition-transform shadow-inner">
-                <MapPin className="h-5 w-5 fill-[#d4af37]/30 text-[#d4af37]" />
-              </div>
-              <div className="text-left">
-                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#d4af37]">
-                  {t("heroDirections")}
-                </div>
-                <div className="text-sm font-heading font-black text-white tracking-wide">
-                  {t("heroDirectionsDesc")}
-                </div>
-              </div>
-            </a>
-
-            <div className="h-8 w-[1px] bg-white/15" />
-
-            {/* Hemen Ara Butonu */}
-            <a
-              href={`tel:${STORE_INFO.phoneIntl || STORE_INFO.phone}`}
-              className="group flex items-center gap-3.5 px-6 py-3.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 text-white group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30">
-                <PhoneCall className="h-5 w-5 animate-pulse" />
-              </div>
-              <div className="text-left">
-                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
-                  {t("heroCall")}
-                </div>
-                <div className="text-sm font-heading font-black text-white tracking-wide">
-                  {STORE_INFO.phone} · {t("directCall")}
-                </div>
-              </div>
-            </a>
           </div>
         </div>
       </div>

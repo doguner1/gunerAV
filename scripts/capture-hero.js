@@ -10,45 +10,49 @@ async function run() {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
-  // 1. Home Page Hero Spotlight (1440x900)
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 900 });
-  await page.evaluateOnNewDocument(() => {
+  // 1. Desktop Mac (1440x900)
+  const pageMac = await browser.newPage();
+  await pageMac.setViewport({ width: 1440, height: 900 });
+  await pageMac.evaluateOnNewDocument(() => {
     localStorage.setItem("gunerav_theme", "dark");
     localStorage.setItem("gunerav_cookie_consent", "accepted");
   });
-  await page.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
-  await new Promise((r) => setTimeout(r, 800));
-  await page.screenshot({
-    path: `${OUTPUT_DIR}/hero-spotlight-castello.png`,
-    clip: { x: 0, y: 0, width: 1440, height: 900 },
-  });
-  console.log("Captured hero-spotlight-castello.png");
-
-  // 2. Scroll to Featured Products / Showcase
-  await page.evaluate(() => {
-    window.scrollTo(0, 950);
-  });
+  await pageMac.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
   await new Promise((r) => setTimeout(r, 600));
-  await page.screenshot({
-    path: `${OUTPUT_DIR}/showcase-castello.png`,
+  await pageMac.screenshot({
+    path: `${OUTPUT_DIR}/responsive-desktop.png`,
     clip: { x: 0, y: 0, width: 1440, height: 900 },
   });
-  console.log("Captured showcase-castello.png");
+  console.log("Captured responsive-desktop.png");
 
-  // 3. Product Detail Page
-  const detailPage = await browser.newPage();
-  await detailPage.setViewport({ width: 1440, height: 1000 });
-  await detailPage.evaluateOnNewDocument(() => {
+  // 2. Tablet Portrait (800x1100)
+  const pageTablet = await browser.newPage();
+  await pageTablet.setViewport({ width: 800, height: 1100 });
+  await pageTablet.evaluateOnNewDocument(() => {
     localStorage.setItem("gunerav_theme", "dark");
     localStorage.setItem("gunerav_cookie_consent", "accepted");
   });
-  await detailPage.goto("http://localhost:3000/tr/products/castello-mod-505-otomatik-av-tufegi", { waitUntil: "networkidle0" });
-  await new Promise((r) => setTimeout(r, 800));
-  await detailPage.screenshot({
-    path: `${OUTPUT_DIR}/product-detail-castello.png`,
+  await pageTablet.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
+  await new Promise((r) => setTimeout(r, 600));
+  await pageTablet.screenshot({
+    path: `${OUTPUT_DIR}/responsive-tablet-portrait.png`,
+    clip: { x: 0, y: 0, width: 800, height: 1100 },
   });
-  console.log("Captured product-detail-castello.png");
+  console.log("Captured responsive-tablet-portrait.png");
+
+  // 3. Mobile Phone (375x667 - iPhone 7 / SE)
+  const pageMobile = await browser.newPage();
+  await pageMobile.setViewport({ width: 375, height: 667, isMobile: true });
+  await pageMobile.evaluateOnNewDocument(() => {
+    localStorage.setItem("gunerav_theme", "dark");
+    localStorage.setItem("gunerav_cookie_consent", "accepted");
+  });
+  await pageMobile.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
+  await new Promise((r) => setTimeout(r, 600));
+  await pageMobile.screenshot({
+    path: `${OUTPUT_DIR}/responsive-mobile-phone.png`,
+  });
+  console.log("Captured responsive-mobile-phone.png");
 
   await browser.close();
 }
