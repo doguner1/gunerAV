@@ -22,10 +22,19 @@ export default function ContactForm() {
     message: "",
   });
 
+  const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Anti-Bot Honeypot Security Trap: Botlar doldurursa istek sessizce engellenir
+    if (honeypot.trim().length > 0) {
+      console.warn("[Security] Bot faaliyeti tespit edildi ve engellendi.");
+      setStatus("success");
+      return;
+    }
+
     setStatus("submitting");
 
     // Vitrin site simulation delay
@@ -67,6 +76,18 @@ export default function ContactForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Güvenlik: Bot kapanı (Honeypot) */}
+          <div className="hidden" aria-hidden="true" style={{ display: "none" }}>
+            <input
+              type="text"
+              name="gunerav_security_hp"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Name */}
             <div>

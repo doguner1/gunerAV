@@ -1,0 +1,7 @@
+# Vercel Deployment İzolasyonu - Güvenlik & Gereksiz Dosya Engeli
+extension/
+scripts/
+*.sql
+*.log
+.env*
+data/products.demo-backup.json

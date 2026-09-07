@@ -37,18 +37,19 @@ create index if not exists idx_products_specs_tr on public.products using gin(sp
 -- 3. Güvenlik ve Yetkilendirme (Row Level Security - RLS)
 alter table public.products enable row level security;
 
--- Herkes okuyabilir (Sitemiz ziyaretçileri için)
+-- Herkes SADECE okuyabilir (Sitemiz ziyaretçileri ve arama motorları için)
+drop policy if exists "Allow insert and update for authenticated or anon" on public.products;
+drop policy if exists "Allow all for authenticated or anon" on public.products;
 drop policy if exists "Public read access for products" on public.products;
-create policy "Public read access for products"
+drop policy if exists "Public read-only for products" on public.products;
+
+create policy "Public read-only for products"
   on public.products for select
+  to anon, authenticated
   using (true);
 
--- Eklentiden anon key veya service key ile ürün eklenebilmesi için:
-drop policy if exists "Allow insert and update for authenticated or anon" on public.products;
-create policy "Allow insert and update for authenticated or anon"
-  on public.products for all
-  using (true)
-  with check (true);
+-- Not: Ürün ekleme/güncelleme/silme işlemleri sadece eklentinizde 'service_role' anahtarı
+-- kullanılarak güvenle yapılır. Dışarıdan hiç kimse anon key ile ürün silemez!
 
 -- Otomatik Güncelleme Tetikleyicisi (updated_at)
 create or replace function public.handle_updated_at()
