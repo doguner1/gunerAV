@@ -1,8 +1,16 @@
+const rawPhone = process.env.NEXT_PUBLIC_STORE_PHONE || "0545 876 87 99";
+const cleanPhone = rawPhone.replace(/\s+/g, "");
+const formattedPhone =
+  cleanPhone.length === 11 && cleanPhone.startsWith("0")
+    ? `${cleanPhone.slice(0, 4)} ${cleanPhone.slice(4, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9, 11)}`
+    : rawPhone;
+
 export const STORE_INFO = {
   name: process.env.NEXT_PUBLIC_STORE_NAME || "Malatya Av Güner Av Bayii",
   nameShort: "Güner AV",
   category: "Av Malzemeleri Dükkanı",
-  phone: process.env.NEXT_PUBLIC_STORE_PHONE || "0545 876 87 99",
+  phone: formattedPhone,
+  phoneDisplay: formattedPhone,
   phoneIntl: process.env.NEXT_PUBLIC_STORE_PHONE_INTL || "+905458768799",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "905458768799",
   email: process.env.NEXT_PUBLIC_STORE_EMAIL || "iletisim@gunerav.site",

@@ -2,13 +2,12 @@ import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { STORE_INFO } from "@/lib/store";
-import { generateWhatsAppLink } from "@/lib/utils";
 import {
   ArrowRight,
   ShieldCheck,
   Star,
-  MessageCircle,
   MapPin,
+  PhoneCall,
   Compass,
   Crosshair,
 } from "lucide-react";
@@ -21,12 +20,6 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
   const tCommon = useTranslations("Common");
   const locale = useLocale();
   const isTr = locale === "tr";
-
-  const waMsg = isTr
-    ? "Merhaba Güner Av Bayii, web sitenizden ulaşıyorum. Güncel ürünler ve mağazanız hakkında bilgi alabilir miyim?"
-    : "Hello Guner AV, I am contacting you through your website. Could I receive details about your catalog and store?";
-
-  const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
   const spotlightProduct = getHeroSpotlightProduct(products);
   const featuredProductSlug = isTr
@@ -99,32 +92,14 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               </p>
             </div>
 
-            {/* Streamlined Action CTAs: High-impact buttons without eye-straining clutter */}
+            {/* Streamlined Action CTA */}
             <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <Link
                 href="/products"
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black px-7 py-4 text-sm font-extrabold uppercase tracking-wider shadow-2xl transition-all hover:scale-[1.02] active:scale-95"
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-neutral-100 text-black px-8 py-4 text-sm font-extrabold uppercase tracking-wider shadow-[0_12px_32px_rgba(255,255,255,0.25)] transition-all hover:scale-[1.02] active:scale-95 group"
               >
                 <span>{t("catalogCta")}</span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-black/40 hover:bg-black/60 px-6 py-4 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:border-[#25D366] hover:scale-[1.02] active:scale-95 shadow-lg"
-              >
-                <MessageCircle className="h-4 w-4 text-[#25D366]" />
-                <span>{tCommon("whatsappInfoLine")}</span>
-              </a>
-
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/30 hover:bg-black/50 px-5 py-4 text-sm font-semibold text-neutral-200 hover:text-white backdrop-blur-md transition-all shadow-sm"
-              >
-                <MapPin className="h-4 w-4 text-[#d4af37]" />
-                <span>{t("storeCta")}</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1.5" />
               </Link>
             </div>
 
@@ -259,6 +234,51 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 </span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* BOTTOM COMMAND DOCK: Prestigious Google Maps Navigation & Direct Phone Call */}
+        <div className="hidden sm:flex items-center justify-center pt-10 lg:pt-14">
+          <div className="inline-flex items-center p-2 rounded-2xl bg-neutral-950/85 dark:bg-black/85 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.25)] gap-3">
+            {/* Konuma Git Butonu */}
+            <a
+              href={STORE_INFO.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-3.5 px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] group-hover:scale-110 transition-transform shadow-inner">
+                <MapPin className="h-5 w-5 fill-[#d4af37]/30 text-[#d4af37]" />
+              </div>
+              <div className="text-left">
+                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#d4af37]">
+                  {t("heroDirections")}
+                </div>
+                <div className="text-sm font-heading font-black text-white tracking-wide">
+                  Google Haritalar & Yol Tarifi
+                </div>
+              </div>
+            </a>
+
+            <div className="h-8 w-[1px] bg-white/15" />
+
+            {/* Hemen Ara Butonu */}
+            <a
+              href={`tel:${STORE_INFO.phoneIntl || STORE_INFO.phone}`}
+              className="group flex items-center gap-3.5 px-6 py-3.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 text-white group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30">
+                <PhoneCall className="h-5 w-5 animate-pulse" />
+              </div>
+              <div className="text-left">
+                <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
+                  {t("heroCall")}
+                </div>
+                <div className="text-sm font-heading font-black text-white tracking-wide">
+                  {STORE_INFO.phone} · Doğrudan Ara
+                </div>
+              </div>
+            </a>
           </div>
         </div>
       </div>

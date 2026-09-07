@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import WhatsAppFloatingButton from "@/components/common/WhatsAppFloatingButton";
+import MobileQuickBar from "@/components/common/MobileQuickBar";
 import CookieBanner from "@/components/common/CookieBanner";
 import { StoreJsonLd } from "@/components/seo/JsonLd";
 import { STORE_INFO } from "@/lib/store";
@@ -126,6 +127,7 @@ export default async function LocaleLayout({
           <main className="flex-1">{children}</main>
           <Footer />
           <WhatsAppFloatingButton />
+          <MobileQuickBar />
           <CookieBanner />
         </NextIntlClientProvider>
       </body>

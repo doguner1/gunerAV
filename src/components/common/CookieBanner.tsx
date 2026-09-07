@@ -32,7 +32,7 @@ export default function CookieBanner() {
   return (
     <aside
       aria-label={t("ariaLabel")}
-      className="fixed bottom-4 left-4 z-40 max-w-md animate-in fade-in slide-in-from-bottom-5 duration-300"
+      className="fixed bottom-4 left-4 z-50 max-w-md animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 p-5 shadow-2xl backdrop-blur-xl transition-colors">
         <div className="flex items-start justify-between gap-3">
