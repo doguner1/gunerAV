@@ -144,7 +144,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end p-4">
                     <div className="text-white">
                       <div className="text-xs font-mono font-bold tracking-widest text-[#d4af37] uppercase">
-                        [ + ] ÖNE ÇIKAN MODEL
+                        [ + ] {t("spotlightFeaturedModel")}
                       </div>
                       <div className="text-base font-heading font-black">
                         {spotlightTitle}
@@ -213,10 +213,10 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-black text-white tracking-wide">
-                  5.0 ★ Google Haritalar
+                  {t("ratingPillTitle")}
                 </span>
                 <span className="text-[11px] font-medium text-white/70">
-                  Malatya'nın En Yüksek Puanlı Bayii
+                  {t("ratingPillSubtitle")}
                 </span>
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                   {t("heroDirections")}
                 </div>
                 <div className="text-sm font-heading font-black text-white tracking-wide">
-                  Google Haritalar & Yol Tarifi
+                  {t("heroDirectionsDesc")}
                 </div>
               </div>
             </a>
@@ -261,7 +261,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                   {t("heroCall")}
                 </div>
                 <div className="text-sm font-heading font-black text-white tracking-wide">
-                  {STORE_INFO.phone} · Doğrudan Ara
+                  {STORE_INFO.phone} · {t("directCall")}
                 </div>
               </div>
             </a>

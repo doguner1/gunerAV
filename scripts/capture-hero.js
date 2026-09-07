@@ -10,48 +10,48 @@ async function run() {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
-  // 1. Desktop Light Mode
-  const pageLight = await browser.newPage();
-  await pageLight.setViewport({ width: 1440, height: 960 });
-  await pageLight.evaluateOnNewDocument(() => {
-    localStorage.setItem("gunerav_theme", "light");
-    localStorage.setItem("gunerav_cookie_consent", "accepted");
-  });
-  await pageLight.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
-  await new Promise((r) => setTimeout(r, 600));
-  await pageLight.screenshot({
-    path: `${OUTPUT_DIR}/desktop-light.png`,
-    clip: { x: 0, y: 0, width: 1440, height: 960 },
-  });
-  console.log("Captured desktop-light.png");
-
-  // 2. Desktop Dark Mode
-  const pageDark = await browser.newPage();
-  await pageDark.setViewport({ width: 1440, height: 960 });
-  await pageDark.evaluateOnNewDocument(() => {
+  // 1. English Desktop
+  const pageEn = await browser.newPage();
+  await pageEn.setViewport({ width: 1440, height: 960 });
+  await pageEn.evaluateOnNewDocument(() => {
     localStorage.setItem("gunerav_theme", "dark");
     localStorage.setItem("gunerav_cookie_consent", "accepted");
   });
-  await pageDark.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
+  await pageEn.goto("http://localhost:3000/en", { waitUntil: "networkidle0" });
   await new Promise((r) => setTimeout(r, 600));
-  await pageDark.screenshot({
-    path: `${OUTPUT_DIR}/desktop-dark.png`,
+  await pageEn.screenshot({
+    path: `${OUTPUT_DIR}/desktop-en.png`,
     clip: { x: 0, y: 0, width: 1440, height: 960 },
   });
-  console.log("Captured desktop-dark.png");
+  console.log("Captured desktop-en.png");
 
-  // 3. Mobile Viewport (iPhone 14/15 screen)
-  const mobilePage = await browser.newPage();
-  await mobilePage.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
-  await mobilePage.evaluateOnNewDocument(() => {
+  // 2. English Mobile
+  const mobileEn = await browser.newPage();
+  await mobileEn.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+  await mobileEn.evaluateOnNewDocument(() => {
     localStorage.setItem("gunerav_cookie_consent", "accepted");
   });
-  await mobilePage.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
+  await mobileEn.goto("http://localhost:3000/en", { waitUntil: "networkidle0" });
   await new Promise((r) => setTimeout(r, 600));
-  await mobilePage.screenshot({
-    path: `${OUTPUT_DIR}/mobile-hero.png`,
+  await mobileEn.screenshot({
+    path: `${OUTPUT_DIR}/mobile-en.png`,
   });
-  console.log("Captured mobile-hero.png");
+  console.log("Captured mobile-en.png");
+
+  // 3. Turkish Desktop
+  const pageTr = await browser.newPage();
+  await pageTr.setViewport({ width: 1440, height: 960 });
+  await pageTr.evaluateOnNewDocument(() => {
+    localStorage.setItem("gunerav_theme", "dark");
+    localStorage.setItem("gunerav_cookie_consent", "accepted");
+  });
+  await pageTr.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
+  await new Promise((r) => setTimeout(r, 600));
+  await pageTr.screenshot({
+    path: `${OUTPUT_DIR}/desktop-tr.png`,
+    clip: { x: 0, y: 0, width: 1440, height: 960 },
+  });
+  console.log("Captured desktop-tr.png");
 
   await browser.close();
 }

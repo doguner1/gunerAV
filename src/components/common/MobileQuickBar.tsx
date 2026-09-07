@@ -9,7 +9,7 @@ export default function MobileQuickBar() {
 
   return (
     <aside
-      aria-label="Hızlı Erişim & İletişim"
+      aria-label={t("quickBarAria")}
       className="fixed bottom-3 inset-x-3 z-40 sm:hidden pointer-events-none"
     >
       <div className="pointer-events-auto grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-neutral-950/95 dark:bg-black/95 backdrop-blur-2xl border border-white/20 shadow-[0_16px_36px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.1)]">
