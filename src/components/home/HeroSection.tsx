@@ -32,7 +32,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
   const spotlightImage = spotlightProduct?.images?.[0] || "/images/products/optics-1.webp";
 
   return (
-    <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden bg-black pt-20 pb-16 lg:py-24">
+    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-20 pb-10 lg:pt-24 lg:pb-12">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <Image
@@ -45,11 +45,8 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
         />
         {/* Directional Overlay: Darker on the left for crisp text legibility, transparent on right so rifle shines through */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/80" />
       </div>
-
-      {/* Smooth bottom transition fade so there is no harsh white/black cutoff */}
-      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white dark:from-neutral-950 via-white/40 dark:via-neutral-950/40 to-transparent z-0 pointer-events-none" />
 
       {/* Fine Tactical Grid Overlay */}
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
@@ -224,7 +221,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
         </div>
 
         {/* BOTTOM COMMAND DOCK: Prestigious Google Maps Navigation & Direct Phone Call */}
-        <div className="hidden sm:flex items-center justify-center pt-10 lg:pt-14">
+        <div className="hidden sm:flex items-center justify-center pt-6 lg:pt-8">
           <div className="inline-flex items-center p-2 rounded-2xl bg-neutral-950/85 dark:bg-black/85 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.25)] gap-3">
             {/* Konuma Git Butonu */}
             <a
