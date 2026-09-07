@@ -93,9 +93,17 @@
   <div class="content">
     <!-- TAB 1: Sayfadan Çek (Scraper) -->
     <div class="tab-pane active" id="tabScrape">
-      <button class="btn-secondary" id="btnScrapePage">
-        🔍 Açık Olan Tedarikçi Sayfasını Tara
-      </button>
+      <div class="row" style="gap: 6px; margin-bottom: 8px;">
+        <button class="btn-secondary" id="btnScrapePage" style="margin-bottom: 0; flex: 2.5;">
+          🔍 Açık Olan Tedarikçi Sayfasını Tara
+        </button>
+        <button class="icon-btn" id="btnResetForm" style="flex: 1; padding: 8px; font-weight: 700; background: #1e2430;" title="Formu ve taslağı tamamen temizle">
+          🗑️ Temizle
+        </button>
+      </div>
+      <div id="draftStatus" style="display: none; font-size: 11px; color: #38bdf8; margin-bottom: 8px; padding: 4px 8px; background: rgba(56, 189, 248, 0.1); border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25); text-align: center;">
+        💾 Kaydedilmiş taslak geri yüklendi (Değişiklikleriniz otomatik saklanır)
+      </div>
       <div id="scrapeResultWrapper"></div>
     </div>
 
@@ -117,8 +125,11 @@
         <input type="text" id="cfgSupabaseUrl" placeholder="https://xyzcompany.supabase.co">
       </div>
       <div class="form-group">
-        <label>Supabase Anon Key (veya Service Key):</label>
+        <label>Supabase Service Role Key (Admin) veya Anon Key:</label>
         <input type="text" id="cfgSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
+        <div style="font-size: 10px; color: #f59e0b; margin-top: 4px; line-height: 1.3;">
+          ⚠️ <strong>RLS Hatası Almamak İçin:</strong> Eklentide ürün eklemek için Supabase panelinizdeki (<em>Project Settings &rarr; API</em>) <strong>service_role (secret)</strong> anahtarını kullanınız. (Anon key kullanırsanız RLS yazma izni kısıtlamasına takılırsınız).
+        </div>
       </div>
       <div class="row" style="margin-top: 10px;">
         <div class="col">
@@ -154,10 +165,10 @@
         <div class="col form-group">
           <label>Kategori:</label>
           <select id="fldCategory">
+            <option value="kamp">🏕️ Kamp, Balık & Outdoor Ekipman</option>
             <option value="silah-muhimmat">🎯 Av Tüfekleri & Mühimmat</option>
             <option value="optik">🔭 Taktik Optik & Dürbün</option>
             <option value="bicak">🗡️ Av & Taktik Bıçaklar</option>
-            <option value="kamp">🏕️ Kamp & Fener & Outdoor</option>
             <option value="giyim">👕 Avcı & Taktik Giyim</option>
             <option value="diger">📦 Diğer / Aksesuar</option>
           </select>

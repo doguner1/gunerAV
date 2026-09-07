@@ -100,14 +100,59 @@ document.addEventListener("DOMContentLoaded", async () => {
   const discountPercentRow = document.getElementById("discountPercentRow");
   chkHasDiscount?.addEventListener("change", () => {
     discountPercentRow.style.display = chkHasDiscount.checked ? "block" : "none";
+    saveFormDraft();
   });
 
   // 4. Görseller Değişince Önizleme
   const fldImages = document.getElementById("fldImages");
-  fldImages?.addEventListener("input", updateImagesPreview);
+  fldImages?.addEventListener("input", () => {
+    updateImagesPreview();
+    saveFormDraft();
+  });
 
-  // 5. Sayfadan Otomatik Çek (Scraper)
+  // 5. Form Alanlarındaki Değişiklikleri Dinle ve Otomatik Taslak Olarak Kaydet (Persistence)
+  const formInputs = [
+    "fldNameTr",
+    "fldCategory",
+    "fldPrice",
+    "fldBrand",
+    "fldModel",
+    "fldDiscountPercent",
+    "chkFeatured",
+    "chkHeroSpotlight",
+    "chkRequiresLicense",
+    "chkInStock",
+    "fldSpecsJson",
+  ];
+
+  formInputs.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", saveFormDraft);
+    el.addEventListener("change", saveFormDraft);
+  });
+
+  // 6. Önceki Taslağı Geri Yükle (Popup tekrar açıldığında veri kaybolmasın)
+  const { productFormDraft } = await chrome.storage.local.get(["productFormDraft"]);
+  if (productFormDraft && (productFormDraft.nameTr || productFormDraft.images || productFormDraft.brand)) {
+    restoreFormDraft(productFormDraft);
+  }
+
+  // 7. Formu Temizle Butonu
+  document.getElementById("btnResetForm")?.addEventListener("click", async () => {
+    await resetForm();
+    showStatus("Form temizlendi.", "success");
+    setTimeout(() => {
+      const b = document.getElementById("statusBanner");
+      if (b) b.style.display = "none";
+    }, 1500);
+  });
+
+  // 8. Sayfadan Otomatik Çek (Scraper)
   document.getElementById("btnScrapePage")?.addEventListener("click", async () => {
+    // İSTEK: "tekrar tedarikçi sayfasını tara butona basınca önce silsin sonra çekebildiği veriyi çeksin"
+    await resetForm();
+
     showStatus("🔍 Sayfa taranıyor...", "success");
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -128,14 +173,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const data = response.data;
         populateForm(data);
-        showStatus(`✅ Ürün yakalandı: ${data.title.slice(0, 35)}...`, "success");
+        saveFormDraft();
+        showStatus(`✅ Ürün yakalandı: ${(data.title || "").slice(0, 35)}...`, "success");
       });
     } catch (e) {
       showStatus("Hata: " + e.message, "error");
     }
   });
 
-  // 6. Manuel JSON'u Parse Et
+  // 9. Manuel JSON'u Parse Et
   document.getElementById("btnParseJson")?.addEventListener("click", () => {
     const raw = document.getElementById("rawJsonInput").value.trim();
     if (!raw) {
@@ -146,13 +192,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const data = JSON.parse(raw);
       populateForm(data);
+      saveFormDraft();
       showStatus("✅ JSON başarıyla forma aktarıldı!", "success");
     } catch (e) {
       showStatus("Geçersiz JSON formatı: " + e.message, "error");
     }
   });
 
-  // 7. Supabase'e Gönder & Yayınla
+  // 10. Supabase'e Gönder & Yayınla
   document.getElementById("btnSubmitToSupabase")?.addEventListener("click", async () => {
     const btn = document.getElementById("btnSubmitToSupabase");
     const nameTr = document.getElementById("fldNameTr").value.trim();
@@ -211,7 +258,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         brand,
         model,
         name_tr: nameTr,
-        name_en: nameTr, // Başlangıçta aynı, istenirse sonradan çevrilebilir
+        name_en: nameTr,
         description_tr: `${nameTr}. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.`,
         description_en: `${nameTr}. Available at official dealer Guner AV in Malatya.`,
         price,
@@ -225,7 +272,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         specs_en: specs,
       };
 
-      // If this product is set as hero spotlight, optionally unset others, or just let upsert handle it
       const endpoint = `${savedCfg.supabaseUrl}/rest/v1/products`;
 
       const res = await fetch(endpoint, {
@@ -241,22 +287,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (!res.ok) {
         const errText = await res.text();
+        // RLS Hatası tespiti (42501)
+        if (errText.includes("42501") || errText.includes("row-level security")) {
+          throw new Error(
+            `Supabase Yetki Kısıtlaması (RLS 42501):\nKullandığınız anahtar ('anon key') veritabanına yazma yetkisine sahip değil.\n\nÇÖZÜM: Eklenti Ayarlar sekmesine Supabase panelinizdeki (Project Settings -> API) 'service_role (secret)' anahtarını yapıştırınız.`
+          );
+        }
         throw new Error(`HTTP ${res.status}: ${errText}`);
       }
 
       showStatus("🎉 Ürün başarıyla Supabase'e kaydedildi ve yayına alındı!", "success");
       btn.textContent = "✅ Başarıyla Kaydedildi";
+
+      // Başarılı kayıttan sonra taslağı sil
+      await chrome.storage.local.remove("productFormDraft");
+
       setTimeout(() => {
         btn.disabled = false;
         btn.textContent = "🚀 Supabase'e Aktar & Sitede Yayınla";
       }, 3000);
     } catch (err) {
-      showStatus("Hata oluştu: " + err.message, "error");
+      showStatus("Hata: " + err.message, "error");
       btn.disabled = false;
       btn.textContent = "🚀 Tekrar Dene";
     }
   });
 });
+
+// =========================================================================
+// Yardımcı Fonksiyonlar
+// =========================================================================
 
 function populateForm(data) {
   if (data.title) document.getElementById("fldNameTr").value = data.title;
@@ -275,26 +335,163 @@ function populateForm(data) {
   const specs = data.specs_tr || data.specs || {};
   document.getElementById("fldSpecsJson").value = JSON.stringify(specs, null, 2);
 
-  // Otomatik kategori tahmini
-  const fullText = (data.title + " " + JSON.stringify(specs)).toLowerCase();
+  // Akıllı Kategori ve Ruhsat Tahmini
+  const fullText = (
+    (data.title || "") + " " +
+    (data.category || "") + " " +
+    (data.brand || "") + " " +
+    JSON.stringify(specs) + " " +
+    (data.description || "")
+  ).toLowerCase();
+
   const catSelect = document.getElementById("fldCategory");
   const licenseChk = document.getElementById("chkRequiresLicense");
 
-  if (fullText.includes("tüfek") || fullText.includes("shotgun") || fullText.includes("kalibre") || fullText.includes("fişek")) {
+  if (
+    fullText.includes("tüfek") ||
+    fullText.includes("shotgun") ||
+    fullText.includes("yivsiz") ||
+    fullText.includes("tabanca") ||
+    fullText.includes("kalibre") ||
+    fullText.includes("fişek")
+  ) {
     catSelect.value = "silah-muhimmat";
     licenseChk.checked = true;
-  } else if (fullText.includes("dürbün") || fullText.includes("scope") || fullText.includes("optik") || fullText.includes("termal")) {
+  } else if (
+    fullText.includes("dürbün") ||
+    fullText.includes("scope") ||
+    fullText.includes("optik") ||
+    fullText.includes("termal") ||
+    fullText.includes("red dot") ||
+    fullText.includes("reddot")
+  ) {
     catSelect.value = "optik";
     licenseChk.checked = false;
-  } else if (fullText.includes("bıçak") || fullText.includes("çakı") || fullText.includes("knife")) {
+  } else if (
+    fullText.includes("bıçak") ||
+    fullText.includes("çakı") ||
+    fullText.includes("knife") ||
+    fullText.includes("pala") ||
+    fullText.includes("balta")
+  ) {
     catSelect.value = "bicak";
     licenseChk.checked = false;
-  } else if (fullText.includes("çadır") || fullText.includes("kamp") || fullText.includes("fener") || fullText.includes("termos")) {
+  } else if (
+    fullText.includes("giyim") ||
+    fullText.includes("mont") ||
+    fullText.includes("pantolon") ||
+    fullText.includes("yelek") ||
+    fullText.includes("bot") ||
+    fullText.includes("çizme") ||
+    fullText.includes("polar")
+  ) {
+    catSelect.value = "giyim";
+    licenseChk.checked = false;
+  } else if (
+    fullText.includes("olta") ||
+    fullText.includes("balık") ||
+    fullText.includes("kamış") ||
+    fullText.includes("misina") ||
+    fullText.includes("iğne") ||
+    fullText.includes("yem") ||
+    fullText.includes("çadır") ||
+    fullText.includes("kamp") ||
+    fullText.includes("fener") ||
+    fullText.includes("termos")
+  ) {
+    catSelect.value = "kamp";
+    licenseChk.checked = false;
+  } else {
     catSelect.value = "kamp";
     licenseChk.checked = false;
   }
 
   updateImagesPreview();
+}
+
+async function saveFormDraft() {
+  const draft = {
+    nameTr: document.getElementById("fldNameTr")?.value || "",
+    category: document.getElementById("fldCategory")?.value || "kamp",
+    price: document.getElementById("fldPrice")?.value || "",
+    brand: document.getElementById("fldBrand")?.value || "",
+    model: document.getElementById("fldModel")?.value || "",
+    images: document.getElementById("fldImages")?.value || "",
+    featured: document.getElementById("chkFeatured")?.checked ?? true,
+    heroSpotlight: document.getElementById("chkHeroSpotlight")?.checked ?? false,
+    hasDiscount: document.getElementById("chkHasDiscount")?.checked ?? false,
+    discountPercent: document.getElementById("fldDiscountPercent")?.value || "",
+    requiresLicense: document.getElementById("chkRequiresLicense")?.checked ?? false,
+    inStock: document.getElementById("chkInStock")?.checked ?? true,
+    specsJson: document.getElementById("fldSpecsJson")?.value || "",
+  };
+
+  await chrome.storage.local.set({ productFormDraft: draft });
+}
+
+function restoreFormDraft(draft) {
+  if (!draft) return;
+
+  if (draft.nameTr) document.getElementById("fldNameTr").value = draft.nameTr;
+  if (draft.category) document.getElementById("fldCategory").value = draft.category;
+  if (draft.price) document.getElementById("fldPrice").value = draft.price;
+  if (draft.brand) document.getElementById("fldBrand").value = draft.brand;
+  if (draft.model) document.getElementById("fldModel").value = draft.model;
+  if (draft.images) document.getElementById("fldImages").value = draft.images;
+
+  if (typeof draft.featured === "boolean") document.getElementById("chkFeatured").checked = draft.featured;
+  if (typeof draft.heroSpotlight === "boolean") document.getElementById("chkHeroSpotlight").checked = draft.heroSpotlight;
+
+  if (typeof draft.hasDiscount === "boolean") {
+    document.getElementById("chkHasDiscount").checked = draft.hasDiscount;
+    const discountRow = document.getElementById("discountPercentRow");
+    if (discountRow) discountRow.style.display = draft.hasDiscount ? "block" : "none";
+  }
+  if (draft.discountPercent) document.getElementById("fldDiscountPercent").value = draft.discountPercent;
+
+  if (typeof draft.requiresLicense === "boolean") document.getElementById("chkRequiresLicense").checked = draft.requiresLicense;
+  if (typeof draft.inStock === "boolean") document.getElementById("chkInStock").checked = draft.inStock;
+
+  if (draft.specsJson) document.getElementById("fldSpecsJson").value = draft.specsJson;
+
+  updateImagesPreview();
+
+  const draftStatusEl = document.getElementById("draftStatus");
+  if (draftStatusEl) {
+    draftStatusEl.style.display = "block";
+    setTimeout(() => {
+      draftStatusEl.style.display = "none";
+    }, 4000);
+  }
+}
+
+async function resetForm() {
+  document.getElementById("fldNameTr").value = "";
+  document.getElementById("fldBrand").value = "";
+  document.getElementById("fldModel").value = "";
+  document.getElementById("fldPrice").value = "";
+  document.getElementById("fldImages").value = "";
+  document.getElementById("fldSpecsJson").value = "";
+  document.getElementById("fldCategory").value = "kamp";
+
+  document.getElementById("chkFeatured").checked = true;
+  document.getElementById("chkHeroSpotlight").checked = false;
+  document.getElementById("chkHasDiscount").checked = false;
+  document.getElementById("discountPercentRow").style.display = "none";
+  document.getElementById("fldDiscountPercent").value = "";
+  document.getElementById("chkRequiresLicense").checked = false;
+  document.getElementById("chkInStock").checked = true;
+
+  const previewBox = document.getElementById("imagesPreviewBox");
+  if (previewBox) previewBox.innerHTML = "";
+
+  const draftStatusEl = document.getElementById("draftStatus");
+  if (draftStatusEl) draftStatusEl.style.display = "none";
+
+  const banner = document.getElementById("statusBanner");
+  if (banner) banner.style.display = "none";
+
+  await chrome.storage.local.remove("productFormDraft");
 }
 
 function updateImagesPreview() {
@@ -308,7 +505,7 @@ function updateImagesPreview() {
     .map(normalizeUrl)
     .filter((u) => u.startsWith("http"));
 
-  urls.slice(0, 5).forEach((url) => {
+  urls.slice(0, 6).forEach((url) => {
     const img = document.createElement("img");
     img.src = url;
     img.className = "image-thumb";
@@ -340,5 +537,7 @@ function showStatus(msg, type) {
   const b = document.getElementById("statusBanner");
   if (!b) return;
   b.className = `status-banner ${type}`;
+  b.style.display = "block";
   b.textContent = msg;
 }
+
