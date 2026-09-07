@@ -38,6 +38,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     showStatus("✅ Supabase ayarları başarıyla kaydedildi!", "success");
   });
 
+  // 2b. Supabase Bağlantısını Test Et
+  document.getElementById("btnTestConfig")?.addEventListener("click", async () => {
+    const statusEl = document.getElementById("testConnectionStatus");
+    const url = document.getElementById("cfgSupabaseUrl").value.trim().replace(/\/+$/, "");
+    const key = document.getElementById("cfgSupabaseKey").value.trim();
+
+    if (!url || !key) {
+      if (statusEl) {
+        statusEl.style.display = "block";
+        statusEl.style.background = "rgba(239, 68, 68, 0.15)";
+        statusEl.style.color = "#f87171";
+        statusEl.style.border = "1px solid #ef4444";
+        statusEl.textContent = "❌ Lütfen önce URL ve Key alanlarını doldurun.";
+      }
+      return;
+    }
+
+    if (statusEl) {
+      statusEl.style.display = "block";
+      statusEl.style.background = "rgba(56, 189, 248, 0.15)";
+      statusEl.style.color = "#38bdf8";
+      statusEl.style.border = "1px solid #0284c7";
+      statusEl.textContent = "⏳ Supabase bağlantısı test ediliyor...";
+    }
+
+    try {
+      const res = await fetch(`${url}/rest/v1/products?select=id,name_tr`, {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status}: ${txt}`);
+      }
+
+      const products = await res.json();
+      const count = Array.isArray(products) ? products.length : 0;
+
+      if (statusEl) {
+        statusEl.style.background = "rgba(34, 197, 94, 0.15)";
+        statusEl.style.color = "#4ade80";
+        statusEl.style.border = "1px solid #22c55e";
+        statusEl.textContent = `✅ Bağlantı Başarılı! Veritabanında şu an ${count} adet ürün bulunuyor.`;
+      }
+    } catch (err) {
+      if (statusEl) {
+        statusEl.style.background = "rgba(239, 68, 68, 0.15)";
+        statusEl.style.color = "#f87171";
+        statusEl.style.border = "1px solid #ef4444";
+        statusEl.textContent = `❌ Bağlantı başarısız: ${err.message}`;
+      }
+    }
+  });
+
   // 3. İndirim Alanı Göster/Gizle
   const chkHasDiscount = document.getElementById("chkHasDiscount");
   const discountPercentRow = document.getElementById("discountPercentRow");
@@ -124,7 +181,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const rawImages = document.getElementById("fldImages").value;
       const images = rawImages
         .split(/[\n,]/)
-        .map((u) => u.trim())
+        .map(normalizeUrl)
         .filter((u) => u.startsWith("http"));
 
       const isFeatured = document.getElementById("chkFeatured").checked;
@@ -248,7 +305,7 @@ function updateImagesPreview() {
   const text = document.getElementById("fldImages").value;
   const urls = text
     .split(/[\n,]/)
-    .map((u) => u.trim())
+    .map(normalizeUrl)
     .filter((u) => u.startsWith("http"));
 
   urls.slice(0, 5).forEach((url) => {
@@ -260,6 +317,14 @@ function updateImagesPreview() {
     };
     box.appendChild(img);
   });
+}
+
+function normalizeUrl(url) {
+  let u = (url || "").trim();
+  if (u.startsWith("//")) {
+    u = "https:" + u;
+  }
+  return u;
 }
 
 function slugify(text) {

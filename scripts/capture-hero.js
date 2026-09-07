@@ -10,50 +10,45 @@ async function run() {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
-  // 1. Fullscreen Mac (1440x900)
-  const pageMac = await browser.newPage();
-  await pageMac.setViewport({ width: 1440, height: 900 });
-  await pageMac.evaluateOnNewDocument(() => {
+  // 1. Home Page Hero Spotlight (1440x900)
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1440, height: 900 });
+  await page.evaluateOnNewDocument(() => {
     localStorage.setItem("gunerav_theme", "dark");
     localStorage.setItem("gunerav_cookie_consent", "accepted");
   });
-  await pageMac.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
-  await new Promise((r) => setTimeout(r, 600));
-  await pageMac.screenshot({
-    path: `${OUTPUT_DIR}/fullscreen-mac.png`,
+  await page.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
+  await new Promise((r) => setTimeout(r, 800));
+  await page.screenshot({
+    path: `${OUTPUT_DIR}/hero-spotlight-castello.png`,
     clip: { x: 0, y: 0, width: 1440, height: 900 },
   });
-  console.log("Captured fullscreen-mac.png");
+  console.log("Captured hero-spotlight-castello.png");
 
-  // 2. Fullscreen 1080p (1920x1080)
-  const page1080 = await browser.newPage();
-  await page1080.setViewport({ width: 1920, height: 1080 });
-  await page1080.evaluateOnNewDocument(() => {
+  // 2. Scroll to Featured Products / Showcase
+  await page.evaluate(() => {
+    window.scrollTo(0, 950);
+  });
+  await new Promise((r) => setTimeout(r, 600));
+  await page.screenshot({
+    path: `${OUTPUT_DIR}/showcase-castello.png`,
+    clip: { x: 0, y: 0, width: 1440, height: 900 },
+  });
+  console.log("Captured showcase-castello.png");
+
+  // 3. Product Detail Page
+  const detailPage = await browser.newPage();
+  await detailPage.setViewport({ width: 1440, height: 1000 });
+  await detailPage.evaluateOnNewDocument(() => {
     localStorage.setItem("gunerav_theme", "dark");
     localStorage.setItem("gunerav_cookie_consent", "accepted");
   });
-  await page1080.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
-  await new Promise((r) => setTimeout(r, 600));
-  await page1080.screenshot({
-    path: `${OUTPUT_DIR}/fullscreen-1080p.png`,
-    clip: { x: 0, y: 0, width: 1920, height: 1080 },
+  await detailPage.goto("http://localhost:3000/tr/products/castello-mod-505-otomatik-av-tufegi", { waitUntil: "networkidle0" });
+  await new Promise((r) => setTimeout(r, 800));
+  await detailPage.screenshot({
+    path: `${OUTPUT_DIR}/product-detail-castello.png`,
   });
-  console.log("Captured fullscreen-1080p.png");
-
-  // 3. Fullscreen Light Mode (1440x900 - to prove ZERO white fog)
-  const pageLight = await browser.newPage();
-  await pageLight.setViewport({ width: 1440, height: 900 });
-  await pageLight.evaluateOnNewDocument(() => {
-    localStorage.setItem("gunerav_theme", "light");
-    localStorage.setItem("gunerav_cookie_consent", "accepted");
-  });
-  await pageLight.goto("http://localhost:3000/tr", { waitUntil: "networkidle0" });
-  await new Promise((r) => setTimeout(r, 600));
-  await pageLight.screenshot({
-    path: `${OUTPUT_DIR}/fullscreen-light.png`,
-    clip: { x: 0, y: 0, width: 1440, height: 900 },
-  });
-  console.log("Captured fullscreen-light.png");
+  console.log("Captured product-detail-castello.png");
 
   await browser.close();
 }

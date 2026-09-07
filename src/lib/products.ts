@@ -13,7 +13,10 @@ export async function getAllProducts(): Promise<Product[]> {
   try {
     const supabaseItems = await getSupabaseProducts();
     if (supabaseItems && supabaseItems.length > 0) {
-      return supabaseItems;
+      // Supabase ürünleri önceliklidir; aynı id'ye sahip yerel ürünler filtrelenir
+      const supabaseIds = new Set(supabaseItems.map((p) => p.id));
+      const filteredLocal = localProducts.filter((p) => !supabaseIds.has(p.id));
+      return [...supabaseItems, ...filteredLocal];
     }
   } catch (e) {
     console.warn("[Products] Supabase'den ürün çekilemedi, yerel veri kullanılıyor:", e);

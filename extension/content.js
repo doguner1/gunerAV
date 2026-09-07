@@ -62,23 +62,28 @@ function extractProductData() {
   );
 
   galleryImgs.forEach((img) => {
-    const src =
+    let src =
       img.getAttribute("data-zoom-image") ||
       img.getAttribute("data-large") ||
       img.getAttribute("data-src") ||
       img.src;
 
-    if (src && !src.includes("logo") && !src.includes("icon") && !src.includes("banner")) {
-      imageSet.add(src);
+    if (src) {
+      if (src.startsWith("//")) src = "https:" + src;
+      if (!src.includes("logo") && !src.includes("icon") && !src.includes("banner")) {
+        imageSet.add(src);
+      }
     }
   });
 
   // Genel büyük resimler fallback
   if (imageSet.size === 0) {
     document.querySelectorAll("img").forEach((img) => {
+      let s = img.src;
+      if (s && s.startsWith("//")) s = "https:" + s;
       if (img.naturalWidth > 300 || img.width > 300) {
-        if (!img.src.includes("logo") && !img.src.includes("icon")) {
-          imageSet.add(img.src);
+        if (!s.includes("logo") && !s.includes("icon")) {
+          imageSet.add(s);
         }
       }
     });

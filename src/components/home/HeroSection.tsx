@@ -31,6 +31,11 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
   const spotlightTitle = (isTr ? spotlightProduct?.name_tr : spotlightProduct?.name_en) || t("spotlightTitle");
   const spotlightImage = spotlightProduct?.images?.[0] || "/images/products/optics-1.webp";
 
+  const rawSpecs = (isTr ? spotlightProduct?.specs_tr : spotlightProduct?.specs_en) || spotlightProduct?.specs_tr || {};
+  const dynamicSpecs = Object.entries(rawSpecs)
+    .filter(([k, v]) => Boolean(v && typeof v === "string" && v.length < 40))
+    .slice(0, 3);
+
   return (
     <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-20 pb-10 lg:pt-24 lg:pb-12">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
@@ -155,30 +160,48 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
 
               {/* Tactical Specs Bar (Apple Control Center Glass Tiles) */}
               <div className="grid grid-cols-3 gap-2.5 py-3 border-y border-white/15 text-center">
-                <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
-                  <div className="text-[10px] uppercase font-bold text-white/70">
-                    {t("spotlightMagnification")}
-                  </div>
-                  <div className="font-heading font-black text-sm text-white mt-0.5">
-                    3x - 24x
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
-                  <div className="text-[10px] uppercase font-bold text-white/70">
-                    {t("spotlightLight")}
-                  </div>
-                  <div className="font-heading font-black text-sm text-emerald-300 mt-0.5">
-                    %92+
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
-                  <div className="text-[10px] uppercase font-bold text-white/70">
-                    {t("spotlightDurability")}
-                  </div>
-                  <div className="font-heading font-black text-sm text-white mt-0.5">
-                    Magnum
-                  </div>
-                </div>
+                {dynamicSpecs.length >= 2 ? (
+                  dynamicSpecs.map(([specKey, specVal]) => (
+                    <div
+                      key={specKey}
+                      className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all"
+                    >
+                      <div className="text-[10px] uppercase font-bold text-white/70 truncate">
+                        {specKey}
+                      </div>
+                      <div className="font-heading font-black text-sm text-white mt-0.5 truncate">
+                        {specVal}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
+                      <div className="text-[10px] uppercase font-bold text-white/70">
+                        {t("spotlightMagnification")}
+                      </div>
+                      <div className="font-heading font-black text-sm text-white mt-0.5">
+                        3x - 24x
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
+                      <div className="text-[10px] uppercase font-bold text-white/70">
+                        {t("spotlightLight")}
+                      </div>
+                      <div className="font-heading font-black text-sm text-emerald-300 mt-0.5">
+                        %92+
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
+                      <div className="text-[10px] uppercase font-bold text-white/70">
+                        {t("spotlightDurability")}
+                      </div>
+                      <div className="font-heading font-black text-sm text-white mt-0.5">
+                        Magnum
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Spotlight Footer & Action */}

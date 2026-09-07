@@ -3,6 +3,7 @@ import { Link } from "@/i18n/routing";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Metadata } from "next";
 import {
+  fetchProductBySlug,
   getProductBySlug,
   getAllProducts,
   getCategoryById,
@@ -46,7 +47,7 @@ export async function generateMetadata({
 }: {
   params: { locale: string; slug: string };
 }): Promise<Metadata> {
-  const product = await getProductBySlug(slug, locale);
+  const product = await fetchProductBySlug(slug, locale);
   if (!product) return {};
 
   const isTr = locale === "tr";
@@ -79,7 +80,7 @@ export default async function ProductDetailPage({
   params: { locale: string; slug: string };
 }) {
   setRequestLocale(locale);
-  const product = await getProductBySlug(slug, locale);
+  const product = await fetchProductBySlug(slug, locale);
 
   if (!product) {
     notFound();
