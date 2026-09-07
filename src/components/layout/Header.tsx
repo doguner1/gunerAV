@@ -41,23 +41,32 @@ export default function Header() {
     { href: "/contact", label: t("contact") },
   ];
 
+  const isHome = pathname === "/" || pathname === "/tr" || pathname === "/en" || pathname === "";
+  const isHeroOverlay = !scrolled && isHome;
+
   return (
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/95 dark:bg-neutral-950/95 shadow-lg shadow-black/5 dark:shadow-black/30 backdrop-blur-xl"
-            : "bg-white/80 dark:bg-neutral-950/70 backdrop-blur-md"
+          isHeroOverlay
+            ? "bg-black/30 backdrop-blur-xl border-b border-white/10 text-white"
+            : scrolled
+            ? "bg-white/95 dark:bg-neutral-950/95 shadow-lg shadow-black/5 dark:shadow-black/30 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800"
+            : "bg-white/80 dark:bg-neutral-950/70 backdrop-blur-md border-b border-neutral-200/60 dark:border-neutral-800/60"
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link href="/" className="group flex items-center gap-2.5 shrink-0">
             <div className="flex flex-col">
-              <span className="font-heading text-lg font-black tracking-wider text-neutral-950 dark:text-white uppercase sm:text-xl">
+              <span className={`font-heading text-lg font-black tracking-wider uppercase sm:text-xl ${
+                isHeroOverlay ? "text-white" : "text-neutral-950 dark:text-white"
+              }`}>
                 GÜNER <span className="text-[#d4af37]">AV</span>
               </span>
-              <span className="text-[9px] font-semibold tracking-[0.2em] text-neutral-400 dark:text-neutral-500 uppercase">
+              <span className={`text-[9px] font-semibold tracking-[0.2em] uppercase ${
+                isHeroOverlay ? "text-neutral-300" : "text-neutral-400 dark:text-neutral-500"
+              }`}>
                 MALATYA · AV &amp; OUTDOOR
               </span>
             </div>
@@ -73,7 +82,11 @@ export default function Header() {
                   href={link.href}
                   className={`px-3 py-1.5 text-[13px] transition-colors ${
                     isActive
-                      ? "text-neutral-950 dark:text-white font-bold"
+                      ? isHeroOverlay
+                        ? "text-white font-bold"
+                        : "text-neutral-950 dark:text-white font-bold"
+                      : isHeroOverlay
+                      ? "text-neutral-200 hover:text-white font-medium"
                       : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white font-medium"
                   }`}
                 >
@@ -87,7 +100,11 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setCategoriesOpen(!categoriesOpen)}
-                className="flex items-center gap-1 px-3 py-1.5 text-[13px] font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors"
+                className={`flex items-center gap-1 px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                  isHeroOverlay
+                    ? "text-neutral-200 hover:text-white"
+                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+                }`}
               >
                 <span>{t("categories")}</span>
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${categoriesOpen ? "rotate-180" : ""}`} />
@@ -126,14 +143,18 @@ export default function Header() {
             {/* Phone */}
             <a
               href={`tel:${STORE_INFO.phone}`}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                isHeroOverlay
+                  ? "text-neutral-200 hover:text-white"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+              }`}
               aria-label={STORE_INFO.phone}
             >
               <Phone className="h-3.5 w-3.5 text-[#d4af37]" />
               <span className="hidden xl:inline">{STORE_INFO.phone}</span>
             </a>
 
-            <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
+            <div className={`h-4 w-px ${isHeroOverlay ? "bg-white/20" : "bg-neutral-200 dark:bg-neutral-800"}`} />
 
             {/* Language Switcher */}
             <LanguageSwitcher />
@@ -141,12 +162,16 @@ export default function Header() {
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
+            <div className={`h-4 w-px ${isHeroOverlay ? "bg-white/20" : "bg-neutral-200 dark:bg-neutral-800"}`} />
 
             {/* CTA */}
             <Link
               href="/products"
-              className="rounded-lg bg-neutral-900 dark:bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-white dark:text-black transition-all hover:bg-neutral-700 dark:hover:bg-neutral-200 active:scale-95"
+              className={`rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 ${
+                isHeroOverlay
+                  ? "bg-white hover:bg-neutral-200 text-black shadow-lg"
+                  : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-700 dark:hover:bg-neutral-200"
+              }`}
             >
               {t("viewCatalog")}
             </Link>
@@ -156,7 +181,9 @@ export default function Header() {
           <div className="flex items-center gap-1.5 lg:hidden">
             <a
               href={`tel:${STORE_INFO.phone}`}
-              className="rounded-lg p-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+              className={`rounded-lg p-2 ${
+                isHeroOverlay ? "text-white" : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+              }`}
               aria-label={STORE_INFO.phone}
             >
               <Phone className="h-5 w-5" />
@@ -166,7 +193,9 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="rounded-lg p-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 focus:outline-none"
+              className={`rounded-lg p-2 focus:outline-none ${
+                isHeroOverlay ? "text-white hover:bg-white/10" : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+              }`}
               aria-label={tCommon("toggleMenu")}
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
