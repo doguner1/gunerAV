@@ -98,8 +98,8 @@ export default async function ProductDetailPage({
   const related = await getRelatedProducts(product.id, product.category, 3);
 
   const waMsg = isTr
-    ? `Merhaba Güner Av Bayii, ${name} ürünü hakkında mağazanızdan bilgi almak istiyorum.`
-    : `Hello Guner AV, I would like to inquire about the ${name}.`;
+    ? `Merhaba Güner Av Bayii, ${name} ürününün fiyatını öğrenmek istiyorum.`
+    : `Hello Guner AV, I would like to inquire about the price of ${name}.`;
 
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
@@ -171,7 +171,7 @@ export default async function ProductDetailPage({
 
               {/* Price section */}
               <div className="rounded-xl border border-neutral-200 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 p-4 shadow-sm">
-                {product.price ? (
+                {!product.requires_license && product.price ? (
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                       {tCommon("msrpTitle")}

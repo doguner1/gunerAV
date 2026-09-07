@@ -24,8 +24,8 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
   const mainImage = product.images[0] || "/images/products/optics-1.webp";
 
   const waMsg = isTr
-    ? `Merhaba Güner Av Bayii, ${name} hakkında bilgi almak istiyorum.`
-    : `Hello Guner AV, I would like to receive details regarding the ${name}.`;
+    ? `Merhaba Güner Av Bayii, ${name} ürününün fiyatını öğrenmek istiyorum.`
+    : `Hello Guner AV, I would like to inquire about the price of ${name}.`;
 
   const waLink = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
@@ -59,11 +59,11 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
             ) : null}
 
             {/* Discount Badge */}
-            {product.discount_percent && (
+            {!product.requires_license && product.discount_percent ? (
               <span className="rounded-md border border-[#d4af37]/50 bg-[#d4af37]/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#d4af37] backdrop-blur-md">
                 %{product.discount_percent} {tCommon("discount")}
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* Stock Tag */}
@@ -98,7 +98,11 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
             {product.requires_license ? tCommon("legalStatus") : tCommon("msrpShort")}
           </span>
           <div className="text-right">
-            {product.price ? (
+            {product.requires_license ? (
+              <span className="text-xs font-bold text-amber-700 dark:text-[#d4af37]">
+                {t("askPrice")}
+              </span>
+            ) : product.price ? (
               <div className="flex flex-col items-end">
                 {product.discount_percent ? (
                   <span className="text-[11px] text-neutral-400 line-through font-medium">

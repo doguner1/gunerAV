@@ -80,7 +80,7 @@ export function ProductJsonLd({
       "@type": "Brand",
       "name": "Güner AV",
     },
-    ...(product.price
+    ...(!product.requires_license && product.price
       ? {
           "offers": {
             "@type": "Offer",

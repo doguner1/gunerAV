@@ -162,7 +162,7 @@
     "showOnlyDeals": "Yalnızca İndirimliler",
     "licenseWarningTitle": "Yasal Mevzuat & Ruhsat Uyarısı",
     "licenseWarningText": "5188 ve 2521 sayılı kanunlar uyarınca ateşli silah, yivsiz av tüfeği ve mühimmat satışı internet üzerinden kesinlikle yapılamaz. Bu ürünlerin satışı ve devri yalnızca fiziki mağazamızda, adli sicil kaydı ve geçerli Satın Alma Belgesi / Ruhsat ibrazı ile gerçekleştirilmektedir. Fiyat, stok ve prosedür bilgisi için lütfen mağazamıza başvurun.",
-    "whatsappMessage": "Merhaba Güner Av Bayii, {productName} ürünü hakkında bilgi almak istiyorum."
+    "whatsappMessage": "Merhaba Güner Av Bayii, {productName} ürününün fiyatını öğrenmek istiyorum."
   },
   "Trust": {
     "sectionTitle": "Neden Güner Av?",
