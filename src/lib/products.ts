@@ -1,7 +1,7 @@
 import productsData from "../../data/products.json";
 import categoriesData from "../../data/categories.json";
 import { Product, Category } from "@/types/product";
-import { getSupabaseProducts, getSupabaseProductBySlug } from "./supabase";
+import { isSupabaseConfigured, getSupabaseProducts, getSupabaseProductBySlug } from "./supabase";
 import { getSecureImageUrl } from "./image-crypto";
 
 function secureProduct(p: Product): Product {
@@ -39,19 +39,18 @@ const localProducts: Product[] = rawLocalProducts.map(secureProduct);
 const categories = categoriesData as unknown as Category[];
 
 /**
- * Supabase bağlıysa ve ürün varsa oradan, yoksa local products.json dosyasından çeker.
+ * Supabase bağlıysa yalnızca Supabase'deki ürünleri getirir (veritabanı temizlendiğinde yerel veri zorla gösterilmez).
+ * Supabase yapılandırılmamışsa yerel products.json dosyasını kullanır.
  */
 export async function getAllProducts(): Promise<Product[]> {
-  try {
-    const supabaseItems = await getSupabaseProducts();
-    if (supabaseItems && supabaseItems.length > 0) {
-      const securedSupabase = supabaseItems.map(secureProduct);
-      const supabaseIds = new Set(securedSupabase.map((p) => p.id));
-      const filteredLocal = localProducts.filter((p) => !supabaseIds.has(p.id));
-      return [...securedSupabase, ...filteredLocal];
+  if (isSupabaseConfigured) {
+    try {
+      const supabaseItems = await getSupabaseProducts();
+      return (supabaseItems || []).map(secureProduct);
+    } catch (e) {
+      console.warn("[Products] Supabase'den ürün çekilemedi:", e);
+      return [];
     }
-  } catch (e) {
-    console.warn("[Products] Supabase'den ürün çekilemedi, yerel veri kullanılıyor:", e);
   }
   return localProducts;
 }
@@ -90,11 +89,14 @@ export async function fetchProductBySlug(
   slug: string,
   locale: string = "tr"
 ): Promise<Product | undefined> {
-  try {
-    const fromSupabase = await getSupabaseProductBySlug(slug);
-    if (fromSupabase) return secureProduct(fromSupabase);
-  } catch (e) {
-    // ignore
+  if (isSupabaseConfigured) {
+    try {
+      const fromSupabase = await getSupabaseProductBySlug(slug);
+      if (fromSupabase) return secureProduct(fromSupabase);
+      return undefined;
+    } catch (e) {
+      return undefined;
+    }
   }
 
   const all = await getAllProducts();
@@ -129,13 +131,13 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
   return arr.filter((p) => p.category === category);
 }
 
-export function getRelatedProducts(
+export async function getRelatedProducts(
   currentId: string,
   category: string,
   limit: number = 3,
   list?: Product[]
-): Product[] {
-  const arr = list || localProducts;
+): Promise<Product[]> {
+  const arr = list || (await getAllProducts());
   return arr
     .filter((p) => {
       if (p.id === currentId) return false;
