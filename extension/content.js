@@ -226,10 +226,44 @@ function extractProductData() {
   // =========================================================================
   // 7. Görsel URL'leri (Image Gallery)
   // =========================================================================
-  // Renk varyantları sekmesini / alanını bulup ana galeriden ayırıyoruz
-  const colorTab =
-    document.getElementById("tab_renkler-seçenekleri") ||
-    document.querySelector("[id*='renkler'], .color-variants, .variants");
+  // Renk varyantları sekmesini / alanını dinamik ve esnek bulucu fonksiyon
+  // (Hem 'tab_renkler-seçenekleri' hem de 'tab_renk-seçenekleri' / tekil-çoğul varyasyonlarını destekler)
+  function findColorTab() {
+    const directIds = [
+      "tab_renk-seçenekleri",
+      "tab_renkler-seçenekleri",
+      "tab_renk-secenekleri",
+      "tab_renkler-secenekleri",
+      "tab_renkler",
+      "tab_renk",
+      "tab-renk-seçenekleri",
+      "tab-renkler-seçenekleri",
+    ];
+    for (const id of directIds) {
+      const el = document.getElementById(id);
+      if (el && (el.classList.contains("panel") || el.tagName === "DIV")) return el;
+    }
+
+    const panel = document.querySelector(
+      ".panel[id*='renk'], [role='tabpanel'][id*='renk'], div[id*='tab_renk'], div[id*='tab-renk'], .color-variants, .variants"
+    );
+    if (panel) return panel;
+
+    const tabLink = Array.from(document.querySelectorAll("li.tab a, .tab a, .tabs a")).find((a) =>
+      /renk|color|variant/i.test(a.textContent || "")
+    );
+    if (tabLink) {
+      const href = tabLink.getAttribute("href");
+      if (href && href.startsWith("#")) {
+        const target = document.getElementById(href.slice(1));
+        if (target) return target;
+      }
+    }
+
+    return null;
+  }
+
+  const colorTab = findColorTab();
 
   const rawMainImgs = [];
 
@@ -245,7 +279,7 @@ function extractProductData() {
   galleryImgs.forEach((el) => {
     // Eğer görsel renk varyantları sekmesindeyse ana görsellere dahil etme!
     if (colorTab && colorTab.contains(el)) return;
-    if (el.closest && el.closest("[id*='renkler'], .color-variants, .variants")) return;
+    if (el.closest && el.closest("[id*='renk'], .color-variants, .variants")) return;
 
     let src =
       el.getAttribute("data-zoom-image") ||
@@ -281,6 +315,7 @@ function extractProductData() {
   if (rawMainImgs.length === 0) {
     document.querySelectorAll("img").forEach((img) => {
       if (colorTab && colorTab.contains(img)) return;
+      if (img.closest && img.closest("[id*='renk'], .color-variants, .variants")) return;
       let s = img.src;
       if (s && (img.naturalWidth > 250 || img.width > 250)) {
         const cleaned = cleanImageUrl(s);
