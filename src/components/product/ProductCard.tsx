@@ -33,19 +33,20 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
     <article className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800/90 bg-white dark:bg-neutral-950 transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 dark:hover:border-neutral-700 shadow-sm hover:shadow-xl">
       {/* Top Media Area */}
       <div>
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-950">
-          <Link href={`/products/${slug}`} className="block h-full w-full">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-white dark:bg-neutral-900/90 border-b border-neutral-200 dark:border-neutral-800/80">
+          <Link href={`/products/${slug}`} className="relative block h-full w-full p-2.5 sm:p-3 flex items-center justify-center">
             <Image
               src={mainImage}
               alt={name}
               fill
+              unoptimized={mainImage.startsWith("http") || mainImage.startsWith("/api/img")}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-contain p-2 sm:p-2.5 transition-transform duration-500 group-hover:scale-105 pointer-events-none"
             />
           </Link>
 
           {/* Badges Overlay */}
-          <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+          <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-10">
             {/* Category / License Badge */}
             {product.requires_license ? (
               <span className="inline-flex items-center gap-1 rounded-md border border-red-500/50 bg-red-950/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 backdrop-blur-md">
@@ -67,7 +68,7 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
           </div>
 
           {/* Stock Tag */}
-          <div className="absolute bottom-3 left-3 pointer-events-none">
+          <div className="absolute bottom-3 left-3 pointer-events-none z-10">
             {product.in_stock && (
               <span className="inline-flex items-center gap-1 rounded bg-black/85 px-2 py-0.5 text-[10px] font-medium text-emerald-400 backdrop-blur-md border border-emerald-900/50">
                 <CheckCircle2 className="h-2.5 w-2.5" />

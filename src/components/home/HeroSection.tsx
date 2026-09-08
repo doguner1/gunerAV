@@ -183,17 +183,18 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               {/* Hero Product Visual Display */}
               <Link
                 href={featuredProductSlug}
-                className="group block relative my-4 rounded-2xl bg-black/35 border border-white/20 overflow-hidden aspect-[4/3] backdrop-blur-xl shadow-inner"
+                className="group block relative my-4 rounded-2xl bg-black/35 border border-white/20 overflow-hidden aspect-[4/3] backdrop-blur-xl shadow-inner p-3"
               >
                 <Image
                   src={spotlightImage}
                   alt={spotlightTitle}
                   fill
+                  unoptimized={spotlightImage.startsWith("http") || spotlightImage.startsWith("/api/img")}
                   sizes="(max-width: 768px) 100vw, 500px"
-                  className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                  className="object-contain p-2 object-center transition-transform duration-500 group-hover:scale-105"
                 />
                 {spotlightProduct ? (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end p-4">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end p-4 pointer-events-none">
                     <div className="text-white">
                       <div className="text-xs font-mono font-bold tracking-widest text-[#d4af37] uppercase">
                         [ + ] {t("spotlightFeaturedModel")}

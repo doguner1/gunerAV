@@ -2,8 +2,21 @@ import productsData from "../../data/products.json";
 import categoriesData from "../../data/categories.json";
 import { Product, Category } from "@/types/product";
 import { getSupabaseProducts, getSupabaseProductBySlug } from "./supabase";
+import { getSecureImageUrl } from "./image-crypto";
 
-const localProducts = (productsData || []) as unknown as Product[];
+function secureProduct(p: Product): Product {
+  if (!p) return p;
+  return {
+    ...p,
+    images:
+      Array.isArray(p.images) && p.images.length > 0
+        ? p.images.map(getSecureImageUrl)
+        : ["/images/products/optics-1.webp"],
+  };
+}
+
+const rawLocalProducts = (productsData || []) as unknown as Product[];
+const localProducts: Product[] = rawLocalProducts.map(secureProduct);
 const categories = categoriesData as unknown as Category[];
 
 /**
@@ -13,10 +26,10 @@ export async function getAllProducts(): Promise<Product[]> {
   try {
     const supabaseItems = await getSupabaseProducts();
     if (supabaseItems && supabaseItems.length > 0) {
-      // Supabase ürünleri önceliklidir; aynı id'ye sahip yerel ürünler filtrelenir
-      const supabaseIds = new Set(supabaseItems.map((p) => p.id));
+      const securedSupabase = supabaseItems.map(secureProduct);
+      const supabaseIds = new Set(securedSupabase.map((p) => p.id));
       const filteredLocal = localProducts.filter((p) => !supabaseIds.has(p.id));
-      return [...supabaseItems, ...filteredLocal];
+      return [...securedSupabase, ...filteredLocal];
     }
   } catch (e) {
     console.warn("[Products] Supabase'den ürün çekilemedi, yerel veri kullanılıyor:", e);
@@ -60,7 +73,7 @@ export async function fetchProductBySlug(
 ): Promise<Product | undefined> {
   try {
     const fromSupabase = await getSupabaseProductBySlug(slug);
-    if (fromSupabase) return fromSupabase;
+    if (fromSupabase) return secureProduct(fromSupabase);
   } catch (e) {
     // ignore
   }
