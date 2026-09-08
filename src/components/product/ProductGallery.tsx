@@ -161,7 +161,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
         onMouseLeave={() => setIsHovered(false)}
         onMouseMove={handleMouseMove}
         onClick={() => setIsLightboxOpen(true)}
-        className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm dark:shadow-2xl cursor-zoom-in select-none"
+        className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white shadow-sm dark:shadow-2xl cursor-zoom-in select-none"
       >
         {/* Scaled Image Container */}
         <div
@@ -215,7 +215,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
                 setSelected(idx);
                 resetModalZoom();
               }}
-              className={`relative aspect-square w-20 shrink-0 overflow-hidden rounded-xl border p-1 bg-white dark:bg-neutral-900 transition-all ${
+              className={`relative aspect-square w-20 shrink-0 overflow-hidden rounded-xl border p-1 bg-white transition-all ${
                 selected === idx
                   ? "border-[#d4af37] ring-2 ring-[#d4af37]/40 shadow-md"
                   : "border-neutral-300 dark:border-neutral-800 opacity-60 hover:opacity-100"

@@ -33,8 +33,8 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
     <article className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800/90 bg-white dark:bg-neutral-950 transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 dark:hover:border-neutral-700 shadow-sm hover:shadow-xl">
       {/* Top Media Area */}
       <div>
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-white dark:bg-neutral-900/90 border-b border-neutral-200 dark:border-neutral-800/80">
-          <Link href={`/products/${slug}`} className="relative block h-full w-full p-2.5 sm:p-3 flex items-center justify-center">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-white border-b border-neutral-200 dark:border-neutral-800/80">
+          <Link href={`/products/${slug}`} className="relative block h-full w-full flex items-center justify-center">
             <Image
               src={mainImage}
               alt={name}
