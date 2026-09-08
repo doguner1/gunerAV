@@ -50,9 +50,9 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Access to private resources is forbidden", { status: 403 });
     }
 
-    // Fetch upstream image with 10s timeout
+    // Fetch upstream image with 15s timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const upstreamRes = await fetch(targetUrl, {
       signal: controller.signal,
@@ -70,12 +70,58 @@ export async function GET(req: NextRequest) {
     }
 
     const contentType = upstreamRes.headers.get("content-type") || "image/jpeg";
-    const imageBuffer = await upstreamRes.arrayBuffer();
+    const rawBuffer = Buffer.from(await upstreamRes.arrayBuffer());
 
-    return new NextResponse(imageBuffer, {
+    let outputBuffer = rawBuffer;
+    let outputContentType = contentType;
+
+    try {
+      const sharp = (await import("sharp")).default;
+      const img = sharp(rawBuffer);
+      const meta = await img.metadata();
+
+      if (meta.format && ["jpeg", "jpg", "png", "webp", "avif", "tiff"].includes(meta.format)) {
+        // 1. Automatically trim solid/transparent outer margins (threshold: 12)
+        const trimmed = await sharp(rawBuffer)
+          .trim({ threshold: 12 })
+          .toBuffer({ resolveWithObject: true });
+
+        if (trimmed.info.width > 20 && trimmed.info.height > 20) {
+          // 2. Add a subtle 1.5% breathing padding around trimmed subject
+          const padX = Math.min(24, Math.max(6, Math.round(trimmed.info.width * 0.015)));
+          const padY = Math.min(24, Math.max(6, Math.round(trimmed.info.height * 0.015)));
+
+          const isTransparent = Boolean(trimmed.info.channels === 4 && trimmed.info.hasAlpha);
+          const bg = isTransparent
+            ? { r: 255, g: 255, b: 255, alpha: 0 }
+            : { r: 255, g: 255, b: 255, alpha: 1 };
+
+          // 3. High-definition output (max 2560px, pristine 92 quality webp)
+          outputBuffer = await sharp(trimmed.data)
+            .extend({
+              top: padY,
+              bottom: padY,
+              left: padX,
+              right: padX,
+              background: bg,
+            })
+            .resize({ width: 2560, fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 92, effort: 4 })
+            .toBuffer();
+
+          outputContentType = "image/webp";
+        }
+      }
+    } catch (procErr: any) {
+      // Graceful fallback to original upstream buffer if trimming is not applicable
+      console.warn("[api/img] Optimization fallback:", procErr?.message || procErr);
+      outputBuffer = rawBuffer;
+    }
+
+    return new NextResponse(outputBuffer, {
       status: 200,
       headers: {
-        "Content-Type": contentType,
+        "Content-Type": outputContentType,
         "Cache-Control": "public, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
       },
