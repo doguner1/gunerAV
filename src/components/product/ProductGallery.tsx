@@ -165,10 +165,12 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
       >
         {/* Scaled Image Container */}
         <div
-          className="relative h-full w-full flex items-center justify-center transition-transform duration-150 ease-out"
+          className="relative h-full w-full flex items-center justify-center transition-transform duration-150 ease-out will-change-transform"
           style={{
             transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
             transform: isHovered ? "scale(2.2)" : "scale(1)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
           }}
         >
           <Image
@@ -176,9 +178,11 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
             alt={`${productName} - ${isTr ? "Görsel" : "Image"} ${selected + 1}`}
             fill
             priority
-            unoptimized={activeImage.startsWith("http")}
-            sizes="(max-width: 1024px) 100vw, 800px"
+            unoptimized={true}
             className="object-contain pointer-events-none"
+            style={{
+              imageRendering: "auto",
+            }}
           />
         </div>
 
@@ -225,7 +229,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
                 src={img}
                 alt={`${productName} thumbnail ${idx + 1}`}
                 fill
-                unoptimized={img.startsWith("http")}
+                unoptimized={true}
                 sizes="80px"
                 className="object-contain p-1"
               />
@@ -350,8 +354,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
                 alt={`${productName} Fullscreen`}
                 fill
                 priority
-                unoptimized={activeImage.startsWith("http")}
-                sizes="100vw"
+                unoptimized={true}
                 className="object-contain select-none pointer-events-none"
               />
             </div>
@@ -385,7 +388,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
                       src={img}
                       alt={`Thumb ${idx + 1}`}
                       fill
-                      unoptimized={img.startsWith("http")}
+                      unoptimized={true}
                       sizes="56px"
                       className="object-contain"
                     />

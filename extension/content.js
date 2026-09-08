@@ -196,16 +196,23 @@ function extractProductData() {
   }
 
   const galleryImgs = document.querySelectorAll(
-    ".product-image img, .gallery img, .product-gallery img, .swiper-slide img, .carousel-item img, [data-zoom-image], a[data-standard]"
+    ".product-image img, .gallery img, .product-gallery img, .swiper-slide img, .carousel-item img, [data-zoom-image], a[data-standard], #product-thumb-image a, #product-thumb-image img, .thumb-item a"
   );
 
-  galleryImgs.forEach((img) => {
+  galleryImgs.forEach((el) => {
     let src =
-      img.getAttribute("data-zoom-image") ||
-      img.getAttribute("data-large") ||
-      img.getAttribute("data-standard") ||
-      img.getAttribute("data-src") ||
-      img.src;
+      el.getAttribute("data-zoom-image") ||
+      el.parentElement?.getAttribute("data-zoom-image") ||
+      el.parentElement?.getAttribute("data-image") ||
+      el.getAttribute("data-image") ||
+      el.getAttribute("data-large") ||
+      el.parentElement?.getAttribute("data-large") ||
+      el.getAttribute("data-original") ||
+      el.getAttribute("data-highres") ||
+      el.getAttribute("data-standard") ||
+      el.getAttribute("data-src") ||
+      (el.tagName === "A" && el.href && !el.href.endsWith("#") ? el.href : "") ||
+      el.src;
 
     if (src) {
       const cleaned = cleanImageUrl(src);
@@ -336,9 +343,28 @@ function extractProductData() {
 
 function cleanImageUrl(url) {
   let u = (url || "").trim();
+  if (!u) return "";
   if (u.startsWith("//")) u = "https:" + u;
-  // IdeaSoft thumbnail clean: e.g. _min.jpeg -> .jpeg
+
+  // IdeaSoft: _min.jpeg / _thumb.jpeg -> .jpeg (veya varsa _max.jpeg)
   u = u.replace(/_min\.(jpe?g|png|webp)/i, ".$1");
   u = u.replace(/_thumb\.(jpe?g|png|webp)/i, ".$1");
+
+  // Ticimax: /kucuk/ veya /orta/ -> /buyuk/
+  u = u.replace(/\/Uploads\/UrunResimleri\/(kucuk|orta)\//gi, "/Uploads/UrunResimleri/buyuk/");
+
+  // T-Soft: /images/urunler/k_ -> /images/urunler/b_
+  u = u.replace(/\/images\/urunler\/k_/gi, "/images/urunler/b_");
+
+  // Shopify: _small. / _medium. / _compact. / _large. / _400x400. -> .
+  u = u.replace(/_(small|medium|compact|large|100x100|200x200|400x400|600x600)\.(jpe?g|png|webp)/i, ".$2");
+
+  // WooCommerce: -150x150. / -300x300. / -600x600. -> .
+  u = u.replace(/-\d{3,4}x\d{3,4}\.(jpe?g|png|webp)/i, ".$1");
+
+  // Boyut küçülten query parametrelerini temizle (?w=300, ?width=400 vb.)
+  u = u.replace(/([?&])(w|width|h|height|size|resize)=\d+(&|$)/gi, "$1");
+  u = u.replace(/[?&]$/, "");
+
   return u;
 }
