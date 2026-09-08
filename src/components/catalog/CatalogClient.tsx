@@ -41,9 +41,14 @@ export default function CatalogClient({
     return initialProducts.filter((product) => {
       // Category filter
       if (selectedCategory !== "all") {
-        if (selectedCategory === "silah-muhimmat") {
+        if (selectedCategory === "tufek") {
+          const isShotgun =
+            product.category.startsWith("tufek") ||
+            product.category === "silah-muhimmat";
+          if (!isShotgun) return false;
+        } else if (selectedCategory === "silah-muhimmat") {
           const isFirearmOrAmmo =
-            product.category.startsWith("tufek-") ||
+            product.category.startsWith("tufek") ||
             product.category === "muhimmat" ||
             product.category === "silah-muhimmat";
           if (!isFirearmOrAmmo) return false;

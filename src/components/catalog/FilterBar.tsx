@@ -111,7 +111,7 @@ export default function FilterBar({
         </div>
       </div>
 
-      {/* Category Pills */}
+      {/* 1. Main Category Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <button
           type="button"
@@ -126,7 +126,10 @@ export default function FilterBar({
         </button>
 
         {categories.map((cat) => {
-          const isSelected = selectedCategory === cat.id;
+          const isSelected =
+            cat.id === "tufek"
+              ? selectedCategory === "tufek" || selectedCategory.startsWith("tufek-")
+              : selectedCategory === cat.id;
           const label = isTr ? cat.name_tr : cat.name_en;
           return (
             <button
@@ -144,6 +147,51 @@ export default function FilterBar({
           );
         })}
       </div>
+
+      {/* 2. Shotgun Sub-Categories Row (Visible ONLY when Av Tüfekleri is active) */}
+      {(selectedCategory === "tufek" || selectedCategory.startsWith("tufek-")) && (
+        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#b45309] dark:text-[#d4af37] shrink-0 mr-1 flex items-center gap-1">
+              <span>🎯</span>
+              <span>{isTr ? "Tüfek Çeşidi:" : "Shotgun Type:"}</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => onSelectCategory("tufek")}
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                selectedCategory === "tufek"
+                  ? "bg-[#d4af37] text-black shadow-sm font-black"
+                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {isTr ? "Tüm Tüfekler" : "All Shotguns"}
+            </button>
+
+            {categories
+              .find((c) => c.id === "tufek")
+              ?.subcategories?.map((sub) => {
+                const isSubSelected = selectedCategory === sub.id;
+                const subLabel = isTr ? sub.name_tr : sub.name_en;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => onSelectCategory(sub.id)}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                      isSubSelected
+                        ? "bg-[#d4af37] text-black shadow-sm font-black"
+                        : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                    }`}
+                  >
+                    {subLabel}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

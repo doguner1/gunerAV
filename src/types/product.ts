@@ -20,6 +20,13 @@ export interface Product {
   specs_en?: Record<string, string | undefined>;
 }
 
+export interface SubCategory {
+  id: string;
+  slug: string;
+  name_tr: string;
+  name_en: string;
+}
+
 export interface Category {
   id: string;
   slug: string;
@@ -29,4 +36,6 @@ export interface Category {
   description_en: string;
   icon?: string;
   image: string;
+  subcategories?: SubCategory[];
 }
+

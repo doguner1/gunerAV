@@ -98,8 +98,11 @@ export function getProductBySlug(
 
 export function getProductsByCategory(category: string, list?: Product[]): Product[] {
   const arr = list || localProducts;
+  if (category === "tufek") {
+    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "silah-muhimmat");
+  }
   if (category === "silah-muhimmat") {
-    return arr.filter((p) => p.category.startsWith("tufek-") || p.category === "muhimmat" || p.category === "silah-muhimmat");
+    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat");
   }
   if (category === "bicak" || category === "aksesuar") {
     return arr.filter((p) => p.category === "bicak" || p.category === "aksesuar");
@@ -117,7 +120,7 @@ export function getRelatedProducts(
   return arr
     .filter((p) => {
       if (p.id === currentId) return false;
-      if (category.startsWith("tufek-") && p.category.startsWith("tufek-")) return true;
+      if (category.startsWith("tufek") && p.category.startsWith("tufek")) return true;
       if ((category === "bicak" || category === "aksesuar") && (p.category === "bicak" || p.category === "aksesuar")) return true;
       return p.category === category;
     })
@@ -126,13 +129,50 @@ export function getRelatedProducts(
 
 export function getCategoryById(id: string): Category | undefined {
   if (id === "aksesuar") return categories.find((c) => c.id === "bicak");
-  if (id === "silah-muhimmat") return categories.find((c) => c.id === "tufek-yari-otomatik") || categories[0];
-  return categories.find((c) => c.id === id);
+  if (id === "silah-muhimmat") return categories.find((c) => c.id === "tufek") || categories[0];
+  const main = categories.find((c) => c.id === id);
+  if (main) return main;
+
+  for (const cat of categories) {
+    const sub = cat.subcategories?.find((s) => s.id === id);
+    if (sub) {
+      return {
+        id: sub.id,
+        slug: sub.slug,
+        name_tr: sub.name_tr,
+        name_en: sub.name_en,
+        description_tr: `${cat.name_tr} - ${sub.name_tr}`,
+        description_en: `${cat.name_en} - ${sub.name_en}`,
+        image: cat.image,
+        icon: cat.icon,
+      };
+    }
+  }
+  return undefined;
 }
 
 export function getCategoryBySlug(slug: string): Category | undefined {
   if (slug === "aksesuar") return categories.find((c) => c.id === "bicak");
-  if (slug === "silah-muhimmat") return categories.find((c) => c.id === "tufek-yari-otomatik") || categories[0];
-  return categories.find((c) => c.slug === slug || c.id === slug);
+  if (slug === "silah-muhimmat") return categories.find((c) => c.id === "tufek") || categories[0];
+  const main = categories.find((c) => c.slug === slug || c.id === slug);
+  if (main) return main;
+
+  for (const cat of categories) {
+    const sub = cat.subcategories?.find((s) => s.slug === slug || s.id === slug);
+    if (sub) {
+      return {
+        id: sub.id,
+        slug: sub.slug,
+        name_tr: sub.name_tr,
+        name_en: sub.name_en,
+        description_tr: `${cat.name_tr} - ${sub.name_tr}`,
+        description_en: `${cat.name_en} - ${sub.name_en}`,
+        image: cat.image,
+        icon: cat.icon,
+      };
+    }
+  }
+  return undefined;
 }
+
 

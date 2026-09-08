@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import { STORE_INFO } from "@/lib/store";
-import { Menu, X, Phone, ChevronDown } from "lucide-react";
+import { Menu, X, Phone, ChevronDown, ChevronRight } from "lucide-react";
 import { getAllCategories } from "@/lib/products";
 
 export default function Header() {
@@ -18,6 +18,7 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [mobileTufekOpen, setMobileTufekOpen] = useState(false);
   const categories = getAllCategories();
 
   useEffect(() => {
@@ -117,6 +118,54 @@ export default function Header() {
                 >
                   {categories.map((cat) => {
                     const categoryName = isTr ? cat.name_tr : cat.name_en;
+                    const isLicensed = cat.id === "tufek" || cat.id.startsWith("tufek-") || cat.id === "muhimmat" || cat.id === "silah-muhimmat";
+
+                    if (cat.subcategories && cat.subcategories.length > 0) {
+                      return (
+                        <div key={cat.id} className="relative group/sub">
+                          <Link
+                            href={`/products?category=${cat.id}`}
+                            onClick={() => setCategoriesOpen(false)}
+                            className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span>{categoryName}</span>
+                              <ChevronRight className="h-3 w-3 text-neutral-400 group-hover/sub:text-[#d4af37] transition-transform group-hover/sub:translate-x-0.5" />
+                            </span>
+                            {isLicensed && (
+                              <span className="rounded bg-red-50 dark:bg-red-950/60 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:text-red-400">
+                                {tCommon("licensed")}
+                              </span>
+                            )}
+                          </Link>
+
+                          {/* Flyout Submenu to the right */}
+                          <div className="invisible opacity-0 group-hover/sub:visible group-hover/sub:opacity-100 transition-all duration-150 absolute left-full top-0 ml-1 w-44 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-1.5 shadow-xl z-50">
+                            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 border-b border-neutral-100 dark:border-neutral-800/60 mb-1">
+                              {isTr ? "Tüfek Çeşitleri" : "Shotgun Types"}
+                            </div>
+                            <Link
+                              href={`/products?category=${cat.id}`}
+                              onClick={() => setCategoriesOpen(false)}
+                              className="block rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-[#d4af37]"
+                            >
+                              {isTr ? "Tüm Tüfekler" : "All Shotguns"}
+                            </Link>
+                            {cat.subcategories.map((sub) => (
+                              <Link
+                                key={sub.id}
+                                href={`/products?category=${sub.id}`}
+                                onClick={() => setCategoriesOpen(false)}
+                                className="block rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
+                              >
+                                {isTr ? sub.name_tr : sub.name_en}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <Link
                         key={cat.id}
@@ -125,7 +174,7 @@ export default function Header() {
                         className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                       >
                         <span>{categoryName}</span>
-                        {(cat.id.startsWith("tufek-") || cat.id === "muhimmat" || cat.id === "silah-muhimmat") && (
+                        {isLicensed && (
                           <span className="rounded bg-red-50 dark:bg-red-950/60 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:text-red-400">
                             {tCommon("licensed")}
                           </span>
@@ -252,6 +301,56 @@ export default function Header() {
                 </span>
                 {categories.map((cat) => {
                   const categoryName = isTr ? cat.name_tr : cat.name_en;
+                  const isLicensed = cat.id === "tufek" || cat.id.startsWith("tufek-") || cat.id === "muhimmat" || cat.id === "silah-muhimmat";
+
+                  if (cat.subcategories && cat.subcategories.length > 0) {
+                    return (
+                      <div key={cat.id} className="flex flex-col">
+                        <div className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white">
+                          <Link
+                            href={`/products?category=${cat.id}`}
+                            className="flex-1 flex items-center justify-between"
+                          >
+                            <span>{categoryName}</span>
+                            {isLicensed && (
+                              <span className="rounded bg-red-50 dark:bg-red-950/60 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:text-red-400">
+                                {tCommon("licensed")}
+                              </span>
+                            )}
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setMobileTufekOpen(!mobileTufekOpen)}
+                            className="p-1 text-neutral-400 hover:text-white ml-2 rounded hover:bg-neutral-200 dark:hover:bg-neutral-800"
+                            aria-label="Alt kategorileri aç/kapat"
+                          >
+                            <ChevronDown className={`h-4 w-4 transition-transform ${mobileTufekOpen ? "rotate-180" : ""}`} />
+                          </button>
+                        </div>
+
+                        {mobileTufekOpen && (
+                          <div className="ml-4 pl-2 border-l border-neutral-200 dark:border-neutral-800 flex flex-col gap-1 my-1 animate-in fade-in duration-150">
+                            <Link
+                              href={`/products?category=${cat.id}`}
+                              className="px-2.5 py-1 text-xs font-bold text-neutral-900 dark:text-white hover:text-[#d4af37]"
+                            >
+                              {isTr ? "• Tüm Tüfekler" : "• All Shotguns"}
+                            </Link>
+                            {cat.subcategories.map((sub) => (
+                              <Link
+                                key={sub.id}
+                                href={`/products?category=${sub.id}`}
+                                className="px-2.5 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+                              >
+                                {isTr ? `• ${sub.name_tr}` : `• ${sub.name_en}`}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <Link
                       key={cat.id}
@@ -259,7 +358,7 @@ export default function Header() {
                       className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                     >
                       <span>{categoryName}</span>
-                      {(cat.id.startsWith("tufek-") || cat.id === "muhimmat" || cat.id === "silah-muhimmat") && (
+                      {isLicensed && (
                         <span className="rounded bg-red-50 dark:bg-red-950/60 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:text-red-400">
                           {tCommon("licensed")}
                         </span>

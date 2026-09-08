@@ -41,12 +41,13 @@ export default function FeaturedCategories({ products = [] }: { products?: Produ
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => {
             const count = products.filter((p: Product) => {
+              if (category.id === "tufek") return p.category.startsWith("tufek") || p.category === "silah-muhimmat";
               if (category.id === "bicak") return p.category === "bicak" || p.category === "aksesuar";
               return p.category === category.id;
             }).length;
             const name = isTr ? category.name_tr : category.name_en;
             const desc = isTr ? category.description_tr : category.description_en;
-            const isLicenseReq = category.id === "silah-muhimmat" || category.id.startsWith("tufek-") || category.id === "muhimmat";
+            const isLicenseReq = category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-") || category.id === "muhimmat";
 
             return (
               <Link

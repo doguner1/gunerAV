@@ -1,73 +1,57 @@
 [
   {
-    "id": "tufek-bullpup",
-    "slug": "tufek-bullpup",
-    "name_tr": "Bullpup",
-    "name_en": "Bullpup Shotguns",
-    "description_tr": "Kompakt gövde tasarımı, üstün manevra kabiliyeti ve yüksek atış dengesi sunan modern bullpup yivsiz av tüfekleri.",
-    "description_en": "Modern compact bullpup shotguns offering superior maneuverability, balance, and tactical ergonomics.",
+    "id": "tufek",
+    "slug": "tufek",
+    "name_tr": "Av Tüfekleri",
+    "name_en": "Hunting Shotguns",
+    "description_tr": "Bullpup, şarjörlü, yarı otomatik, pompalı, tek kırma, süperpoze ve çifte yivsiz av tüfekleri.",
+    "description_en": "Hunting shotguns including bullpup, magazine-fed, semi-auto, pump-action, single barrel, over-under, and side-by-side models.",
     "icon": "Crosshair",
-    "image": "/images/categories/firearms.webp"
-  },
-  {
-    "id": "tufek-sarjorlu",
-    "slug": "tufek-sarjorlu",
-    "name_tr": "Şarjörlü",
-    "name_en": "Magazine-Fed Shotguns",
-    "description_tr": "Kutu ve tambur şarjörlü besleme sistemi ile hızlı doldurma ve yüksek atış kapasiteli taktik av tüfekleri.",
-    "description_en": "Magazine-fed shotguns delivering rapid reloading, high capacity, and tactical performance.",
-    "icon": "Layers",
-    "image": "/images/categories/firearms.webp"
-  },
-  {
-    "id": "tufek-yari-otomatik",
-    "slug": "tufek-yari-otomatik",
-    "name_tr": "Yarı Otomatik",
-    "name_en": "Semi-Automatic Shotguns",
-    "description_tr": "Gazlı ve kinetik çalışma mekanizmalı, seri atış kabiliyetine sahip güvenilir yarı otomatik av tüfekleri.",
-    "description_en": "High-reliability gas and inertia-driven semi-automatic hunting shotguns with fast follow-up shots.",
-    "icon": "Zap",
-    "image": "/images/categories/firearms.webp"
-  },
-  {
-    "id": "tufek-pompali",
-    "slug": "tufek-pompali",
-    "name_tr": "Pompalı",
-    "name_en": "Pump-Action Shotguns",
-    "description_tr": "Mekanik el kurmalı, her türlü hava ve saha koşulunda tutukluk yapmayan sağlam pompalı av tüfekleri.",
-    "description_en": "Foolproof mechanical pump-action shotguns engineered for relentless reliability in any environment.",
-    "icon": "Shield",
-    "image": "/images/categories/firearms.webp"
-  },
-  {
-    "id": "tufek-tek-kirma",
-    "slug": "tufek-tek-kirma",
-    "name_tr": "Tek Kırma",
-    "name_en": "Single Barrel Shotguns",
-    "description_tr": "Hafif gövde yapısı, kolay taşınabilirlik ve klasik kırma namlu mekanizmalı tek kırma tüfekler.",
-    "description_en": "Lightweight, easy-to-carry classic single barrel break-action hunting shotguns.",
-    "icon": "Crosshair",
-    "image": "/images/categories/firearms.webp"
-  },
-  {
-    "id": "tufek-superpoze",
-    "slug": "tufek-superpoze",
-    "name_tr": "Süperpoze",
-    "name_en": "Over-and-Under Shotguns",
-    "description_tr": "Üst üste çift namlulu, kusursuz nişan hattı ve trap-skeet veya av için dengeli süperpoze tüfekler.",
-    "description_en": "Over-and-under double barrel shotguns with pristine sightlines and competition-grade balance.",
-    "icon": "Crosshair",
-    "image": "/images/categories/firearms.webp"
-  },
-  {
-    "id": "tufek-cifte",
-    "slug": "tufek-cifte",
-    "name_tr": "Çifte",
-    "name_en": "Side-by-Side Shotguns",
-    "description_tr": "Geleneksel yan yana çift namlulu, zarif gravürlü ve klasik avcılık mirasını taşıyan çifte tüfekler.",
-    "description_en": "Traditional side-by-side double barrel shotguns representing time-honored hunting craftsmanship.",
-    "icon": "Crosshair",
-    "image": "/images/categories/firearms.webp"
+    "image": "/images/categories/firearms.webp",
+    "subcategories": [
+      {
+        "id": "tufek-bullpup",
+        "slug": "tufek-bullpup",
+        "name_tr": "Bullpup",
+        "name_en": "Bullpup"
+      },
+      {
+        "id": "tufek-sarjorlu",
+        "slug": "tufek-sarjorlu",
+        "name_tr": "Şarjörlü",
+        "name_en": "Magazine-Fed"
+      },
+      {
+        "id": "tufek-yari-otomatik",
+        "slug": "tufek-yari-otomatik",
+        "name_tr": "Yarı Otomatik",
+        "name_en": "Semi-Automatic"
+      },
+      {
+        "id": "tufek-pompali",
+        "slug": "tufek-pompali",
+        "name_tr": "Pompalı",
+        "name_en": "Pump-Action"
+      },
+      {
+        "id": "tufek-tek-kirma",
+        "slug": "tufek-tek-kirma",
+        "name_tr": "Tek Kırma",
+        "name_en": "Single Barrel"
+      },
+      {
+        "id": "tufek-superpoze",
+        "slug": "tufek-superpoze",
+        "name_tr": "Süperpoze",
+        "name_en": "Over-and-Under"
+      },
+      {
+        "id": "tufek-cifte",
+        "slug": "tufek-cifte",
+        "name_tr": "Çifte",
+        "name_en": "Side-by-Side"
+      }
+    ]
   },
   {
     "id": "kamp",
