@@ -6,12 +6,31 @@ import { getSecureImageUrl } from "./image-crypto";
 
 function secureProduct(p: Product): Product {
   if (!p) return p;
+
+  const rawVariants =
+    Array.isArray(p.variants) && p.variants.length > 0
+      ? p.variants
+      : Array.isArray((p as any)?.specs_tr?.variants)
+      ? (p as any).specs_tr.variants
+      : undefined;
+
+  const securedVariants = rawVariants
+    ? rawVariants.map((v: any) => ({
+        ...v,
+        images:
+          Array.isArray(v.images) && v.images.length > 0
+            ? v.images.map(getSecureImageUrl)
+            : [],
+      }))
+    : undefined;
+
   return {
     ...p,
     images:
       Array.isArray(p.images) && p.images.length > 0
         ? p.images.map(getSecureImageUrl)
         : ["/images/products/optics-1.webp"],
+    variants: securedVariants,
   };
 }
 

@@ -10,20 +10,10 @@ import {
   getRelatedProducts,
 } from "@/lib/products";
 import { STORE_INFO } from "@/lib/store";
-import { formatPrice, generateWhatsAppLink } from "@/lib/utils";
-import ProductGallery from "@/components/product/ProductGallery";
-import LicenseNotice from "@/components/product/LicenseNotice";
+import ProductOverview from "@/components/product/ProductOverview";
 import ProductCard from "@/components/product/ProductCard";
 import { ProductJsonLd } from "@/components/seo/JsonLd";
-import {
-  MessageCircle,
-  Phone,
-  MapPin,
-  ShieldCheck,
-  CheckCircle2,
-  ChevronRight,
-  HelpCircle,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 export const dynamicParams = true;
 export const revalidate = 30;
@@ -97,12 +87,6 @@ export default async function ProductDetailPage({
   const specs = isTr ? product.specs_tr : product.specs_en;
   const related = await getRelatedProducts(product.id, product.category, 3);
 
-  const waMsg = isTr
-    ? `Merhaba Güner Av Bayii, ${name} ürününün fiyatını öğrenmek istiyorum.`
-    : `Hello Guner AV, I would like to inquire about the price of ${name}.`;
-
-  const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
-
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
       <ProductJsonLd product={product} locale={locale} />
@@ -136,132 +120,12 @@ export default async function ProductDetailPage({
         </nav>
 
         {/* Product Overview Grid */}
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-          {/* Left Column: Image Gallery */}
-          <div className="lg:col-span-7">
-            <ProductGallery images={product.images} productName={name} />
-          </div>
-
-          {/* Right Column: Details & Actions */}
-          <div className="flex flex-col justify-between space-y-6 lg:col-span-5">
-            <div className="space-y-4">
-              {/* Category & Stock Badges */}
-              <div className="flex flex-wrap items-center gap-2">
-                {category && (
-                  <Link
-                    href={`/products?category=${category.id}`}
-                    className="rounded-md border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-1 text-xs font-bold text-neutral-800 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-700 hover:text-black dark:hover:text-white shadow-sm"
-                  >
-                    {categoryName}
-                  </Link>
-                )}
-
-                {product.in_stock && (
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/40">
-                    <CheckCircle2 className="h-3 w-3" />
-                    {tCommon("inStockAtStore")}
-                  </span>
-                )}
-              </div>
-
-              {/* Title */}
-              <h1 className="font-heading text-2xl font-black text-neutral-950 dark:text-white sm:text-3xl leading-tight">
-                {name}
-              </h1>
-
-              {/* Price section */}
-              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 p-4 shadow-sm">
-                {!product.requires_license && product.price ? (
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                      {tCommon("msrpTitle")}
-                    </span>
-                    <div className="mt-1 flex items-baseline gap-3">
-                      <span className="font-heading text-2xl sm:text-3xl font-black text-neutral-950 dark:text-white">
-                        {formatPrice(product.price, locale)}
-                      </span>
-                      {product.discount_percent && (
-                        <span className="rounded bg-amber-100 dark:bg-[#d4af37]/20 px-2 py-0.5 text-xs font-extrabold text-amber-800 dark:text-[#d4af37] border border-amber-300 dark:border-[#d4af37]/40">
-                          %{product.discount_percent} {tCommon("specialOffers")}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-[11px] text-neutral-500 font-medium">
-                      {tCommon("msrpNotice")}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-[#d4af37]">
-                      {tCommon("pricingPolicyTitle")}
-                    </span>
-                    <div className="text-lg font-bold text-neutral-950 dark:text-white">
-                      {tCommon("pricingPolicyDesc")}
-                    </div>
-                    <p className="text-[11px] text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium">
-                      {tCommon("pricingPolicyNotice")}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Description */}
-              <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300 font-medium">
-                {description}
-              </p>
-
-              {/* Mandatory License Warning when requires_license is true */}
-              {product.requires_license && (
-                <div className="pt-2">
-                  <LicenseNotice productName={name} />
-                </div>
-              )}
-            </div>
-
-            {/* In-store CTAs (NO CART, NO CHECKOUT) */}
-            <div className="space-y-3 border-t border-neutral-200 dark:border-neutral-800 pt-6">
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3.5 text-sm font-black uppercase tracking-wider text-neutral-950 shadow-xl transition-all hover:bg-[#20ba59] active:scale-98"
-              >
-                <MessageCircle className="h-5 w-5 fill-neutral-950 text-neutral-950" />
-                <span>{t("askOnWhatsapp")}</span>
-              </a>
-
-              <div className="grid grid-cols-2 gap-3">
-                <a
-                  href={`tel:${STORE_INFO.phone}`}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 py-3 text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 shadow-sm"
-                >
-                  <Phone className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />
-                  <span>{tCommon("callStore")}</span>
-                </a>
-
-                <Link
-                  href="/contact"
-                  className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-black py-3 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-300 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white shadow-sm"
-                >
-                  <MapPin className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />
-                  <span>{tCommon("storeDirections")}</span>
-                </Link>
-              </div>
-
-              {/* Trust badges */}
-              <div className="flex items-center justify-between pt-3 text-[11px] text-neutral-600 dark:text-neutral-400 font-medium">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#b45309] dark:text-[#d4af37]" />
-                  {tCommon("genuine100")}
-                </span>
-                <span className="flex items-center gap-1">
-                  <HelpCircle className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" />
-                  {tCommon("freeTechnicalGuidance")}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Product Overview with Dynamic Variants & Reactive Image Gallery */}
+        <ProductOverview
+          product={product}
+          locale={locale}
+          categoryName={categoryName}
+        />
 
         {/* Technical Specs Section */}
         {specs && Object.keys(specs).length > 0 && (

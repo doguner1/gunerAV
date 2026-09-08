@@ -24,9 +24,13 @@ create table if not exists public.products (
   in_stock boolean default true,                       -- Stokta var mı?
   specs_tr jsonb not null default '{}'::jsonb,         -- DİNAMİK TEKNİK ÖZELLİKLER (Tüfek, balık, bıçak fark etmeksizin)
   specs_en jsonb not null default '{}'::jsonb,         -- İngilizce teknik özellikler
+  variants jsonb default '[]'::jsonb,                  -- RENK & MODEL VARYANTLARI (CR01, CR02 vb. görselleriyle)
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Var olan veritabanı için ek kolon (Hata vermez):
+alter table public.products add column if not exists variants jsonb default '[]'::jsonb;
 
 -- 2. Hızlı Arama & Filtreleme İndeksleri
 create index if not exists idx_products_category on public.products(category);

@@ -1,3 +1,9 @@
+export interface ProductVariant {
+  name: string;
+  color_code?: string;
+  images: string[];
+}
+
 export interface Product {
   id: string;
   category: string;
@@ -8,6 +14,7 @@ export interface Product {
   price: number | null;
   discount_percent: number | null;
   images: string[];
+  variants?: ProductVariant[];
   featured: boolean;
   in_stock: boolean;
   requires_license: boolean;

@@ -196,7 +196,7 @@ function extractProductData() {
   }
 
   const galleryImgs = document.querySelectorAll(
-    ".product-image img, .gallery img, .product-gallery img, .swiper-slide img, .carousel-item img, [data-zoom-image], a[data-standard], #product-thumb-image a, #product-thumb-image img, .thumb-item a"
+    ".product-image img, .gallery img, .product-gallery img, .swiper-slide img, .carousel-item img, [data-zoom-image], a[data-standard], #product-thumb-image a, #product-thumb-image img, .thumb-item a, .slider-wrapper a, .slider a, a.image-lightbox, a.lightbox-gallery, .slider img, .flickity-slider a, .flickity-slider img"
   );
 
   galleryImgs.forEach((el) => {
@@ -216,7 +216,13 @@ function extractProductData() {
 
     if (src) {
       const cleaned = cleanImageUrl(src);
-      if (cleaned && !cleaned.includes("logo") && !cleaned.includes("icon") && !cleaned.includes("banner")) {
+      if (
+        cleaned &&
+        !cleaned.includes("logo") &&
+        !cleaned.includes("icon") &&
+        !cleaned.includes("banner") &&
+        (cleaned.includes(".webp") || cleaned.includes(".png") || cleaned.includes(".jpg") || cleaned.includes(".jpeg"))
+      ) {
         imageSet.add(cleaned);
       }
     }
@@ -235,7 +241,66 @@ function extractProductData() {
     });
   }
 
-  result.images = Array.from(imageSet).slice(0, 8);
+  result.images = Array.from(imageSet).slice(0, 10);
+
+  // =========================================================================
+  // 7b. Renk & Model Varyantları Tespiti (Color Variants)
+  // =========================================================================
+  const variants = [];
+
+  // Arslan Silah / Flatsome sekmeli renk seçenekleri veya renk sütunları
+  const colorCols = document.querySelectorAll(
+    "#tab_renkler-seçenekleri .col, #tab_renkler-seçenekleri .col-inner, .color-variants .col, .variants .col, .col"
+  );
+
+  colorCols.forEach((col) => {
+    const text = col.textContent || "";
+    const colorMatch = text.match(/Renk\s*Kodu\s*:?\s*([A-Za-z0-9-]+)/i);
+    if (colorMatch) {
+      const code = colorMatch[1].trim();
+      const imgs = [];
+      const links = col.querySelectorAll("a.image-lightbox, a.lightbox-gallery, a[href*='uploads'], img");
+      links.forEach((el) => {
+        let u =
+          el.getAttribute("href") ||
+          el.getAttribute("data-zoom-image") ||
+          el.getAttribute("data-large") ||
+          el.getAttribute("data-src") ||
+          el.src;
+        if (u && !u.endsWith("#")) {
+          const cleaned = cleanImageUrl(u);
+          if (
+            cleaned &&
+            !imgs.includes(cleaned) &&
+            !cleaned.includes("logo") &&
+            !cleaned.includes("icon") &&
+            (cleaned.includes(".webp") || cleaned.includes(".png") || cleaned.includes(".jpg") || cleaned.includes(".jpeg"))
+          ) {
+            imgs.push(cleaned);
+          }
+        }
+      });
+
+      if (imgs.length > 0 && !variants.some((v) => v.color_code === code)) {
+        variants.push({
+          name: `Renk Kodu: ${code}`,
+          color_code: code,
+          images: imgs,
+        });
+      }
+    }
+  });
+
+  // Eğer varyantlar bulunduysa, ana görseli de 1. varyant (Standart / Siyah CR01) olarak başa ekle:
+  if (variants.length > 0 && result.images.length > 0) {
+    variants.unshift({
+      name: "Standart / Siyah (CR01)",
+      color_code: "CR01",
+      images: [...result.images],
+    });
+  }
+
+  result.variants = variants;
 
   // =========================================================================
   // 8. Teknik Özellikler Tablosu ve Liste Satırları (Specs)
@@ -291,7 +356,9 @@ function extractProductData() {
   });
 
   // C. Ürün Bilgisi / Detay Metninden Özellik Çıkarımı (.product-detail)
-  const detailEl = document.querySelector(".product-detail, .product-description, #tab-description, [itemprop='description']");
+  const detailEl = document.querySelector(
+    ".product-detail, .product-description, #tab-description, [itemprop='description'], #tab_Ürün-açıklaması, #tab-Ürün-açıklaması, [id*='Ürün-açıklaması'], [id*='urun-aciklamasi']"
+  );
   if (detailEl) {
     const rawText = detailEl.textContent.replace(/&nbsp;/g, " ");
     const lines = rawText
@@ -319,13 +386,33 @@ function extractProductData() {
       }
     });
 
-    result.description = lines.slice(0, 5).join(". ") + ".";
+    if (lines.length > 0) {
+      result.description = lines.slice(0, 5).join(". ") + ".";
+    }
+  }
+
+  // Fallback description from description tab paragraphs
+  if (!result.description || result.description.length < 20) {
+    const descTab = document.querySelector("#tab_Ürün-açıklaması, #tab-Ürün-açıklaması, .entry-content");
+    if (descTab) {
+      const ps = Array.from(descTab.querySelectorAll("p"))
+        .map((p) => p.textContent.trim())
+        .filter((t) => t.length > 25);
+      if (ps.length > 0) {
+        result.description = ps.slice(0, 3).join(" ");
+      }
+    }
   }
 
   // D. Başlıktan ekstra özellikler
   const lengthMatch = result.title.match(/(\d{2,4}\s*cm)/i);
   if (lengthMatch && !specs["Kamış Boyu"] && !specs["Uzunluk"]) {
     specs["Uzunluk"] = lengthMatch[1];
+  }
+
+  if (window.location.href.includes("/bullpup/") || result.title.toLowerCase().includes("bullpup")) {
+    if (!result.category) result.category = "Tüfek - Bullpup";
+    specs["Tipi"] = "Bullpup";
   }
 
   result.specs = specs;

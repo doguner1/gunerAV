@@ -42,5 +42,125 @@
       "Receiver": "Aluminum",
       "Stock": "Synthetic & Walnut"
     }
+  },
+  {
+    "id": "castello-blp",
+    "category": "tufek-bullpup",
+    "slug_tr": "castello-blp",
+    "slug_en": "castello-blp-bullpup-shotgun",
+    "brand": "Castello",
+    "model": "Castello BLP",
+    "name_tr": "Castello BLP Bullpup Şarjörlü Av Tüfeği",
+    "name_en": "Castello BLP Bullpup Magazine-Fed Shotgun",
+    "description_tr": "Bu 12 kalibre şarjör beslemeli av tüfeği, sentetik alt gövde ve sentetik el kundağına sahiptir. 4140 delme çelikten yapılmış namlusu, gazla çalışan sistemiyle mükemmel kontrol ve düşük geri tepme sağlar. Kompakt bullpup ergonomisi sahada ve taktik atışta üstün denge sunar. Malatya Castello Yetkili Bayii Güner AV güvencesiyle mağazamızda.",
+    "description_en": "This 12 gauge magazine-fed bullpup shotgun features a durable synthetic lower receiver and handguard. Equipped with a 4140 drilled steel barrel and gas-operated system for optimal recoil control. Official Malatya dealer Guner AV guarantee.",
+    "price": 29500,
+    "discount_percent": null,
+    "images": [
+      "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-1-scaled.webp",
+      "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-2.png"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "color_code": "CR01",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-2.png"
+        ]
+      },
+      {
+        "name": "Altın Sarısı (CR02)",
+        "color_code": "CR02",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR02-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR02-Arslan-Silah-2-scaled.webp"
+        ]
+      },
+      {
+        "name": "Kamuflaj (CR03)",
+        "color_code": "CR03",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR03-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR03-Arslan-Silah-2-scaled.webp"
+        ]
+      },
+      {
+        "name": "Taktik Yeşil (CR04)",
+        "color_code": "CR04",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR04-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR04-Arslan-Silah-2-scaled.webp"
+        ]
+      },
+      {
+        "name": "Ay Yıldız / Bayrak (CR05)",
+        "color_code": "CR05",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR05-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR05-Arslan-Silah-2-scaled.webp"
+        ]
+      },
+      {
+        "name": "Bronz / Kum (CR06)",
+        "color_code": "CR06",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR06-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR06-Arslan-Silah-2-scaled.webp"
+        ]
+      },
+      {
+        "name": "Kuru Kafa Desen (CR07)",
+        "color_code": "CR07",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR07-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR07-Arslan-Silah-2-scaled.webp"
+        ]
+      },
+      {
+        "name": "Askeri Kamuflaj (CR08)",
+        "color_code": "CR08",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR08-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR08-Arslan-Silah-2-scaled.webp"
+        ]
+      },
+      {
+        "name": "Özel Tasarım (CR09)",
+        "color_code": "CR09",
+        "images": [
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR09-Arslan-Silah-1-scaled.webp",
+          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR09-Arslan-Silah-2-scaled.webp"
+        ]
+      }
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Model": "Castello BLP",
+      "Kalibre": "12 GA",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Şarjör Kapasitesi": "2 / 5 / 10",
+      "Kaplama": "Anodize / Cerakote / Hidro Dipping",
+      "Dipçik & El Kundağı": "Sentetik",
+      "Namlu Uzunluğu": "18,5 İnç – 47 cm",
+      "Fişek Yuvası": "3 İnç / 76 mm Magnum",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Şok": "Slug"
+    },
+    "specs_en": {
+      "Model": "Castello BLP",
+      "Gauge": "12 GA",
+      "System": "Gas Operated Semi-Auto",
+      "Magazine Capacity": "2 / 5 / 10",
+      "Coating": "Anodized / Cerakote / Hydro Dipping",
+      "Stock & Handguard": "Synthetic",
+      "Barrel Length": "18.5 Inch – 47 cm",
+      "Chamber": "3 Inch / 76 mm Magnum",
+      "Receiver": "Lower Synthetic – Upper Aluminum",
+      "Choke": "Slug"
+    }
   }
 ]

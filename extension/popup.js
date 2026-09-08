@@ -259,6 +259,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         specs = {};
       }
 
+      // Variants parse
+      let variants = [];
+      try {
+        const variantsText = document.getElementById("fldVariantsJson")?.value?.trim();
+        if (variantsText) variants = JSON.parse(variantsText);
+      } catch (e) {
+        variants = [];
+      }
+
+      // Fallback: varyantları hem ana kolona hem de specs_tr içine koyuyoruz (garanti)
+      if (Array.isArray(variants) && variants.length > 0) {
+        specs.variants = variants;
+      }
+
       const slug = slugify(nameTr);
 
       const payload = {
@@ -275,6 +289,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         price,
         discount_percent: discountPercent,
         images: images.length > 0 ? images : ["/images/products/optics-1.webp"],
+        variants: variants.length > 0 ? variants : [],
         featured: isFeatured,
         is_hero_spotlight: isHeroSpotlight,
         requires_license: requiresLicense,
@@ -345,6 +360,10 @@ function populateForm(data) {
   // Specs
   const specs = data.specs_tr || data.specs || {};
   document.getElementById("fldSpecsJson").value = JSON.stringify(specs, null, 2);
+
+  // Variants (Renk / Model Varyantları)
+  const variants = data.variants || [];
+  renderVariantsPreview(variants);
 
   // Akıllı Kategori ve Ruhsat Tahmini
   const fullText = (
@@ -497,6 +516,7 @@ async function saveFormDraft() {
     brand: document.getElementById("fldBrand")?.value || "",
     model: document.getElementById("fldModel")?.value || "",
     images: document.getElementById("fldImages")?.value || "",
+    variantsJson: document.getElementById("fldVariantsJson")?.value || "",
     featured: document.getElementById("chkFeatured")?.checked ?? true,
     heroSpotlight: document.getElementById("chkHeroSpotlight")?.checked ?? false,
     hasDiscount: document.getElementById("chkHasDiscount")?.checked ?? false,
@@ -518,6 +538,13 @@ function restoreFormDraft(draft) {
   if (draft.brand) document.getElementById("fldBrand").value = draft.brand;
   if (draft.model) document.getElementById("fldModel").value = draft.model;
   if (draft.images) document.getElementById("fldImages").value = draft.images;
+
+  if (draft.variantsJson) {
+    try {
+      const vars = JSON.parse(draft.variantsJson);
+      renderVariantsPreview(vars);
+    } catch (e) {}
+  }
 
   if (typeof draft.featured === "boolean") document.getElementById("chkFeatured").checked = draft.featured;
   if (typeof draft.heroSpotlight === "boolean") document.getElementById("chkHeroSpotlight").checked = draft.heroSpotlight;
@@ -554,6 +581,8 @@ async function resetForm() {
   document.getElementById("fldSpecsJson").value = "";
   document.getElementById("fldCategory").value = "kamp";
 
+  renderVariantsPreview([]);
+
   document.getElementById("chkFeatured").checked = true;
   document.getElementById("chkHeroSpotlight").checked = false;
   document.getElementById("chkHasDiscount").checked = false;
@@ -572,6 +601,45 @@ async function resetForm() {
   if (banner) banner.style.display = "none";
 
   await chrome.storage.local.remove("productFormDraft");
+}
+
+function renderVariantsPreview(variants) {
+  const sec = document.getElementById("variantsSection");
+  const list = document.getElementById("variantsList");
+  const count = document.getElementById("variantsCount");
+  const fld = document.getElementById("fldVariantsJson");
+
+  if (!sec || !list || !fld) return;
+
+  if (Array.isArray(variants) && variants.length > 0) {
+    sec.style.display = "block";
+    if (count) count.textContent = variants.length;
+    fld.value = JSON.stringify(variants);
+    list.innerHTML = "";
+
+    variants.forEach((v) => {
+      const chip = document.createElement("div");
+      chip.style.cssText =
+        "display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; font-size: 10px; color: #f0f6fc; font-weight: 600;";
+
+      if (v.images && v.images[0]) {
+        const img = document.createElement("img");
+        img.src = v.images[0];
+        img.style.cssText = "width: 20px; height: 14px; object-fit: contain; border-radius: 2px; background: #fff; border: 1px solid #444;";
+        chip.appendChild(img);
+      }
+
+      const label = document.createElement("span");
+      label.textContent = `${v.color_code || v.name} (${v.images ? v.images.length : 0} resim)`;
+      chip.appendChild(label);
+
+      list.appendChild(chip);
+    });
+  } else {
+    sec.style.display = "none";
+    fld.value = "";
+    list.innerHTML = "";
+  }
 }
 
 function updateImagesPreview() {
