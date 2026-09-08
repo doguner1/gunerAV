@@ -81,7 +81,7 @@ export function getSecureImageUrl(url: string | undefined | null): string {
 
   if (url.startsWith("http://") || url.startsWith("https://")) {
     const token = encryptImageUrl(url);
-    return `/api/img?token=${token}`;
+    return `/api/img?token=${token}&v=2`;
   }
 
   return url;

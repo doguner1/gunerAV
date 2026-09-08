@@ -134,15 +134,22 @@ export default async function ProductDetailPage({
               {tCommon("technicalSpecs")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(specs).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900 py-3 text-xs"
-                >
-                  <span className="font-bold text-neutral-600 dark:text-neutral-400">{key}</span>
-                  <span className="font-semibold text-neutral-950 dark:text-white text-right">{value}</span>
-                </div>
-              ))}
+              {Object.entries(specs)
+                .filter(
+                  ([key, value]) =>
+                    key !== "variants" &&
+                    typeof value === "string" &&
+                    value.trim() !== ""
+                )
+                .map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900 py-3 text-xs"
+                  >
+                    <span className="font-bold text-neutral-600 dark:text-neutral-400">{key}</span>
+                    <span className="font-semibold text-neutral-950 dark:text-white text-right">{value}</span>
+                  </div>
+                ))}
             </div>
           </div>
         )}

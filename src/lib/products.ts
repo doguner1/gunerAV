@@ -24,6 +24,16 @@ function secureProduct(p: Product): Product {
       }))
     : undefined;
 
+  // Clean specs so variants array or non-primitive objects are not exposed as specs
+  const cleanSpecsTr = p.specs_tr ? { ...p.specs_tr } : undefined;
+  if (cleanSpecsTr && "variants" in cleanSpecsTr) {
+    delete (cleanSpecsTr as any).variants;
+  }
+  const cleanSpecsEn = p.specs_en ? { ...p.specs_en } : undefined;
+  if (cleanSpecsEn && "variants" in cleanSpecsEn) {
+    delete (cleanSpecsEn as any).variants;
+  }
+
   return {
     ...p,
     images:
@@ -31,6 +41,8 @@ function secureProduct(p: Product): Product {
         ? p.images.map(getSecureImageUrl)
         : ["/images/products/optics-1.webp"],
     variants: securedVariants,
+    specs_tr: cleanSpecsTr,
+    specs_en: cleanSpecsEn,
   };
 }
 
