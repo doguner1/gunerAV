@@ -41,7 +41,7 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
               fill
               unoptimized={mainImage.startsWith("http") || mainImage.startsWith("/api/img")}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-contain p-2 sm:p-2.5 transition-transform duration-500 group-hover:scale-105 pointer-events-none"
+              className="object-contain transition-transform duration-500 group-hover:scale-105 pointer-events-none"
             />
           </Link>
 

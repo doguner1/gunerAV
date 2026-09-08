@@ -165,7 +165,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
       >
         {/* Scaled Image Container */}
         <div
-          className="relative h-full w-full p-3 sm:p-5 flex items-center justify-center transition-transform duration-150 ease-out"
+          className="relative h-full w-full flex items-center justify-center transition-transform duration-150 ease-out"
           style={{
             transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
             transform: isHovered ? "scale(2.2)" : "scale(1)",
