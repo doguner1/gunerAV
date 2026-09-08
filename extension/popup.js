@@ -347,7 +347,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 function populateForm(data) {
   if (data.title) document.getElementById("fldNameTr").value = data.title;
   if (data.name_tr) document.getElementById("fldNameTr").value = data.name_tr;
-  if (data.brand) document.getElementById("fldBrand").value = data.brand;
+
+  const brandVal =
+    data.brand ||
+    (data.specs ? data.specs["Marka"] || data.specs["Brand"] : "") ||
+    (data.specs_tr ? data.specs_tr["Marka"] || data.specs_tr["Brand"] : "");
+  if (brandVal) document.getElementById("fldBrand").value = brandVal;
+
   if (data.model) document.getElementById("fldModel").value = data.model;
   if (data.price) document.getElementById("fldPrice").value = data.price;
 

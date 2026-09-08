@@ -66,9 +66,9 @@ export default function ProductOverview({
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
   return (
-    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-      {/* Left Column: Image Gallery (re-mounts or updates cleanly on variant change) */}
-      <div className="lg:col-span-7">
+    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 items-start">
+      {/* Left Column: Image Gallery (re-mounts cleanly on variant change, sticky scroll on desktop) */}
+      <div className="lg:col-span-7 lg:sticky lg:top-24 lg:self-start">
         <ProductGallery
           key={activeVariant ? `${activeVariant.color_code || selectedVariantIndex}` : "base"}
           images={displayImages}

@@ -24,6 +24,26 @@ function secureProduct(p: Product): Product {
       }))
     : undefined;
 
+  let cleanedVariants = securedVariants;
+  if (cleanedVariants && cleanedVariants.length > 1) {
+    const otherVariantImages = new Set<string>();
+    for (let i = 1; i < cleanedVariants.length; i++) {
+      (cleanedVariants[i].images || []).forEach((img: string) => otherVariantImages.add(img));
+    }
+    // If the 1st variant accidentally contains images from subsequent variants (legacy scraper artifact)
+    if (cleanedVariants[0]?.images && cleanedVariants[0].images.length > 0) {
+      const filteredFirstVariantImages = cleanedVariants[0].images.filter(
+        (img: string) => !otherVariantImages.has(img)
+      );
+      if (filteredFirstVariantImages.length > 0) {
+        cleanedVariants[0] = {
+          ...cleanedVariants[0],
+          images: filteredFirstVariantImages,
+        };
+      }
+    }
+  }
+
   // Clean specs so variants array or non-primitive objects are not exposed as specs
   const cleanSpecsTr = p.specs_tr ? { ...p.specs_tr } : undefined;
   if (cleanSpecsTr && "variants" in cleanSpecsTr) {
@@ -34,13 +54,17 @@ function secureProduct(p: Product): Product {
     delete (cleanSpecsEn as any).variants;
   }
 
+  const baseImages =
+    cleanedVariants && cleanedVariants[0]?.images && cleanedVariants[0].images.length > 0
+      ? cleanedVariants[0].images
+      : Array.isArray(p.images) && p.images.length > 0
+      ? p.images.map(getSecureImageUrl)
+      : ["/images/products/optics-1.webp"];
+
   return {
     ...p,
-    images:
-      Array.isArray(p.images) && p.images.length > 0
-        ? p.images.map(getSecureImageUrl)
-        : ["/images/products/optics-1.webp"],
-    variants: securedVariants,
+    images: baseImages,
+    variants: cleanedVariants,
     specs_tr: cleanSpecsTr,
     specs_en: cleanSpecsEn,
   };

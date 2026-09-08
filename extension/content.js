@@ -110,8 +110,23 @@ function extractProductData() {
     }
   }
 
-  if (result.brand) {
-    result.specs["Marka"] = result.brand;
+  // Bilinen Av & Silah Markaları Listesi ve Başlıktan Marka Çıkarımı
+  const KNOWN_BRANDS = [
+    "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata",
+    "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
+    "Kral Arms", "Kral", "Retay", "Huğlu", "Huglu", "Akdaş", "Akdas",
+    "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
+    "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex"
+  ];
+
+  if (!result.brand && result.title) {
+    for (const b of KNOWN_BRANDS) {
+      const regex = new RegExp(`\\b${b}\\b`, "i");
+      if (regex.test(result.title)) {
+        result.brand = b;
+        break;
+      }
+    }
   }
 
   // =========================================================================
@@ -140,11 +155,34 @@ function extractProductData() {
   // 5. Model Tespiti (Model / SKU)
   // =========================================================================
   if (!result.model) {
-    // Check title for common model patterns (e.g. MOD-505, Ranger 8, 300 Cm, CFX Pro)
-    const titleModelMatch = result.title.match(/(MOD[-\s]?\d+|Ranger\s*\d+|Neo\s*\d+|Renova|\b\d{3,4}\s*cm\b|[A-Z]{2,}-\d+)/i);
+    // Check title for common model patterns (e.g. MOD-505, Ranger 8, CSR-12, BLP, CFX Pro)
+    const titleModelMatch = result.title.match(/(MOD[-\s]?\d+|Ranger\s*\d+|Neo\s*\d+|Renova|\b\d{3,4}\s*cm\b|[A-Z]{2,}-\d+|\bBLP\b|\bCSR-\d+\b)/i);
     if (titleModelMatch) {
       result.model = titleModelMatch[1].trim();
     }
+  }
+
+  // Eğer marka hala boşsa ve model biliniyorsa, başlıktaki modelden önceki kelime markadır
+  if (!result.brand && result.title && result.model) {
+    const idx = result.title.indexOf(result.model);
+    if (idx > 0) {
+      const prefix = result.title.substring(0, idx).trim();
+      if (prefix.length > 1 && prefix.length < 30) {
+        result.brand = prefix;
+      }
+    }
+  }
+
+  // Hala boşsa başlıktaki ilk kelimeyi dene
+  if (!result.brand && result.title) {
+    const words = result.title.split(/\s+/);
+    if (words.length > 1 && words[0].length >= 3 && /^[A-ZÇĞİÖŞÜa-zçğıöşü]+$/.test(words[0])) {
+      result.brand = words[0];
+    }
+  }
+
+  if (result.brand) {
+    result.specs["Marka"] = result.brand;
   }
 
   // =========================================================================
@@ -188,11 +226,16 @@ function extractProductData() {
   // =========================================================================
   // 7. Görsel URL'leri (Image Gallery)
   // =========================================================================
-  const imageSet = new Set();
+  // Renk varyantları sekmesini / alanını bulup ana galeriden ayırıyoruz
+  const colorTab =
+    document.getElementById("tab_renkler-seçenekleri") ||
+    document.querySelector("[id*='renkler'], .color-variants, .variants");
+
+  const rawMainImgs = [];
 
   const ogImage = document.querySelector('meta[property="og:image"]');
-  if (ogImage && ogImage.content && !ogImage.content.includes("logo")) {
-    imageSet.add(cleanImageUrl(ogImage.content));
+  if (ogImage && ogImage.content && !ogImage.content.includes("logo") && !ogImage.content.includes("Favicon")) {
+    rawMainImgs.push(cleanImageUrl(ogImage.content));
   }
 
   const galleryImgs = document.querySelectorAll(
@@ -200,6 +243,10 @@ function extractProductData() {
   );
 
   galleryImgs.forEach((el) => {
+    // Eğer görsel renk varyantları sekmesindeyse ana görsellere dahil etme!
+    if (colorTab && colorTab.contains(el)) return;
+    if (el.closest && el.closest("[id*='renkler'], .color-variants, .variants")) return;
+
     let src =
       el.getAttribute("data-zoom-image") ||
       el.parentElement?.getAttribute("data-zoom-image") ||
@@ -221,83 +268,93 @@ function extractProductData() {
         !cleaned.includes("logo") &&
         !cleaned.includes("icon") &&
         !cleaned.includes("banner") &&
+        !cleaned.includes("Favicon") &&
+        !cleaned.includes("Silah-Ureticisi") &&
         (cleaned.includes(".webp") || cleaned.includes(".png") || cleaned.includes(".jpg") || cleaned.includes(".jpeg"))
       ) {
-        imageSet.add(cleaned);
+        rawMainImgs.push(cleaned);
       }
     }
   });
 
   // Fallback images
-  if (imageSet.size === 0) {
+  if (rawMainImgs.length === 0) {
     document.querySelectorAll("img").forEach((img) => {
+      if (colorTab && colorTab.contains(img)) return;
       let s = img.src;
       if (s && (img.naturalWidth > 250 || img.width > 250)) {
         const cleaned = cleanImageUrl(s);
-        if (cleaned && !cleaned.includes("logo") && !cleaned.includes("icon")) {
-          imageSet.add(cleaned);
+        if (cleaned && !cleaned.includes("logo") && !cleaned.includes("icon") && !cleaned.includes("Favicon")) {
+          rawMainImgs.push(cleaned);
         }
       }
     });
   }
 
-  result.images = Array.from(imageSet).slice(0, 10);
+  result.images = dedupeImages(rawMainImgs).slice(0, 10);
 
   // =========================================================================
   // 7b. Renk & Model Varyantları Tespiti (Color Variants)
   // =========================================================================
   const variants = [];
 
-  // Arslan Silah / Flatsome sekmeli renk seçenekleri veya renk sütunları
-  const colorCols = document.querySelectorAll(
-    "#tab_renkler-seçenekleri .col, #tab_renkler-seçenekleri .col-inner, .color-variants .col, .variants .col, .col"
-  );
+  if (colorTab) {
+    // Sadece renk sekmesindeki alt sütunları tara (tüm sayfadaki .col'ları değil!)
+    const colorCols = colorTab.querySelectorAll(".col, .col-inner, [class*='column']");
+    const processedCodes = new Set();
 
-  colorCols.forEach((col) => {
-    const text = col.textContent || "";
-    const colorMatch = text.match(/Renk\s*Kodu\s*:?\s*([A-Za-z0-9-]+)/i);
-    if (colorMatch) {
-      const code = colorMatch[1].trim();
-      const imgs = [];
-      const links = col.querySelectorAll("a.image-lightbox, a.lightbox-gallery, a[href*='uploads'], img");
-      links.forEach((el) => {
-        let u =
-          el.getAttribute("href") ||
-          el.getAttribute("data-zoom-image") ||
-          el.getAttribute("data-large") ||
-          el.getAttribute("data-src") ||
-          el.src;
-        if (u && !u.endsWith("#")) {
-          const cleaned = cleanImageUrl(u);
-          if (
-            cleaned &&
-            !imgs.includes(cleaned) &&
-            !cleaned.includes("logo") &&
-            !cleaned.includes("icon") &&
-            (cleaned.includes(".webp") || cleaned.includes(".png") || cleaned.includes(".jpg") || cleaned.includes(".jpeg"))
-          ) {
-            imgs.push(cleaned);
+    colorCols.forEach((col) => {
+      const text = col.textContent || "";
+      const colorMatch = text.match(/Renk\s*Kodu\s*:?\s*([A-Za-z0-9-]+)/i);
+      if (colorMatch) {
+        const code = colorMatch[1].trim();
+        if (processedCodes.has(code)) return;
+
+        const colImgs = [];
+        const imgElements = col.querySelectorAll("a.image-lightbox, a.lightbox-gallery, .slider img, img");
+        imgElements.forEach((el) => {
+          let u =
+            el.getAttribute("href") ||
+            el.getAttribute("data-zoom-image") ||
+            el.getAttribute("data-large") ||
+            el.getAttribute("data-original") ||
+            el.src;
+          if (u && !u.endsWith("#")) {
+            const cleaned = cleanImageUrl(u);
+            if (
+              cleaned &&
+              !cleaned.includes("logo") &&
+              !cleaned.includes("icon") &&
+              !cleaned.includes("banner") &&
+              !cleaned.includes("Favicon") &&
+              !cleaned.includes("Silah-Ureticisi") &&
+              (cleaned.includes(".webp") || cleaned.includes(".png") || cleaned.includes(".jpg") || cleaned.includes(".jpeg"))
+            ) {
+              colImgs.push(cleaned);
+            }
           }
-        }
-      });
-
-      if (imgs.length > 0 && !variants.some((v) => v.color_code === code)) {
-        variants.push({
-          name: `Renk Kodu: ${code}`,
-          color_code: code,
-          images: imgs,
         });
-      }
-    }
-  });
 
-  // Eğer varyantlar bulunduysa, ana görseli de 1. varyant (Standart / Siyah CR01) olarak başa ekle:
-  if (variants.length > 0 && result.images.length > 0) {
-    variants.unshift({
-      name: "Standart / Siyah (CR01)",
-      color_code: "CR01",
-      images: [...result.images],
+        const dedupedColImgs = dedupeImages(colImgs);
+        if (dedupedColImgs.length > 0) {
+          processedCodes.add(code);
+          variants.push({
+            name: `Renk Kodu: ${code}`,
+            color_code: code,
+            images: dedupedColImgs,
+          });
+        }
+      }
     });
+
+    // Eğer varyantlar bulunduysa, ana görseli de 1. varyant (Standart / Siyah CR01) olarak başa ekle:
+    if (variants.length > 0 && result.images.length > 0) {
+      variants.unshift({
+        name: "Standart / Siyah (CR01)",
+        color_code: "CR01",
+        images: [...result.images],
+      });
+    }
   }
 
   result.variants = variants;
@@ -455,3 +512,20 @@ function cleanImageUrl(url) {
 
   return u;
 }
+
+function dedupeImages(urls) {
+  if (!Array.isArray(urls)) return [];
+  const seen = new Set();
+  const res = [];
+  for (const raw of urls) {
+    if (!raw) continue;
+    // -scaled olan veya olmayan aynı görseli tekilleştir
+    const norm = raw.replace(/-scaled\.(jpe?g|png|webp)/i, ".$1");
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      res.push(raw);
+    }
+  }
+  return res;
+}
+
