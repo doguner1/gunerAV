@@ -132,6 +132,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     el.addEventListener("change", saveFormDraft);
   });
 
+  // Kategori değiştiğinde tüfek veya mühimmat ise ruhsat zorunluluğunu otomatik aç
+  document.getElementById("fldCategory")?.addEventListener("change", (e) => {
+    const val = e.target.value;
+    const isLicensed = val.startsWith("tufek-") || val === "muhimmat" || val === "silah-muhimmat";
+    const licenseChk = document.getElementById("chkRequiresLicense");
+    if (licenseChk && isLicensed) {
+      licenseChk.checked = true;
+      saveFormDraft();
+    }
+  });
+
   // 6. Önceki Taslağı Geri Yükle (Popup tekrar açıldığında veri kaybolmasın)
   const { productFormDraft } = await chrome.storage.local.get(["productFormDraft"]);
   if (productFormDraft && (productFormDraft.nameTr || productFormDraft.images || productFormDraft.brand)) {
@@ -347,15 +358,76 @@ function populateForm(data) {
   const catSelect = document.getElementById("fldCategory");
   const licenseChk = document.getElementById("chkRequiresLicense");
 
-  if (
+  // 1. Tüfek Alt Sınıfları (Öncelikli Tespit)
+  if (fullText.includes("bullpup")) {
+    catSelect.value = "tufek-bullpup";
+    licenseChk.checked = true;
+  } else if (
+    fullText.includes("şarjör") ||
+    fullText.includes("sarjor") ||
+    fullText.includes("şarjörlü") ||
+    fullText.includes("sarjorlu")
+  ) {
+    catSelect.value = "tufek-sarjorlu";
+    licenseChk.checked = true;
+  } else if (
+    fullText.includes("pompalı") ||
+    fullText.includes("pompali") ||
+    fullText.includes("pump action") ||
+    fullText.includes("pump-action")
+  ) {
+    catSelect.value = "tufek-pompali";
+    licenseChk.checked = true;
+  } else if (
+    fullText.includes("tek kırma") ||
+    fullText.includes("tek kirma") ||
+    fullText.includes("tekkırma")
+  ) {
+    catSelect.value = "tufek-tek-kirma";
+    licenseChk.checked = true;
+  } else if (
+    fullText.includes("süperpoze") ||
+    fullText.includes("superpoze") ||
+    fullText.includes("over and under") ||
+    fullText.includes("poze")
+  ) {
+    catSelect.value = "tufek-superpoze";
+    licenseChk.checked = true;
+  } else if (
+    fullText.includes("çifte") ||
+    fullText.includes("cifte") ||
+    fullText.includes("side by side")
+  ) {
+    catSelect.value = "tufek-cifte";
+    licenseChk.checked = true;
+  } else if (
+    fullText.includes("yarı otomatik") ||
+    fullText.includes("yari otomatik") ||
+    fullText.includes("otomatik av tüfeği") ||
+    fullText.includes("otomatik") ||
+    fullText.includes("kinetik") ||
+    fullText.includes("gazlı") ||
+    fullText.includes("semi-auto") ||
+    fullText.includes("semi auto")
+  ) {
+    catSelect.value = "tufek-yari-otomatik";
+    licenseChk.checked = true;
+  } else if (
     fullText.includes("tüfek") ||
     fullText.includes("shotgun") ||
     fullText.includes("yivsiz") ||
-    fullText.includes("tabanca") ||
-    fullText.includes("kalibre") ||
-    fullText.includes("fişek")
+    fullText.includes("av tüfeği")
   ) {
-    catSelect.value = "silah-muhimmat";
+    catSelect.value = "tufek-yari-otomatik";
+    licenseChk.checked = true;
+  } else if (
+    fullText.includes("fişek") ||
+    fullText.includes("fisek") ||
+    fullText.includes("mühimmat") ||
+    fullText.includes("muhimmat") ||
+    fullText.includes("kartuş")
+  ) {
+    catSelect.value = "muhimmat";
     licenseChk.checked = true;
   } else if (
     fullText.includes("dürbün") ||
@@ -369,10 +441,13 @@ function populateForm(data) {
     licenseChk.checked = false;
   } else if (
     fullText.includes("bıçak") ||
+    fullText.includes("bicak") ||
     fullText.includes("çakı") ||
+    fullText.includes("caki") ||
     fullText.includes("knife") ||
     fullText.includes("pala") ||
-    fullText.includes("balta")
+    fullText.includes("balta") ||
+    fullText.includes("kılıf")
   ) {
     catSelect.value = "bicak";
     licenseChk.checked = false;
@@ -383,21 +458,26 @@ function populateForm(data) {
     fullText.includes("yelek") ||
     fullText.includes("bot") ||
     fullText.includes("çizme") ||
-    fullText.includes("polar")
+    fullText.includes("polar") ||
+    fullText.includes("şapka") ||
+    fullText.includes("eldiven")
   ) {
     catSelect.value = "giyim";
     licenseChk.checked = false;
   } else if (
     fullText.includes("olta") ||
     fullText.includes("balık") ||
+    fullText.includes("balik") ||
     fullText.includes("kamış") ||
+    fullText.includes("kamis") ||
     fullText.includes("misina") ||
     fullText.includes("iğne") ||
     fullText.includes("yem") ||
     fullText.includes("çadır") ||
     fullText.includes("kamp") ||
     fullText.includes("fener") ||
-    fullText.includes("termos")
+    fullText.includes("termos") ||
+    fullText.includes("tulum")
   ) {
     catSelect.value = "kamp";
     licenseChk.checked = false;

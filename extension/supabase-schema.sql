@@ -6,7 +6,7 @@
 -- 1. Ürünler Tablosunu Oluştur
 create table if not exists public.products (
   id text primary key,                                 -- slug formatında benzersiz id (örn: castello-mod-505)
-  category text not null,                              -- 'silah-muhimmat', 'optik', 'bicak', 'kamp', 'giyim'
+  category text not null,                              -- 'tufek-bullpup', 'tufek-sarjorlu', 'tufek-yari-otomatik', 'tufek-pompali', 'tufek-tek-kirma', 'tufek-superpoze', 'tufek-cifte', 'kamp', 'optik', 'bicak', 'giyim', 'muhimmat'
   name_tr text not null,                               -- Türkçe başlık
   name_en text,                                        -- İngilizce başlık
   slug_tr text,                                        -- Türkçe SEO dostu URL slug

@@ -98,6 +98,12 @@ export function getProductBySlug(
 
 export function getProductsByCategory(category: string, list?: Product[]): Product[] {
   const arr = list || localProducts;
+  if (category === "silah-muhimmat") {
+    return arr.filter((p) => p.category.startsWith("tufek-") || p.category === "muhimmat" || p.category === "silah-muhimmat");
+  }
+  if (category === "bicak" || category === "aksesuar") {
+    return arr.filter((p) => p.category === "bicak" || p.category === "aksesuar");
+  }
   return arr.filter((p) => p.category === category);
 }
 
@@ -109,14 +115,24 @@ export function getRelatedProducts(
 ): Product[] {
   const arr = list || localProducts;
   return arr
-    .filter((p) => p.category === category && p.id !== currentId)
+    .filter((p) => {
+      if (p.id === currentId) return false;
+      if (category.startsWith("tufek-") && p.category.startsWith("tufek-")) return true;
+      if ((category === "bicak" || category === "aksesuar") && (p.category === "bicak" || p.category === "aksesuar")) return true;
+      return p.category === category;
+    })
     .slice(0, limit);
 }
 
 export function getCategoryById(id: string): Category | undefined {
+  if (id === "aksesuar") return categories.find((c) => c.id === "bicak");
+  if (id === "silah-muhimmat") return categories.find((c) => c.id === "tufek-yari-otomatik") || categories[0];
   return categories.find((c) => c.id === id);
 }
 
 export function getCategoryBySlug(slug: string): Category | undefined {
+  if (slug === "aksesuar") return categories.find((c) => c.id === "bicak");
+  if (slug === "silah-muhimmat") return categories.find((c) => c.id === "tufek-yari-otomatik") || categories[0];
   return categories.find((c) => c.slug === slug || c.id === slug);
 }
+

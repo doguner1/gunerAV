@@ -24,11 +24,11 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
 
   const spotlightProduct = getHeroSpotlightProduct(products);
   const featuredProductSlug = isTr
-    ? `/products/${spotlightProduct?.slug_tr || spotlightProduct?.id || "steiner-ranger-8-3-24x56-tufek-durbunu"}`
-    : `/products/${spotlightProduct?.slug_en || spotlightProduct?.id || "steiner-ranger-8-3-24x56-rifle-scope"}`;
+    ? `/products/${spotlightProduct?.slug_tr || spotlightProduct?.id || "castello-mod-505-otomatik-av-tufegi"}`
+    : `/products/${spotlightProduct?.slug_en || spotlightProduct?.id || "castello-mod-505-semi-auto-shotgun"}`;
 
   const spotlightTitle = (isTr ? spotlightProduct?.name_tr : spotlightProduct?.name_en) || t("spotlightTitle");
-  const spotlightImage = spotlightProduct?.images?.[0] || "/images/products/optics-1.webp";
+  const spotlightImage = spotlightProduct?.images?.[0] || "/images/hero-bg-hd.webp";
 
   const rawSpecs = (isTr ? spotlightProduct?.specs_tr : spotlightProduct?.specs_en) || spotlightProduct?.specs_tr || {};
   const dynamicSpecs = Object.entries(rawSpecs)

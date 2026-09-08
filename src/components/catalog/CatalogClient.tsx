@@ -40,8 +40,46 @@ export default function CatalogClient({
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
       // Category filter
-      if (selectedCategory !== "all" && product.category !== selectedCategory) {
-        return false;
+      if (selectedCategory !== "all") {
+        if (selectedCategory === "silah-muhimmat") {
+          const isFirearmOrAmmo =
+            product.category.startsWith("tufek-") ||
+            product.category === "muhimmat" ||
+            product.category === "silah-muhimmat";
+          if (!isFirearmOrAmmo) return false;
+        } else if (selectedCategory === "bicak" || selectedCategory === "aksesuar") {
+          if (product.category !== "bicak" && product.category !== "aksesuar") return false;
+        } else if (selectedCategory.startsWith("tufek-")) {
+          if (product.category === selectedCategory) {
+            // Direct match
+          } else if (product.category === "silah-muhimmat") {
+            // Backward compatibility matching for legacy Supabase entries
+            const subType = selectedCategory.replace("tufek-", "");
+            const fullText = (
+              (product.name_tr || "") + " " +
+              (product.description_tr || "") + " " +
+              JSON.stringify(product.specs_tr || {})
+            ).toLowerCase();
+
+            const matchKeywords: Record<string, string[]> = {
+              "bullpup": ["bullpup"],
+              "sarjorlu": ["şarjör", "sarjor", "şarjörlü", "sarjorlu"],
+              "yari-otomatik": ["yarı otomatik", "yari otomatik", "otomatik av tüfeği", "gazlı", "kinetik"],
+              "pompali": ["pompalı", "pompali", "pump"],
+              "tek-kirma": ["tek kırma", "tek kirma", "tekkırma"],
+              "superpoze": ["süperpoze", "superpoze", "poze"],
+              "cifte": ["çifte", "cifte"],
+            };
+
+            const keywords = matchKeywords[subType] || [];
+            const matches = keywords.some((kw) => fullText.includes(kw));
+            if (!matches) return false;
+          } else {
+            return false;
+          }
+        } else if (product.category !== selectedCategory) {
+          return false;
+        }
       }
 
       // License toggle

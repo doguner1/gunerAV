@@ -55,7 +55,7 @@ async function run() {
   await page.screenshot({ path: path.join(OUTPUT_DIR, "catalog-light.png") });
 
   console.log("5. Testing Product Detail Light...");
-  await page.goto("http://localhost:3000/tr/products/ata-arms-neo12-kinetik-yivsiz-av-tufegi", {
+  await page.goto("http://localhost:3000/tr/products/castello-mod-505-otomatik-av-tufegi", {
     waitUntil: "networkidle0",
   });
   await page.screenshot({ path: path.join(OUTPUT_DIR, "detail-light.png") });

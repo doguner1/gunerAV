@@ -43,7 +43,7 @@ const urlsToTest = [
   { name: "about-en", url: "http://localhost:3000/en/about" },
   { name: "contact-en", url: "http://localhost:3000/en/contact" },
   { name: "privacy-en", url: "http://localhost:3000/en/privacy" },
-  { name: "detail-en", url: "http://localhost:3000/en/products/steiner-ranger-8-3-24x56-rifle-scope" }
+  { name: "detail-en", url: "http://localhost:3000/en/products/castello-mod-505-semi-auto-shotgun" }
 ];
 
 async function run() {

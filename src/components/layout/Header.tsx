@@ -125,7 +125,7 @@ export default function Header() {
                         className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                       >
                         <span>{categoryName}</span>
-                        {cat.id === "silah-muhimmat" && (
+                        {(cat.id.startsWith("tufek-") || cat.id === "muhimmat" || cat.id === "silah-muhimmat") && (
                           <span className="rounded bg-red-50 dark:bg-red-950/60 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:text-red-400">
                             {tCommon("licensed")}
                           </span>
@@ -259,7 +259,7 @@ export default function Header() {
                       className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                     >
                       <span>{categoryName}</span>
-                      {cat.id === "silah-muhimmat" && (
+                      {(cat.id.startsWith("tufek-") || cat.id === "muhimmat" || cat.id === "silah-muhimmat") && (
                         <span className="rounded bg-red-50 dark:bg-red-950/60 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:text-red-400">
                           {tCommon("licensed")}
                         </span>

@@ -1,5 +1,85 @@
 [
   {
+    "id": "tufek-bullpup",
+    "slug": "tufek-bullpup",
+    "name_tr": "Bullpup",
+    "name_en": "Bullpup Shotguns",
+    "description_tr": "Kompakt gövde tasarımı, üstün manevra kabiliyeti ve yüksek atış dengesi sunan modern bullpup yivsiz av tüfekleri.",
+    "description_en": "Modern compact bullpup shotguns offering superior maneuverability, balance, and tactical ergonomics.",
+    "icon": "Crosshair",
+    "image": "/images/categories/firearms.webp"
+  },
+  {
+    "id": "tufek-sarjorlu",
+    "slug": "tufek-sarjorlu",
+    "name_tr": "Şarjörlü",
+    "name_en": "Magazine-Fed Shotguns",
+    "description_tr": "Kutu ve tambur şarjörlü besleme sistemi ile hızlı doldurma ve yüksek atış kapasiteli taktik av tüfekleri.",
+    "description_en": "Magazine-fed shotguns delivering rapid reloading, high capacity, and tactical performance.",
+    "icon": "Layers",
+    "image": "/images/categories/firearms.webp"
+  },
+  {
+    "id": "tufek-yari-otomatik",
+    "slug": "tufek-yari-otomatik",
+    "name_tr": "Yarı Otomatik",
+    "name_en": "Semi-Automatic Shotguns",
+    "description_tr": "Gazlı ve kinetik çalışma mekanizmalı, seri atış kabiliyetine sahip güvenilir yarı otomatik av tüfekleri.",
+    "description_en": "High-reliability gas and inertia-driven semi-automatic hunting shotguns with fast follow-up shots.",
+    "icon": "Zap",
+    "image": "/images/categories/firearms.webp"
+  },
+  {
+    "id": "tufek-pompali",
+    "slug": "tufek-pompali",
+    "name_tr": "Pompalı",
+    "name_en": "Pump-Action Shotguns",
+    "description_tr": "Mekanik el kurmalı, her türlü hava ve saha koşulunda tutukluk yapmayan sağlam pompalı av tüfekleri.",
+    "description_en": "Foolproof mechanical pump-action shotguns engineered for relentless reliability in any environment.",
+    "icon": "Shield",
+    "image": "/images/categories/firearms.webp"
+  },
+  {
+    "id": "tufek-tek-kirma",
+    "slug": "tufek-tek-kirma",
+    "name_tr": "Tek Kırma",
+    "name_en": "Single Barrel Shotguns",
+    "description_tr": "Hafif gövde yapısı, kolay taşınabilirlik ve klasik kırma namlu mekanizmalı tek kırma tüfekler.",
+    "description_en": "Lightweight, easy-to-carry classic single barrel break-action hunting shotguns.",
+    "icon": "Crosshair",
+    "image": "/images/categories/firearms.webp"
+  },
+  {
+    "id": "tufek-superpoze",
+    "slug": "tufek-superpoze",
+    "name_tr": "Süperpoze",
+    "name_en": "Over-and-Under Shotguns",
+    "description_tr": "Üst üste çift namlulu, kusursuz nişan hattı ve trap-skeet veya av için dengeli süperpoze tüfekler.",
+    "description_en": "Over-and-under double barrel shotguns with pristine sightlines and competition-grade balance.",
+    "icon": "Crosshair",
+    "image": "/images/categories/firearms.webp"
+  },
+  {
+    "id": "tufek-cifte",
+    "slug": "tufek-cifte",
+    "name_tr": "Çifte",
+    "name_en": "Side-by-Side Shotguns",
+    "description_tr": "Geleneksel yan yana çift namlulu, zarif gravürlü ve klasik avcılık mirasını taşıyan çifte tüfekler.",
+    "description_en": "Traditional side-by-side double barrel shotguns representing time-honored hunting craftsmanship.",
+    "icon": "Crosshair",
+    "image": "/images/categories/firearms.webp"
+  },
+  {
+    "id": "kamp",
+    "slug": "kamp",
+    "name_tr": "Balık ve Kamp Ekipmanları",
+    "name_en": "Fishing & Camping Equipment",
+    "description_tr": "Olta takımları, makine ve misinalar, profesyonel kamp çadırları, taktik sırt çantaları ve fenerler.",
+    "description_en": "Fishing rods and reels, professional camping tents, tactical backpacks, high-lumen flashlights, and outdoor gear.",
+    "icon": "Compass",
+    "image": "/images/categories/camping.webp"
+  },
+  {
     "id": "optik",
     "slug": "optik",
     "name_tr": "Optik & Dürbün",
@@ -8,6 +88,16 @@
     "description_en": "Tactical rifle scopes, red-dot sights, thermal optics, and high-performance binoculars.",
     "icon": "Crosshair",
     "image": "/images/categories/optics.webp"
+  },
+  {
+    "id": "bicak",
+    "slug": "bicak",
+    "name_tr": "Bıçak & Aksesuar",
+    "name_en": "Knives & Accessories",
+    "description_tr": "Dövme çelik av bıçakları, çok amaçlı çakılar, silah bakım yağları ve deri kılıflar.",
+    "description_en": "Forged hunting knives, multi-tools, gun maintenance kits, and leather holsters.",
+    "icon": "Layers",
+    "image": "/images/categories/knives.webp"
   },
   {
     "id": "giyim",
@@ -20,32 +110,12 @@
     "image": "/images/categories/apparel.webp"
   },
   {
-    "id": "kamp",
-    "slug": "kamp",
-    "name_tr": "Kamp & Taktik Ekipman",
-    "name_en": "Camping & Tactical Gear",
-    "description_tr": "Profesyonel kamp çadırları, taktik sırt çantaları, yüksek lümenli fenerler ve hayatta kalma kitleri.",
-    "description_en": "Professional tents, tactical backpacks, high-lumen flashlights, and survival gear.",
-    "icon": "Compass",
-    "image": "/images/categories/camping.webp"
-  },
-  {
-    "id": "aksesuar",
-    "slug": "aksesuar",
-    "name_tr": "Bıçak & Aksesuar",
-    "name_en": "Knives & Accessories",
-    "description_tr": "Dövme çelik av bıçakları, çok amaçlı çakılar, silah bakım yağları ve deri kılıflar.",
-    "description_en": "Forged hunting knives, multi-tools, gun maintenance kits, and leather holsters.",
-    "icon": "Layers",
-    "image": "/images/categories/knives.webp"
-  },
-  {
-    "id": "silah-muhimmat",
-    "slug": "silah-muhimmat",
-    "name_tr": "Tüfek & Mühimmat (Ruhsatlı)",
-    "name_en": "Shotguns & Ammo (Licensed)",
-    "description_tr": "Yivsiz av tüfekleri, havalı tüfekler ve orijinal fişek çeşitleri. Sadece mağazamızda ruhsat ibrazıyla satılır.",
-    "description_en": "Shotguns, air rifles, and certified ammunition. Sold exclusively in-store with legal permit verification.",
+    "id": "muhimmat",
+    "slug": "muhimmat",
+    "name_tr": "Mühimmat & Fişek (Ruhsatlı)",
+    "name_en": "Ammunition & Cartridges (Licensed)",
+    "description_tr": "12, 16, 20 ve 36 kalibre orijinal av ve trap fişekleri. Sadece mağazamızda ruhsat ibrazıyla satılır.",
+    "description_en": "Original 12, 16, 20, and 36 gauge hunting and target cartridges. In-store purchase with license only.",
     "icon": "AlertTriangle",
     "image": "/images/categories/firearms.webp"
   }
