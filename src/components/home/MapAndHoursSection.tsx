@@ -16,7 +16,7 @@ export default function MapAndHoursSection() {
 
   return (
     <section id="magaza-konum" className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 py-24 transition-colors">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">
         <div className="mb-12">
           <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
             {tCommon("physicalStoreAndDirections")}

@@ -55,10 +55,10 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       {/* Fine Tactical Grid Overlay */}
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+      <div className="relative z-10 mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16 w-full">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 xl:gap-32 items-center justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="lg:col-span-7 space-y-6 sm:space-y-8">
+          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-6 sm:space-y-8">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
@@ -161,7 +161,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
           </div>
 
           {/* RIGHT COLUMN: Authentic Apple iOS Frosted Liquid Glass Spotlight Card */}
-          <div className="lg:col-span-5 relative mt-4 lg:mt-0">
+          <div className="w-full lg:w-2/5 xl:w-[45%] max-w-lg lg:max-w-none lg:ml-auto relative mt-8 lg:mt-0">
             {/* iOS Liquid Glass Container */}
             <div className="relative rounded-[32px] bg-neutral-900/40 dark:bg-black/40 backdrop-blur-3xl border border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.4)] p-5 sm:p-6 pb-12 sm:pb-14 overflow-hidden text-white">
               {/* Spotlight Header Bar */}

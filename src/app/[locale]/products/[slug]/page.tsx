@@ -49,9 +49,9 @@ export async function generateMetadata({
   const categoryName = isTr ? category?.name_tr : category?.name_en;
   const brandStr = product.brand || "";
 
-  const keywords = isTr
+  const keywords = (isTr
     ? [brandStr, name, categoryName, "Malatya", "Malatya av bayii", "fiyatları", "özellikleri", "satın al", brandStr && `${brandStr} Malatya`, "tüfek", "fişek"].filter(Boolean)
-    : [brandStr, name, categoryName, "Malatya hunting", "dealer", "price", "specs", brandStr && `${brandStr} Malatya`].filter(Boolean);
+    : [brandStr, name, categoryName, "Malatya hunting", "dealer", "price", "specs", brandStr && `${brandStr} Malatya`].filter(Boolean)) as string[];
 
   return {
     title,
@@ -108,7 +108,7 @@ export default async function ProductDetailPage({
         ]}
       />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">
         {/* Breadcrumb Navigation */}
         <nav
           aria-label="Breadcrumb"

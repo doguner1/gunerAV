@@ -17,7 +17,7 @@ export default function HomeCtaBanner() {
 
   return (
     <section className="bg-neutral-50 dark:bg-black py-20 relative overflow-hidden transition-colors">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">
         <div className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-r from-neutral-900 via-neutral-950 to-black p-8 sm:p-14 shadow-2xl">
           {/* Subtle gold / ambient accent */}
           <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#d4af37]/10 blur-3xl pointer-events-none" />

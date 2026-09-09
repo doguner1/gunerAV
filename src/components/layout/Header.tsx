@@ -56,7 +56,7 @@ export default function Header() {
             : "bg-white/80 dark:bg-neutral-950/70 backdrop-blur-md border-b border-neutral-200/60 dark:border-neutral-800/60"
         }`}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-[1600px] 2xl:max-w-[1800px] items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16">
           {/* Logo */}
           <Link href="/" className="group flex items-center gap-2.5 shrink-0">
             <div className="flex flex-col">

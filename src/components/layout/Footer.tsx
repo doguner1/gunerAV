@@ -24,7 +24,7 @@ export default function Footer() {
     <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 transition-colors">
       {/* Statutory License Warning Bar */}
       <div className="border-b border-red-200 dark:border-red-950/60 bg-red-50/80 dark:bg-red-950/30 px-4 py-4 transition-colors">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 text-xs text-red-700 dark:text-red-400">
+        <div className="mx-auto flex max-w-[1600px] 2xl:max-w-[1800px] items-center gap-3 text-xs text-red-700 dark:text-red-400">
           <ShieldAlert className="h-5 w-5 shrink-0 text-red-600 dark:text-red-500" />
           <p className="font-semibold leading-relaxed">
             <strong className="text-red-800 dark:text-red-300 font-extrabold">{tCommon("licensedOfficialHuntingStore")} ({tCommon("permitRequiredNotice")}):</strong>{" "}
@@ -34,7 +34,7 @@ export default function Footer() {
       </div>
 
       {/* Main Footer Content */}
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
           {/* Col 1: Brand & Identity */}
           <div className="space-y-4">
