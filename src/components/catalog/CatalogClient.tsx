@@ -7,6 +7,7 @@ import FilterBar from "./FilterBar";
 import ProductCard from "@/components/product/ProductCard";
 import { useLocale, useTranslations } from "next-intl";
 import { AlertCircle } from "lucide-react";
+import { trackSearch, trackCategoryClick } from "@/lib/analytics";
 
 interface CatalogClientProps {
   initialProducts: Product[];
@@ -120,13 +121,27 @@ export default function CatalogClient({
     });
   }, [initialProducts, selectedCategory, licenseOnly, dealsOnly, searchQuery]);
 
+  // Debounced search query analytics
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    const timer = setTimeout(() => {
+      trackSearch(searchQuery, filteredProducts.length);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [searchQuery, filteredProducts.length]);
+
+  const handleSelectCategory = (cat: string) => {
+    setSelectedCategory(cat);
+    trackCategoryClick(cat);
+  };
+
   return (
     <div className="space-y-8">
       {/* Filter Toolbar */}
       <FilterBar
         categories={categories}
         selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={handleSelectCategory}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         licenseOnly={licenseOnly}

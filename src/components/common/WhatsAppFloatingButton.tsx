@@ -4,6 +4,7 @@ import { STORE_INFO } from "@/lib/store";
 import { generateWhatsAppLink } from "@/lib/utils";
 import { MessageCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { trackWhatsAppClick } from "@/lib/analytics";
 
 export default function WhatsAppFloatingButton() {
   const locale = useLocale();
@@ -22,6 +23,7 @@ export default function WhatsAppFloatingButton() {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackWhatsAppClick("floating_button")}
         aria-label={t("whatsappInquiryLine")}
         className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:bg-[#20ba59] active:scale-95"
       >

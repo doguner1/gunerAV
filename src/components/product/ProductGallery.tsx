@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useLocale } from "next-intl";
+import { trackProductZoom } from "@/lib/analytics";
 import {
   Maximize2,
   ZoomIn,
@@ -157,10 +158,16 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
       {/* 1. Main Image Showcase */}
       <div
         ref={containerRef}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={() => {
+          setIsHovered(true);
+          trackProductZoom({ id: productName, name: productName, imageIndex: selected, type: "lens" });
+        }}
         onMouseLeave={() => setIsHovered(false)}
         onMouseMove={handleMouseMove}
-        onClick={() => setIsLightboxOpen(true)}
+        onClick={() => {
+          setIsLightboxOpen(true);
+          trackProductZoom({ id: productName, name: productName, imageIndex: selected, type: "lightbox" });
+        }}
         className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white shadow-sm dark:shadow-2xl cursor-zoom-in select-none"
       >
         {/* Base Unzoomed Image */}

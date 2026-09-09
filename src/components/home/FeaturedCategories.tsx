@@ -1,9 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { getAllCategories, getAllProducts } from "@/lib/products";
 import { Product } from "@/types/product";
 import { ArrowUpRight, ShieldAlert } from "lucide-react";
+import { trackCategoryClick } from "@/lib/analytics";
 
 export default function FeaturedCategories({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Categories");
@@ -64,6 +67,7 @@ export default function FeaturedCategories({ products = [] }: { products?: Produ
               <Link
                 key={category.id}
                 href={`/products?category=${category.id}`}
+                onClick={() => trackCategoryClick(category.id, name)}
                 className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-lg transition-all duration-500 hover:-translate-y-1.5 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-black/60"
               >
                 {/* Background Image Container */}

@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { Product, ProductVariant } from "@/types/product";
 import { formatPrice, generateWhatsAppLink } from "@/lib/utils";
 import { STORE_INFO } from "@/lib/store";
+import {
+  trackProductView,
+  trackVariantSelect,
+  trackWhatsAppClick,
+  trackPhoneClick,
+} from "@/lib/analytics";
 import ProductGallery from "@/components/product/ProductGallery";
 import LicenseNotice from "@/components/product/LicenseNotice";
 import {
@@ -43,6 +49,17 @@ export default function ProductOverview({
 
   // Selected variant state
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
+
+  // Track product view on page load
+  useEffect(() => {
+    trackProductView({
+      id: product.id,
+      name,
+      category: categoryName || product.category,
+      price: product.price,
+      slug: product.slug_tr || product.slug_en || product.id,
+    });
+  }, [product.id, name, categoryName]);
 
   const activeVariant: ProductVariant | undefined = hasVariants
     ? variants[selectedVariantIndex] || variants[0]
@@ -168,7 +185,10 @@ export default function ProductOverview({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setSelectedVariantIndex(idx)}
+                      onClick={() => {
+                        setSelectedVariantIndex(idx);
+                        trackVariantSelect({ id: product.id, name }, v.name || v.color_code || `Variant #${idx + 1}`);
+                      }}
                       className={`group relative flex flex-col items-center justify-between p-2 rounded-xl border text-center transition-all cursor-pointer ${
                         isSelected
                           ? "border-[#d4af37] bg-[#d4af37]/10 dark:bg-[#d4af37]/15 ring-2 ring-[#d4af37]/40 shadow-sm"
@@ -237,6 +257,7 @@ export default function ProductOverview({
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackWhatsAppClick("product_detail_main", { id: product.id, name })}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3.5 text-sm font-black uppercase tracking-wider text-neutral-950 shadow-xl transition-all hover:bg-[#20ba59] active:scale-98"
           >
             <MessageCircle className="h-5 w-5 fill-neutral-950 text-neutral-950" />
@@ -250,6 +271,7 @@ export default function ProductOverview({
           <div className="grid grid-cols-2 gap-3">
             <a
               href={`tel:${STORE_INFO.phone}`}
+              onClick={() => trackPhoneClick("product_detail_call")}
               className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 py-3 text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 shadow-sm"
             >
               <Phone className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />

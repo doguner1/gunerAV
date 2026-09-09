@@ -8,6 +8,7 @@ import { Product } from "@/types/product";
 import { formatPrice, generateWhatsAppLink } from "@/lib/utils";
 import { STORE_INFO } from "@/lib/store";
 import { MessageCircle, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
+import { trackEvent, trackWhatsAppClick } from "@/lib/analytics";
 
 interface ProductCardProps {
   product: Product;
@@ -39,7 +40,11 @@ export default function ProductCard({ product, categoryName, priority = false }:
       {/* Top Media Area */}
       <div>
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-white border-b border-neutral-200 dark:border-neutral-800/80">
-          <Link href={`/products/${slug}`} className="relative block h-full w-full flex items-center justify-center">
+          <Link
+            href={`/products/${slug}`}
+            onClick={() => trackEvent("click_product_card", { item_id: product.id, item_name: name, category: product.category })}
+            className="relative block h-full w-full flex items-center justify-center"
+          >
             {!isLoaded && (
               <div className="absolute inset-0 bg-neutral-100 dark:bg-neutral-900/60 animate-pulse" />
             )}
@@ -138,6 +143,7 @@ export default function ProductCard({ product, categoryName, priority = false }:
         <div className="grid grid-cols-2 gap-2">
           <Link
             href={`/products/${slug}`}
+            onClick={() => trackEvent("click_product_card_details", { item_id: product.id, item_name: name })}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white"
           >
             <span>{t("details")}</span>
@@ -148,6 +154,7 @@ export default function ProductCard({ product, categoryName, priority = false }:
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackWhatsAppClick("product_card_inquire", { id: product.id, name })}
             className="flex items-center justify-center gap-1.5 rounded-xl bg-neutral-950 dark:bg-white px-3 py-2 text-xs font-extrabold text-white dark:text-black transition-all hover:bg-neutral-800 dark:hover:bg-neutral-200 active:scale-95 shadow-sm"
           >
             <MessageCircle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500" />
