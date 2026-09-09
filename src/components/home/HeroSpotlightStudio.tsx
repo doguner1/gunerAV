@@ -34,18 +34,18 @@ export interface DesignConfig {
   padding: number;      // px
 }
 
-// 1. TAM EKRAN (1920x1080) KULLANICININ SABİTLEDİĞİ AYAR (KORUMALI)
+// 1. TAM EKRAN (1920x1080) KULLANICININ ONAYLADIĞI SABİT AYAR
 export const FULLSCREEN_CONFIG: DesignConfig = {
-  width: 445,
-  offsetX: 80,
-  offsetY: -200,
-  imageHeight: 315,
-  borderRadius: 40,
-  bgOpacity: 30,
+  width: 435,
+  offsetX: 110,
+  offsetY: -245,
+  imageHeight: 330,
+  borderRadius: 36,
+  bgOpacity: 0,
   padding: 18,
 };
 
-// 2. PENCERE / YARIM EKRAN KULLANICININ ONAYLADIĞI YENİ AYAR
+// 2. PENCERE / YARIM EKRAN KULLANICININ ONAYLADIĞI SABİT AYAR
 export const DEFAULT_WINDOWED_CONFIG: DesignConfig = {
   width: 430,
   offsetX: 80,
@@ -76,7 +76,7 @@ export default function HeroSpotlightStudio({
   const [windowedConfig, setWindowedConfig] = useState<DesignConfig>(DEFAULT_WINDOWED_CONFIG);
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [isStudioEnabled, setIsStudioEnabled] = useState(true); // Minik rozet hazır durur, panel kapalıdır
+  const [isStudioEnabled, setIsStudioEnabled] = useState(false); // Canlı Tasarım Stüdyosu tamamen kapatıldı
   const [isDesktop, setIsDesktop] = useState(false);
   const [screenSize, setScreenSize] = useState({ width: 1920, height: 1080 });
   const [editMode, setEditMode] = useState<"windowed" | "fullscreen">("windowed");
