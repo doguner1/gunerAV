@@ -49,50 +49,90 @@ export default function FeaturedCategories({ products = [] }: { products?: Produ
             const desc = isTr ? category.description_tr : category.description_en;
             const isLicenseReq = category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-") || category.id === "muhimmat";
 
+            // Category specific tag
+            const badgeTag = isLicenseReq
+              ? (isTr ? "RUHSATLI" : "LICENSED")
+              : category.id === "kamp"
+              ? (isTr ? "DOĞA & KAMP" : "OUTDOOR")
+              : category.id === "optik"
+              ? (isTr ? "PRO OPTİK" : "PRECISION")
+              : category.id === "bicak"
+              ? (isTr ? "DÖVME ÇELİK" : "STEEL")
+              : (isTr ? "TAKTİK GİYİM" : "TACTICAL");
+
             return (
               <Link
                 key={category.id}
                 href={`/products?category=${category.id}`}
-                className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-950 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-neutral-400 dark:hover:border-neutral-700"
+                className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-lg transition-all duration-500 hover:-translate-y-1.5 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-black/60"
               >
-                {/* Background Image with Overlay */}
-                <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-950">
+                {/* Background Image Container */}
+                <div className="relative aspect-[16/11] w-full overflow-hidden bg-neutral-900">
                   <Image
                     src={category.image}
                     alt={name}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                    priority={false}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+
+                  {/* Top Subtle Vignette */}
+                  <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 via-black/20 to-transparent pointer-events-none" />
+
+                  {/* Decreasing Blur Layer (Azalan Yumuşak Cam Blurluğu) */}
+                  <div
+                    className="absolute inset-x-0 bottom-0 h-3/5 pointer-events-none backdrop-blur-[4px]"
+                    style={{
+                      maskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 100%)",
+                      WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 100%)",
+                    }}
+                  />
+
+                  {/* Bottom Rich Gradient + Scrim for Typography */}
+                  <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black via-black/85 via-50% to-transparent pointer-events-none" />
                 </div>
 
-                {/* Card Content (Always white and high-contrast inside image card) */}
-                <div className="absolute inset-0 p-6 flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    {isLicenseReq ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-red-500/50 bg-red-950/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 backdrop-blur-md">
-                        <ShieldAlert className="h-3 w-3" />
-                        {tCommon("licensedCategory")}
-                      </span>
-                    ) : (
-                      <span className="rounded-md border border-neutral-800 bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-neutral-300 backdrop-blur-md">
-                        {count > 0 ? `${count} ${t("itemCount")}` : tCommon("collections")}
-                      </span>
-                    )}
+                {/* Top Badges & Action */}
+                <div className="absolute inset-x-0 top-0 p-4 flex items-center justify-between z-10">
+                  {isLicenseReq ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-red-600/90 text-white px-3 py-1 text-[11px] font-black uppercase tracking-wider shadow-md backdrop-blur-md">
+                      <ShieldAlert className="h-3.5 w-3.5 text-white animate-pulse" />
+                      {badgeTag}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/90 text-white px-3 py-1 text-[11px] font-black uppercase tracking-wider shadow-md backdrop-blur-md">
+                      <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+                      {badgeTag}
+                    </span>
+                  )}
 
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all group-hover:bg-white group-hover:text-black">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </div>
+                  {/* Floating Action Button */}
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white/90 border border-white/20 backdrop-blur-md transition-all duration-300 group-hover:bg-amber-400 group-hover:text-black group-hover:border-amber-400 group-hover:scale-110 shadow-lg">
+                    <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </div>
+                </div>
 
-                  <div>
-                    <h3 className="font-heading text-xl font-bold uppercase tracking-wide text-white group-hover:text-[#d4af37] transition-colors">
-                      {name}
-                    </h3>
-                    <p className="mt-1.5 text-xs text-neutral-300 line-clamp-2">
-                      {desc}
-                    </p>
+                {/* Bottom Content Area */}
+                <div className="absolute inset-x-0 bottom-0 p-5 z-10 flex flex-col justify-end">
+                  <h3 className="font-heading text-2xl sm:text-2xl font-black uppercase tracking-tight text-white group-hover:text-amber-400 transition-colors drop-shadow-md">
+                    {name}
+                  </h3>
+
+                  <p className="mt-1 text-xs sm:text-xs text-neutral-300/90 line-clamp-2 leading-relaxed font-normal">
+                    {desc}
+                  </p>
+
+                  {/* Bottom Meta & Explore Bar */}
+                  <div className="mt-3.5 flex items-center justify-between pt-2.5 border-t border-white/15 text-xs">
+                    <span className="text-neutral-400 font-medium flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      {count > 0 ? `${count} ${t("itemCount")}` : (isTr ? "Koleksiyonu İncele" : "Explore")}
+                    </span>
+
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-200 bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-md backdrop-blur-md group-hover:bg-amber-400 group-hover:text-black group-hover:border-amber-400 transition-all">
+                      {t("viewCategory")} →
+                    </span>
                   </div>
                 </div>
               </Link>
