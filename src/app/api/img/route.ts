@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
             ? { r: 255, g: 255, b: 255, alpha: 0 }
             : { r: 255, g: 255, b: 255, alpha: 1 };
 
-          // 3. High-definition output (max 2560px, pristine 92 quality webp)
+          // 3. High-definition output (crisp 1600px retina, fast & lightweight webp)
           outputBuffer = await sharp(trimmed.data)
             .extend({
               top: padY,
@@ -105,8 +105,8 @@ export async function GET(req: NextRequest) {
               right: padX,
               background: bg,
             })
-            .resize({ width: 2560, fit: "inside", withoutEnlargement: true })
-            .webp({ quality: 92, effort: 4 })
+            .resize({ width: 1600, fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 88, effort: 2 })
             .toBuffer();
 
           outputContentType = "image/webp";
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": outputContentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=86400, immutable",
         "X-Content-Type-Options": "nosniff",
       },
     });
