@@ -41,17 +41,26 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
     <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-20 pb-10 lg:pt-24 lg:pb-12">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-        <Image
-          src="/images/hero-bg-hd.webp"
-          alt={tCommon("bgAlt")}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center scale-100 transition-transform duration-1000"
-        />
-        {/* Directional Overlay: Darker on the left for crisp text legibility, transparent on right so rifle shines through */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/80" />
+        {/* Responsive Atmospheric Tactical Background (Single download matching device viewport, 1:1 Retina/OLED sharpness) */}
+        <picture className="absolute inset-0 block w-full h-full">
+          <source media="(max-width: 767px)" srcSet="/images/hero-bg-mobile.webp" />
+          <source media="(min-width: 768px)" srcSet="/images/hero-bg-hd.webp" />
+          <img
+            src="/images/hero-bg-hd.webp"
+            alt={tCommon("bgAlt")}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="w-full h-full object-cover object-center scale-100 transition-transform duration-1000"
+          />
+        </picture>
+
+        {/* Desktop Directional Overlay: Darker on the left for crisp text legibility, transparent on right */}
+        <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
+        <div className="hidden md:block absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/80" />
+
+        {/* Mobile Directional Overlay: Cinematic vertical vignette preserving weapon details and text contrast */}
+        <div className="block md:hidden absolute inset-0 bg-gradient-to-b from-black/85 via-black/45 to-black/90" />
       </div>
 
       {/* Fine Tactical Grid Overlay */}
