@@ -11,6 +11,8 @@ import MobileQuickBar from "@/components/common/MobileQuickBar";
 import CookieBanner from "@/components/common/CookieBanner";
 import { StoreJsonLd } from "@/components/seo/JsonLd";
 import { STORE_INFO } from "@/lib/store";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "../globals.css";
 
 const inter = Inter({
@@ -129,6 +131,8 @@ export default async function LocaleLayout({
           <WhatsAppFloatingButton />
           <MobileQuickBar />
           <CookieBanner />
+          <Analytics />
+          <SpeedInsights />
         </NextIntlClientProvider>
       </body>
     </html>

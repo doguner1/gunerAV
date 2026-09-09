@@ -163,15 +163,11 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
         onClick={() => setIsLightboxOpen(true)}
         className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white shadow-sm dark:shadow-2xl cursor-zoom-in select-none"
       >
-        {/* Scaled Image Container */}
+        {/* Base Unzoomed Image */}
         <div
-          className="relative h-full w-full flex items-center justify-center transition-transform duration-150 ease-out will-change-transform"
-          style={{
-            transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
-            transform: isHovered ? "scale(2.2)" : "scale(1)",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-          }}
+          className={`relative h-full w-full flex items-center justify-center transition-opacity duration-200 ${
+            isHovered ? "opacity-0" : "opacity-100"
+          }`}
         >
           <Image
             src={activeImage}
@@ -180,11 +176,21 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
             priority
             unoptimized={true}
             className="object-contain pointer-events-none"
-            style={{
-              imageRendering: "auto",
-            }}
           />
         </div>
+
+        {/* High-Definition Magnifier Lens (Direct full HD pixel sampling without GPU blur) */}
+        <div
+          className={`pointer-events-none absolute inset-0 transition-opacity duration-150 ease-out ${
+            isHovered ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            backgroundImage: `url(${activeImage})`,
+            backgroundPosition: `${mousePos.x}% ${mousePos.y}%`,
+            backgroundSize: "260%",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
 
         {/* Fullscreen Expand Button (Accessible on mobile & desktop) */}
         <button
