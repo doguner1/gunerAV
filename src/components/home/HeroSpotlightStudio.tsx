@@ -522,17 +522,17 @@ export default function HeroSpotlightStudio({
               </div>
 
               {/* Controls */}
-              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 text-xs">
+              <div className="space-y-3.5 max-h-[360px] overflow-y-auto pr-1 text-xs">
                 {/* 1. Genişlik (En) */}
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between items-center text-[11px] mb-1">
                     <span className="text-neutral-300 font-bold">📏 Kart Genişliği:</span>
                     <span className="font-mono text-[#d4af37] font-bold">{currentConfig.width}px</span>
                   </div>
                   <input
                     type="range"
-                    min="300"
-                    max="650"
+                    min="250"
+                    max="800"
                     step="5"
                     value={currentConfig.width}
                     onChange={(e) => updateParam("width", Number(e.target.value))}
@@ -541,61 +541,121 @@ export default function HeroSpotlightStudio({
                 </div>
 
                 {/* 2. Yatay Konum (Sağa / Sola / Ortaya) */}
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-neutral-300 font-bold">↔️ Yatay Konum (Sola / Sağa):</span>
-                    <span className="font-mono text-[#d4af37] font-bold">
-                      {currentConfig.offsetX < 0 ? `${Math.abs(currentConfig.offsetX)}px Sola` : `${currentConfig.offsetX}px Sağa`}
+                <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-2">
+                  <div className="flex justify-between items-center text-[11px] mb-1.5">
+                    <span className="text-white font-bold flex items-center gap-1">
+                      <span>↔️ Yatay Konum:</span>
+                      <span className="font-mono text-[#d4af37]">
+                        {currentConfig.offsetX < 0 ? `${Math.abs(currentConfig.offsetX)}px Sola` : `${currentConfig.offsetX}px Sağa`}
+                      </span>
                     </span>
+                    {/* Quick Nudge Buttons */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => updateParam("offsetX", currentConfig.offsetX - 25)}
+                        className="px-1.5 py-0.5 rounded bg-black border border-neutral-700 text-[10px] text-neutral-300 hover:text-white"
+                        title="25px Sola Kaydır"
+                      >
+                        -25
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateParam("offsetX", currentConfig.offsetX - 5)}
+                        className="px-1.5 py-0.5 rounded bg-black border border-neutral-700 text-[10px] text-neutral-300 hover:text-white"
+                        title="5px Sola Kaydır"
+                      >
+                        -5
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateParam("offsetX", currentConfig.offsetX + 5)}
+                        className="px-1.5 py-0.5 rounded bg-black border border-neutral-700 text-[10px] text-neutral-300 hover:text-white"
+                        title="5px Sağa Kaydır"
+                      >
+                        +5
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateParam("offsetX", currentConfig.offsetX + 25)}
+                        className="px-1.5 py-0.5 rounded bg-black border border-neutral-700 text-[10px] text-neutral-300 hover:text-white"
+                        title="25px Sağa Kaydır"
+                      >
+                        +25
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="range"
-                    min="-600"
-                    max="150"
+                    min="-900"
+                    max="900"
                     step="5"
                     value={currentConfig.offsetX}
                     onChange={(e) => updateParam("offsetX", Number(e.target.value))}
                     className="w-full accent-[#d4af37] cursor-pointer"
                   />
-                  <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
-                    <span>⬅️ Ekran Ortasına (Sola)</span>
-                    <span>Sağa Doğru ➡️</span>
+                  <div className="flex justify-between text-[9px] text-neutral-400 mt-1">
+                    <span>⬅️ -900px (Sola)</span>
+                    <span className="text-[#d4af37] font-bold">0px</span>
+                    <span>+900px (Sağa) ➡️</span>
                   </div>
                 </div>
 
                 {/* 3. Dikey Konum (Yukarı / Aşağı) */}
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-neutral-300 font-bold">↕️ Dikey Konum (Yukarı / Aşağı):</span>
-                    <span className="font-mono text-[#d4af37] font-bold">
-                      {currentConfig.offsetY < 0 ? `${Math.abs(currentConfig.offsetY)}px Yukarı` : `${currentConfig.offsetY}px Aşağı`}
+                <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-2">
+                  <div className="flex justify-between items-center text-[11px] mb-1.5">
+                    <span className="text-white font-bold flex items-center gap-1">
+                      <span>↕️ Dikey Konum:</span>
+                      <span className="font-mono text-[#d4af37]">
+                        {currentConfig.offsetY < 0 ? `${Math.abs(currentConfig.offsetY)}px Yukarı` : `${currentConfig.offsetY}px Aşağı`}
+                      </span>
                     </span>
+                    {/* Quick Nudge Buttons */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => updateParam("offsetY", currentConfig.offsetY - 20)}
+                        className="px-1.5 py-0.5 rounded bg-black border border-neutral-700 text-[10px] text-neutral-300 hover:text-white"
+                        title="20px Yukarı Çek"
+                      >
+                        ⬆️ 20
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateParam("offsetY", currentConfig.offsetY + 20)}
+                        className="px-1.5 py-0.5 rounded bg-black border border-neutral-700 text-[10px] text-neutral-300 hover:text-white"
+                        title="20px Aşağı İndir"
+                      >
+                        ⬇️ 20
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="range"
-                    min="-200"
-                    max="150"
+                    min="-500"
+                    max="400"
                     step="5"
                     value={currentConfig.offsetY}
                     onChange={(e) => updateParam("offsetY", Number(e.target.value))}
                     className="w-full accent-[#d4af37] cursor-pointer"
                   />
-                  <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
-                    <span>⬆️ Daha Yukarı</span>
-                    <span>Daha Aşağı ⬇️</span>
+                  <div className="flex justify-between text-[9px] text-neutral-400 mt-1">
+                    <span>⬆️ -500px (Yukarı)</span>
+                    <span className="text-[#d4af37] font-bold">0px</span>
+                    <span>+400px (Aşağı) ⬇️</span>
                   </div>
                 </div>
 
                 {/* 4. Resim Yüksekliği */}
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between items-center text-[11px] mb-1">
                     <span className="text-neutral-300 font-bold">🖼️ Fotoğraf Yüksekliği:</span>
                     <span className="font-mono text-[#d4af37] font-bold">{currentConfig.imageHeight}px</span>
                   </div>
                   <input
                     type="range"
-                    min="140"
-                    max="400"
+                    min="100"
+                    max="500"
                     step="5"
                     value={currentConfig.imageHeight}
                     onChange={(e) => updateParam("imageHeight", Number(e.target.value))}
@@ -605,14 +665,14 @@ export default function HeroSpotlightStudio({
 
                 {/* 5. Köşe Yuvarlaklığı */}
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between items-center text-[11px] mb-1">
                     <span className="text-neutral-300 font-bold">🔘 Köşe Yuvarlaklığı:</span>
                     <span className="font-mono text-[#d4af37] font-bold">{currentConfig.borderRadius}px</span>
                   </div>
                   <input
                     type="range"
-                    min="8"
-                    max="40"
+                    min="0"
+                    max="60"
                     step="2"
                     value={currentConfig.borderRadius}
                     onChange={(e) => updateParam("borderRadius", Number(e.target.value))}
@@ -622,14 +682,14 @@ export default function HeroSpotlightStudio({
 
                 {/* 6. Arkaplan Koyu Saydamlığı */}
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between items-center text-[11px] mb-1">
                     <span className="text-neutral-300 font-bold">🌫️ Arkaplan Saydamlığı:</span>
                     <span className="font-mono text-[#d4af37] font-bold">%{currentConfig.bgOpacity}</span>
                   </div>
                   <input
                     type="range"
-                    min="20"
-                    max="95"
+                    min="0"
+                    max="100"
                     step="5"
                     value={currentConfig.bgOpacity}
                     onChange={(e) => updateParam("bgOpacity", Number(e.target.value))}
