@@ -441,18 +441,62 @@ function populateForm(data) {
     }
   };
 
-  const isAmmo =
-    (data.category && (data.category === "muhimmat" || data.category.startsWith("muhimmat-"))) ||
-    fullText.includes("fişek") ||
-    fullText.includes("fisek") ||
-    fullText.includes("mühimmat") ||
-    fullText.includes("muhimmat") ||
-    fullText.includes("kartuş") ||
-    fullText.includes("sterling") ||
-    /\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i.test(fullText);
+  const titleLower = (data.title || "").toLowerCase();
+  const isFirearm =
+    titleLower.includes("tüfek") ||
+    titleLower.includes("tufek") ||
+    titleLower.includes("tabanca") ||
+    titleLower.includes("av tüfeği") ||
+    titleLower.includes("av tufegi") ||
+    titleLower.includes("pompalı") ||
+    titleLower.includes("pompali") ||
+    titleLower.includes("poze") ||
+    titleLower.includes("çifte") ||
+    titleLower.includes("cifte");
 
-  // 1. Mühimmat & Av Fişekleri Tespiti (Ruhsat KESİNLİKLE İstenmez)
-  if (isAmmo) {
+  // 1. Ateşli Silah / Av Tüfeği Tespiti (Ruhsat KESİNLİKLE Zorunlu)
+  if (isFirearm) {
+    licenseChk.checked = true;
+    if (fullText.includes("bullpup")) {
+      catSelect.value = "tufek-bullpup";
+    } else if (titleLower.includes("şarjörlü") || titleLower.includes("sarjorlu") || (specs["Tipi"] && /şarjör/i.test(specs["Tipi"]))) {
+      catSelect.value = "tufek-sarjorlu";
+    } else if (fullText.includes("pompalı") || fullText.includes("pompali") || fullText.includes("pump")) {
+      catSelect.value = "tufek-pompali";
+    } else if (fullText.includes("tek kırma") || fullText.includes("tek kirma") || fullText.includes("tekkırma")) {
+      catSelect.value = "tufek-tek-kirma";
+    } else if (fullText.includes("süperpoze") || fullText.includes("superpoze") || fullText.includes("over and under") || fullText.includes("poze")) {
+      catSelect.value = "tufek-superpoze";
+    } else if (fullText.includes("çifte") || fullText.includes("cifte") || fullText.includes("side by side")) {
+      catSelect.value = "tufek-cifte";
+    } else if (
+      fullText.includes("yarı otomatik") ||
+      fullText.includes("yari otomatik") ||
+      fullText.includes("otomatik") ||
+      fullText.includes("kinetik") ||
+      fullText.includes("inertia") ||
+      fullText.includes("gazlı") ||
+      fullText.includes("semi-auto") ||
+      fullText.includes("semi auto") ||
+      fullText.includes("patrol") ||
+      fullText.includes("gordion")
+    ) {
+      catSelect.value = "tufek-yari-otomatik";
+    } else {
+      catSelect.value = "tufek";
+    }
+  } else if (
+    (data.category && (data.category === "muhimmat" || data.category.startsWith("muhimmat-"))) ||
+    titleLower.includes("fişek") ||
+    titleLower.includes("fisek") ||
+    titleLower.includes("mühimmat") ||
+    titleLower.includes("muhimmat") ||
+    titleLower.includes("kartuş") ||
+    titleLower.includes("kartus") ||
+    titleLower.includes("sterling") ||
+    /\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i.test(titleLower)
+  ) {
+    // 2. Mühimmat & Av Fişekleri Tespiti (Ruhsat KESİNLİKLE İstenmez)
     licenseChk.checked = false; // Av fişekleri ruhsatsız satılır
 
     if (data.category && (data.category === "muhimmat" || data.category.startsWith("muhimmat-"))) {

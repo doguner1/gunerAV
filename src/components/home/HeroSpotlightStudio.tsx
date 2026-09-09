@@ -40,14 +40,14 @@ export const FULLSCREEN_CONFIG: DesignConfig = {
   padding: 18,
 };
 
-// 2. PENCERE / YARIM EKRAN BAŞLANGIÇ AYARI (KULLANICI DİLEDİĞİ GİBİ DEĞİŞTİREBİLİR)
+// 2. PENCERE / YARIM EKRAN KULLANICININ ONAYLADIĞI YENİ AYAR
 export const DEFAULT_WINDOWED_CONFIG: DesignConfig = {
-  width: 445,
-  offsetX: 30,
-  offsetY: -75,
-  imageHeight: 315,
+  width: 430,
+  offsetX: 80,
+  offsetY: -180,
+  imageHeight: 290,
   borderRadius: 40,
-  bgOpacity: 30,
+  bgOpacity: 20,
   padding: 18,
 };
 
@@ -82,9 +82,11 @@ export default function HeroSpotlightStudio({
       setIsDesktop(w >= 1024);
       setScreenSize({ width: w, height: h });
 
-      // Eğer pencere küçükse otomatik pencere moduna geç
-      if (w < 1600 || h < 900) {
+      // Eğer ekran 1920x1080 tam ekran değilse (pencere / laptop) pencere moduna geç
+      if (w < 1880 || h < 940) {
         setEditMode("windowed");
+      } else {
+        setEditMode("fullscreen");
       }
     };
 
@@ -94,16 +96,16 @@ export default function HeroSpotlightStudio({
   }, []);
 
   // Şu anki ekran pencere / yarım ekran modunda mı?
-  const isCurrentlyWindowed = isDesktop && (screenSize.width < 1600 || screenSize.height < 900);
+  const isCurrentlyWindowed = isDesktop && (screenSize.width < 1880 || screenSize.height < 940);
 
   // Önceden ayarlanmış değerler varsa yükle
   useEffect(() => {
     try {
-      const savedWin = localStorage.getItem("gunerav_hero_windowed_config_v2");
+      const savedWin = localStorage.getItem("gunerav_hero_windowed_config_v3");
       if (savedWin) {
         setWindowedConfig(JSON.parse(savedWin));
       }
-      const savedFull = localStorage.getItem("gunerav_hero_fullscreen_config_v2");
+      const savedFull = localStorage.getItem("gunerav_hero_fullscreen_config_v3");
       if (savedFull) {
         setFullscreenConfig(JSON.parse(savedFull));
       }
@@ -118,7 +120,7 @@ export default function HeroSpotlightStudio({
       setWindowedConfig((prev) => {
         const next = { ...prev, [key]: value };
         try {
-          localStorage.setItem("gunerav_hero_windowed_config_v2", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_windowed_config_v3", JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -126,7 +128,7 @@ export default function HeroSpotlightStudio({
       setFullscreenConfig((prev) => {
         const next = { ...prev, [key]: value };
         try {
-          localStorage.setItem("gunerav_hero_fullscreen_config_v2", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_fullscreen_config_v3", JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -139,7 +141,7 @@ export default function HeroSpotlightStudio({
       setWindowedConfig((prev) => {
         const next = { ...prev, ...preset };
         try {
-          localStorage.setItem("gunerav_hero_windowed_config_v2", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_windowed_config_v3", JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -147,7 +149,7 @@ export default function HeroSpotlightStudio({
       setFullscreenConfig((prev) => {
         const next = { ...prev, ...preset };
         try {
-          localStorage.setItem("gunerav_hero_fullscreen_config_v2", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_fullscreen_config_v3", JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -159,19 +161,21 @@ export default function HeroSpotlightStudio({
     if (editMode === "windowed") {
       setWindowedConfig(DEFAULT_WINDOWED_CONFIG);
       try {
-        localStorage.removeItem("gunerav_hero_windowed_config_v2");
+        localStorage.removeItem("gunerav_hero_windowed_config_v3");
       } catch {}
     } else {
       setFullscreenConfig(FULLSCREEN_CONFIG);
       try {
-        localStorage.removeItem("gunerav_hero_fullscreen_config_v2");
+        localStorage.removeItem("gunerav_hero_fullscreen_config_v3");
       } catch {}
     }
   };
 
-  // Ekranda canlı uygulanan aktif config:
-  // Pencere modunda isek windowedConfig, tam ekranda isek fullscreenConfig!
-  const activeConfig = isCurrentlyWindowed ? windowedConfig : fullscreenConfig;
+  // Ekranda uygulanan aktif config:
+  // Panel açıksa kullanıcının seçtiği modu önizler; kapalıysa ekran boyutuna göre otomatik seçer
+  const activeConfig = (isStudioEnabled && isPanelOpen)
+    ? (editMode === "windowed" ? windowedConfig : fullscreenConfig)
+    : (isCurrentlyWindowed ? windowedConfig : fullscreenConfig);
   const currentConfig = editMode === "windowed" ? windowedConfig : fullscreenConfig;
 
   // Log JSON formatı
@@ -249,10 +253,10 @@ export default function HeroSpotlightStudio({
               </div>
             </div>
 
-            {/* Hero Product Visual Display */}
+            {/* Hero Product Visual Display - Seamless Pure White Studio Box */}
             <Link
               href={featuredProductSlug}
-              className="group block relative my-3 rounded-xl bg-black/45 border border-white/15 overflow-hidden backdrop-blur-xl shadow-inner p-3 transition-all duration-75"
+              className="group block relative my-3 rounded-2xl bg-white border border-neutral-200/60 overflow-hidden shadow-md p-3 transition-all duration-75"
               style={{
                 height: `${activeConfig.imageHeight}px`,
               }}
@@ -266,18 +270,18 @@ export default function HeroSpotlightStudio({
                 className="object-contain p-2 object-center transition-transform duration-500 group-hover:scale-105"
               />
               {spotlightProduct ? (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-3 pointer-events-none">
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex items-end p-3.5 pointer-events-none rounded-b-2xl">
                   <div className="text-white min-w-0">
-                    <div className="text-[9.5px] font-mono font-bold tracking-widest text-[#d4af37] uppercase truncate">
+                    <div className="text-[9.5px] font-mono font-bold tracking-widest text-[#d4af37] uppercase truncate drop-shadow-md">
                       [ + ] {featuredModelText}
                     </div>
-                    <div className="text-sm font-heading font-black truncate">
+                    <div className="text-sm font-heading font-black truncate drop-shadow-md text-white">
                       {spotlightTitle}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
               )}
             </Link>
 

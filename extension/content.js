@@ -195,6 +195,12 @@ function extractProductData() {
       ".current-price",
       ".sale-price",
       ".product-price-current",
+      ".spanFiyat",
+      ".satisFiyati",
+      ".fiyat",
+      ".kobi-price",
+      "[id*='fiyat' i]",
+      "[class*='fiyat' i]",
     ];
 
     let foundPriceEl = null;
@@ -429,8 +435,10 @@ function extractProductData() {
     }
   });
 
-  // B. HTML Tabloları (table tr th/td)
-  const tables = document.querySelectorAll("table, .tech-specs, .specifications, dl");
+  // B. HTML Tabloları (table tr th/td) ve Kobimaster / Özler Av Açıklama Tablosu (.divAciklamaIcerik)
+  const tables = document.querySelectorAll(
+    ".divAciklamaIcerik table, [class*='divAciklama'] table, #divAciklama table, table, .tech-specs, .specifications, dl"
+  );
   tables.forEach((table) => {
     const rows = table.querySelectorAll("tr");
     rows.forEach((row) => {
@@ -438,7 +446,19 @@ function extractProductData() {
       if (cells.length >= 2) {
         const key = cells[0].textContent.replace(/[:]/g, "").trim();
         const value = cells[1].textContent.replace(/\s+/g, " ").trim();
-        if (key && value && key.length < 50 && value.length < 200) {
+        const keyLower = key.toLowerCase();
+        if (
+          key &&
+          value &&
+          key.length < 60 &&
+          value.length < 300 &&
+          !keyLower.includes("havale") &&
+          !keyLower.includes("taksit") &&
+          !keyLower.includes("banka") &&
+          !keyLower.includes("vade") &&
+          !keyLower.includes("tek çekim") &&
+          !keyLower.includes("finans")
+        ) {
           specs[key] = value;
         }
       }
@@ -456,16 +476,27 @@ function extractProductData() {
     });
   });
 
-  // C. Ürün Bilgisi / Detay Metninden Özellik Çıkarımı (.product-detail)
+  // C. Ürün Bilgisi / Detay Metninden Özellik Çıkarımı (.product-detail, .divAciklamaIcerik)
   const detailEl = document.querySelector(
-    ".product-detail, .product-description, #tab-description, [itemprop='description'], #tab_Ürün-açıklaması, #tab-Ürün-açıklaması, [id*='Ürün-açıklaması'], [id*='urun-aciklamasi']"
+    ".divAciklamaIcerik, [class*='divAciklama'], #divAciklama, #tabGenelBakis, [id*='genel-bakis'], .product-detail, .product-description, #tab-description, [itemprop='description'], #tab_Ürün-açıklaması, #tab-Ürün-açıklaması, [id*='Ürün-açıklaması'], [id*='urun-aciklamasi']"
   );
   if (detailEl) {
     let rawLines = [];
     try {
       const cloned = detailEl.cloneNode(true);
+      // Tablo satırlarını "Özellik: Değer" formatında metne dönüştür
+      cloned.querySelectorAll("tr").forEach((tr) => {
+        const cells = tr.querySelectorAll("th, td");
+        if (cells.length >= 2) {
+          const k = cells[0].textContent.replace(/[:]/g, "").trim();
+          const v = cells[1].textContent.replace(/\s+/g, " ").trim();
+          if (k && v) {
+            tr.textContent = `\n${k}: ${v}\n`;
+          }
+        }
+      });
       cloned.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
-      cloned.querySelectorAll("div, p, li, tr").forEach((el) => {
+      cloned.querySelectorAll("div, p, li").forEach((el) => {
         el.prepend("\n");
         el.append("\n");
       });
@@ -549,6 +580,20 @@ function extractProductData() {
     }
   }
 
+  // Fallback: Eğer açıklama metni hala boş veya çok kısaysa, teknik tablodan zengin açıklama oluştur
+  if (!result.description || result.description.length < 20) {
+    const validSpecs = Object.entries(specs).filter(
+      ([k]) => !["Marka", "Model", "Kategori", "Stok Kodu", "Ürün Kodu", "SKU", "sku"].includes(k)
+    );
+    if (validSpecs.length > 0) {
+      const descLines = ["Teknik Detaylar:"];
+      validSpecs.forEach(([k, v]) => {
+        descLines.push(`${k}: ${v}`);
+      });
+      result.description = descLines.join("\n");
+    }
+  }
+
   // D. Başlıktan ekstra özellikler
   const lengthMatch = result.title.match(/(\d{2,4}\s*cm)/i);
   if (lengthMatch && !specs["Kamış Boyu"] && !specs["Uzunluk"]) {
@@ -584,7 +629,7 @@ function extractProductData() {
   }
 
   // =========================================================================
-  // 9. Kategori ve Ruhsat Durumu Otomatik Tespiti (Mühimmat Ruhsatsızdır)
+  // 9. Kategori ve Ruhsat Durumu Otomatik Tespiti (Tüfek / Ruhsat Öncelikli)
   // =========================================================================
   const fullText = (
     (result.title || "") + " " +
@@ -593,36 +638,82 @@ function extractProductData() {
     window.location.href
   ).toLowerCase();
 
-  const isAmmo =
-    fullText.includes("fişek") ||
-    fullText.includes("fisek") ||
-    fullText.includes("mühimmat") ||
-    fullText.includes("muhimmat") ||
-    fullText.includes("sterling") ||
-    fullText.includes("kartuş") ||
-    /\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i.test(fullText);
+  const titleLower = (result.title || "").toLowerCase();
+  const isFirearm =
+    titleLower.includes("tüfek") ||
+    titleLower.includes("tufek") ||
+    titleLower.includes("tabanca") ||
+    titleLower.includes("av tüfeği") ||
+    titleLower.includes("av tufegi") ||
+    titleLower.includes("pompalı") ||
+    titleLower.includes("pompali") ||
+    titleLower.includes("poze") ||
+    titleLower.includes("çifte") ||
+    titleLower.includes("cifte");
 
-  if (isAmmo) {
-    // Mühimmat / Av Fişeği: Ruhsat kesinlikle İSTENMEZ!
-    result.requires_license = false;
-
-    const gramMatch = fullText.match(/\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i);
-    if (gramMatch) {
-      result.category = `muhimmat-${gramMatch[1]}-gram`;
-    } else if (fullText.includes("tek kurşun") || fullText.includes("tek kursun") || fullText.includes("slug")) {
-      result.category = "muhimmat-tek-kursun";
-    } else if (fullText.includes("şavrotin") || fullText.includes("savrotin") || fullText.includes("buckshot")) {
-      result.category = "muhimmat-savrotin";
-    } else if (fullText.includes("trap") || fullText.includes("skeet")) {
-      result.category = "muhimmat-trap-skeet";
-    } else if (fullText.includes("magnum")) {
-      result.category = "muhimmat-magnum";
-    } else if (fullText.includes("çelik") || fullText.includes("celik") || fullText.includes("kurşunsuz")) {
-      result.category = "muhimmat-kursunsuz-celik";
-    } else if (fullText.includes("özel dolum") || fullText.includes("karışık")) {
-      result.category = "muhimmat-ozel-dolum";
+  if (isFirearm) {
+    result.requires_license = true;
+    if (fullText.includes("bullpup")) {
+      result.category = "tufek-bullpup";
+    } else if (titleLower.includes("şarjörlü") || titleLower.includes("sarjorlu") || (specs["Tipi"] && /şarjör/i.test(specs["Tipi"]))) {
+      result.category = "tufek-sarjorlu";
+    } else if (fullText.includes("pompalı") || fullText.includes("pompali") || fullText.includes("pump")) {
+      result.category = "tufek-pompali";
+    } else if (fullText.includes("süperpoze") || fullText.includes("superpoze") || fullText.includes("poze")) {
+      result.category = "tufek-superpoze";
+    } else if (fullText.includes("çifte") || fullText.includes("cifte")) {
+      result.category = "tufek-cifte";
+    } else if (fullText.includes("tek kırma") || fullText.includes("tek kirma")) {
+      result.category = "tufek-tek-kirma";
+    } else if (
+      fullText.includes("yarı otomatik") ||
+      fullText.includes("yari otomatik") ||
+      fullText.includes("semi auto") ||
+      fullText.includes("inertia") ||
+      fullText.includes("kinetik") ||
+      fullText.includes("gazlı") ||
+      fullText.includes("patrol") ||
+      fullText.includes("gordion")
+    ) {
+      result.category = "tufek-yari-otomatik";
     } else {
-      result.category = "muhimmat";
+      result.category = "tufek";
+    }
+  } else {
+    // Mühimmat kontrolü (Yalnızca açıkça tüfek/silah değilse çalışır)
+    const isAmmo =
+      (result.category && (result.category === "muhimmat" || result.category.startsWith("muhimmat-"))) ||
+      titleLower.includes("fişek") ||
+      titleLower.includes("fisek") ||
+      titleLower.includes("mühimmat") ||
+      titleLower.includes("muhimmat") ||
+      titleLower.includes("sterling") ||
+      titleLower.includes("kartuş") ||
+      titleLower.includes("kartus") ||
+      /\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i.test(titleLower);
+
+    if (isAmmo) {
+      // Mühimmat / Av Fişeği: Ruhsat kesinlikle İSTENMEZ!
+      result.requires_license = false;
+
+      const gramMatch = fullText.match(/\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i);
+      if (gramMatch) {
+        result.category = `muhimmat-${gramMatch[1]}-gram`;
+      } else if (fullText.includes("tek kurşun") || fullText.includes("tek kursun") || fullText.includes("slug")) {
+        result.category = "muhimmat-tek-kursun";
+      } else if (fullText.includes("şavrotin") || fullText.includes("savrotin") || fullText.includes("buckshot")) {
+        result.category = "muhimmat-savrotin";
+      } else if (fullText.includes("trap") || fullText.includes("skeet")) {
+        result.category = "muhimmat-trap-skeet";
+      } else if (fullText.includes("magnum")) {
+        result.category = "muhimmat-magnum";
+      } else if (fullText.includes("çelik") || fullText.includes("celik") || fullText.includes("kurşunsuz")) {
+        result.category = "muhimmat-kursunsuz-celik";
+      } else if (fullText.includes("özel dolum") || fullText.includes("karışık")) {
+        result.category = "muhimmat-ozel-dolum";
+      } else {
+        result.category = "muhimmat";
+      }
     }
   }
 
@@ -633,6 +724,12 @@ function cleanImageUrl(url) {
   let u = (url || "").trim();
   if (!u) return "";
   if (u.startsWith("//")) u = "https:" + u;
+
+  // Çift slash temizliği (örn: admin//Images -> admin/Images)
+  u = u.replace(/([^:])\/{2,}/g, "$1/");
+
+  // Kobimaster / Özler Av: /Medium/ veya /Small/ veya /Thumb/ -> /Large/
+  u = u.replace(/\/Images\/Urun\/(Medium|Small|Thumb)\//gi, "/Images/Urun/Large/");
 
   // IdeaSoft: _min.jpeg / _thumb.jpeg -> .jpeg (veya varsa _max.jpeg)
   u = u.replace(/_min\.(jpe?g|png|webp)/i, ".$1");
@@ -660,14 +757,25 @@ function cleanImageUrl(url) {
 function dedupeImages(urls) {
   if (!Array.isArray(urls)) return [];
   const seen = new Set();
+  const seenFiles = new Set();
   const res = [];
   for (const raw of urls) {
     if (!raw) continue;
-    // -scaled olan veya olmayan aynı görseli tekilleştir
-    const norm = raw.replace(/-scaled\.(jpe?g|png|webp)/i, ".$1");
+    const cleaned = cleanImageUrl(raw);
+    const norm = cleaned.replace(/-scaled\.(jpe?g|png|webp)/i, ".$1");
+
+    // Dosya adı bazında tekilleştirme (örn: 33443_15082026095955.jpg)
+    const fileMatch = norm.match(/\/([^\/?#]+\.(?:jpe?g|png|webp|avif))/i);
+    const filename = fileMatch ? fileMatch[1].toLowerCase() : null;
+
+    if (filename) {
+      if (seenFiles.has(filename)) continue;
+      seenFiles.add(filename);
+    }
+
     if (!seen.has(norm)) {
       seen.add(norm);
-      res.push(raw);
+      res.push(norm);
     }
   }
   return res;
