@@ -139,7 +139,7 @@ export default function ProductOverview({
                     {formatPrice(product.price, locale)}
                   </span>
                   {product.discount_percent && (
-                    <span className="rounded bg-amber-100 dark:bg-[#d4af37]/20 px-2 py-0.5 text-xs font-extrabold text-amber-800 dark:text-[#d4af37] border border-amber-300 dark:border-[#d4af37]/40">
+                    <span className="rounded-md bg-gradient-to-r from-amber-400 via-[#d4af37] to-amber-500 text-neutral-950 font-black px-2.5 py-1 text-xs uppercase tracking-wider shadow-sm border border-amber-300">
                       %{product.discount_percent} {tCommon("specialOffers")}
                     </span>
                   )}

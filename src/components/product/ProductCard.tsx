@@ -76,9 +76,9 @@ export default function ProductCard({ product, categoryName, priority = false }:
               </span>
             ) : null}
 
-            {/* Discount Badge */}
+            {/* Discount Badge - High Contrast, Punchy & Clear */}
             {!product.requires_license && product.discount_percent ? (
-              <span className="rounded-md border border-[#d4af37]/50 bg-[#d4af37]/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#d4af37] backdrop-blur-md">
+              <span className="rounded-md bg-gradient-to-r from-amber-400 via-[#d4af37] to-amber-500 text-neutral-950 font-black px-2.5 py-1 text-[10px] uppercase tracking-wider shadow-md border border-amber-300">
                 %{product.discount_percent} {tCommon("discount")}
               </span>
             ) : null}
