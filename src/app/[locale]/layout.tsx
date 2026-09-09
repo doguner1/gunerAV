@@ -135,6 +135,26 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-P22MB2RK');`,
           }}
         />
+        {/* Google Analytics 4 (GA4) */}
+        <Script
+          id="google-analytics-tag"
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-K2WE6YE6KV"
+        />
+        <Script
+          id="google-analytics-config"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-K2WE6YE6KV', {
+                send_page_view: true
+              });
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-100 flex flex-col antialiased selection:bg-[#d4af37]/30 selection:text-black dark:selection:text-white transition-colors duration-200">
         {/* Google Tag Manager (noscript) */}
