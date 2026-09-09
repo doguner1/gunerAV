@@ -30,12 +30,12 @@ interface DesignConfig {
 }
 
 const DEFAULT_CONFIG: DesignConfig = {
-  width: 440,
-  offsetX: -120,
-  offsetY: -40,
-  imageHeight: 230,
-  borderRadius: 24,
-  bgOpacity: 65,
+  width: 445,
+  offsetX: 80,
+  offsetY: -200,
+  imageHeight: 315,
+  borderRadius: 40,
+  bgOpacity: 30,
   padding: 18,
 };
 
@@ -53,10 +53,30 @@ export default function HeroSpotlightStudio({
 }: HeroSpotlightStudioProps) {
   const [config, setConfig] = useState<DesignConfig>(DEFAULT_CONFIG);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [isStudioEnabled, setIsStudioEnabled] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
 
-  // Load from localStorage if user previously tweaked it
+  // Check desktop viewport
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Studio is hidden for normal visitors, but activates whenever ?design=1 is in URL or saved in localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("design") || params.has("studio") || params.has("edit") || localStorage.getItem("gunerav_studio_active") === "true") {
+        setIsStudioEnabled(true);
+      }
+    }
+  }, []);
+
+  // Load from localStorage if user tweaked it previously in this browser session
   useEffect(() => {
     try {
       const saved = localStorage.getItem("gunerav_hero_design_config_v2");
@@ -139,8 +159,8 @@ export default function HeroSpotlightStudio({
         <div
           className="w-full transition-all duration-75"
           style={{
-            maxWidth: `${config.width}px`,
-            transform: `translate(${config.offsetX}px, ${config.offsetY}px)`,
+            maxWidth: isDesktop ? `${config.width}px` : "100%",
+            transform: isDesktop ? `translate3d(${config.offsetX}px, ${config.offsetY}px, 0)` : "none",
             marginLeft: "auto",
           }}
         >
@@ -227,8 +247,9 @@ export default function HeroSpotlightStudio({
         </div>
       </div>
 
-      {/* 2. FLOATING LIVE DESIGN TOOLBOX (Masaüstünde Gözüken Canlı Ayar Çubuğu) */}
-      <div className="hidden lg:block fixed bottom-6 left-6 z-50">
+      {/* 2. FLOATING LIVE DESIGN TOOLBOX (Yalnızca ?design=1 ile açılır, normal ziyaretçilere kapalıdır) */}
+      {isStudioEnabled && (
+        <div className="hidden lg:block fixed bottom-6 left-6 z-50">
         {!isPanelOpen ? (
           <button
             onClick={() => setIsPanelOpen(true)}
@@ -448,6 +469,7 @@ export default function HeroSpotlightStudio({
           </div>
         )}
       </div>
+      )}
 
       {/* 3. LOG MODAL (Eğer panoya kopyalama çalışmazsa direkt seçebilsin) */}
       {showLogModal && (
