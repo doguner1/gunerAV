@@ -102,7 +102,21 @@ function formatEventDetail(ev: AnalyticsEvent): { title: string; subtitle?: stri
   if (evName === "click_product_card") {
     return {
       title: p.item_name || "Ürün Kartı Tıklandı",
-      subtitle: p.slug ? `Sayfa: /products/${p.slug}` : undefined,
+      subtitle: p.trigger === "title" ? "Ürün Başlığı Tıklandı" : (p.slug ? `Sayfa: /products/${p.slug}` : undefined),
+    };
+  }
+
+  if (evName === "click_product_card_details") {
+    return {
+      title: p.item_name || "Ürün Detayı Tıklandı",
+      subtitle: "Kart 'Detaylar' Butonu",
+    };
+  }
+
+  if (evName === "click_hero_spotlight") {
+    return {
+      title: `Öne Çıkan Ürün: ${p.item_name || "Haftanın Ekipmanı"}`,
+      subtitle: p.trigger === "image" ? "Görsele Tıklanarak Girildi" : "İncele Butonu Tıklandı",
     };
   }
 
@@ -155,6 +169,15 @@ function parseUserAgent(ua: string, deviceType?: string): { device: string; brow
   else if (/Macintosh/i.test(ua)) device = "💻 macOS";
   else if (/Windows/i.test(ua)) device = "💻 Windows";
   else if (/Linux/i.test(ua)) device = "💻 Linux";
+
+  // iPadOS Safari often sends Macintosh user agent with touch points!
+  if (deviceType === "tablet") {
+    if (device === "💻 macOS" || device === "💻 Masaüstü") {
+      device = "📲 iPad / Tablet";
+    }
+  } else if (deviceType === "mobile" && (device === "💻 macOS" || device === "💻 Masaüstü")) {
+    device = "📱 Mobil";
+  }
 
   let browser = "Tarayıcı";
   if (/Edg/i.test(ua)) browser = "Edge";

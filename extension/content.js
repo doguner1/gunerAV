@@ -68,6 +68,7 @@ function extractListingLinks(doc = (typeof document !== "undefined" ? document :
       trimmed.includes("PageNumber=") ||
       trimmed.includes("sayfa=") ||
       trimmed.includes("/k-") ||
+      trimmed.includes("-k-") ||
       trimmed.includes("/kategori") ||
       trimmed.includes("/marka") ||
       trimmed.includes("/sepet") ||

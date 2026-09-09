@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye, Monitor, Smartphone, Star, Sparkles } from "lucide-react";
 import { Product } from "@/types/product";
-import { trackMapClick } from "@/lib/analytics";
+import { trackEvent, trackMapClick } from "@/lib/analytics";
 
 interface HeroSpotlightStudioProps {
   spotlightProduct?: Product;
@@ -292,6 +292,7 @@ export default function HeroSpotlightStudio({
             {/* Hero Product Visual Display - Seamless Pure White Studio Box */}
             <Link
               href={featuredProductSlug}
+              onClick={() => trackEvent("click_hero_spotlight", { item_name: spotlightTitle, slug: featuredProductSlug, trigger: "image" })}
               className="group block relative my-3 rounded-2xl bg-white border border-neutral-200/60 overflow-hidden shadow-md p-3 transition-all duration-75"
               style={{
                 height: `${activeConfig.imageHeight}px`,
@@ -340,6 +341,7 @@ export default function HeroSpotlightStudio({
 
               <Link
                 href={featuredProductSlug}
+                onClick={() => trackEvent("click_hero_spotlight", { item_name: spotlightTitle, slug: featuredProductSlug, trigger: "button" })}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black px-4 py-2 text-xs font-black uppercase tracking-wider shadow-lg transition-all hover:scale-105 active:scale-95 shrink-0"
               >
                 <span>{inspectText}</span>

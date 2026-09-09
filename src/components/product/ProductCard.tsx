@@ -97,7 +97,11 @@ export default function ProductCard({ product, categoryName, priority = false }:
 
         {/* Content Area */}
         <div className="p-5">
-          <Link href={`/products/${slug}`} className="group/title block">
+          <Link
+            href={`/products/${slug}`}
+            onClick={() => trackEvent("click_product_card", { item_id: product.id, item_name: name, category: product.category, trigger: "title" })}
+            className="group/title block"
+          >
             <h3 className="line-clamp-1 font-heading text-base font-bold text-neutral-950 dark:text-white transition-colors group-hover/title:text-amber-700 dark:group-hover/title:text-[#d4af37]">
               {name}
             </h3>

@@ -31,7 +31,8 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
 
   const timestamp = new Date().toISOString();
   const screenWidth = window.innerWidth;
-  const deviceType = screenWidth < 768 ? "mobile" : screenWidth < 1024 ? "tablet" : "desktop";
+  const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0);
+  const deviceType = screenWidth < 768 ? "mobile" : (screenWidth < 1024 || (isTouch && screenWidth <= 1366)) ? "tablet" : "desktop";
 
   const eventPayload = {
     event: eventName,
@@ -66,25 +67,24 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
     localStorage.setItem(LOCAL_STORAGE_LOG_KEY, JSON.stringify(existing));
   } catch (err) {}
 
-  // 4. Send background beacon to server API
+  // 4. Send background event to server API (reliable across iOS/iPadOS Safari & desktop)
   try {
     const bodyStr = JSON.stringify({ event: eventName, params: eventPayload });
-    let sent = false;
-    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-      try {
-        const blob = new Blob([bodyStr], { type: "application/json" });
-        sent = navigator.sendBeacon("/api/analytics", blob);
-      } catch {
-        sent = false;
-      }
-    }
-    if (!sent) {
+    if (typeof fetch === "function") {
       fetch("/api/analytics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: bodyStr,
         keepalive: true,
-      }).catch(() => {});
+      }).catch(() => {
+        if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+          try {
+            navigator.sendBeacon("/api/analytics", bodyStr);
+          } catch {}
+        }
+      });
+    } else if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+      navigator.sendBeacon("/api/analytics", bodyStr);
     }
   } catch (err) {}
 

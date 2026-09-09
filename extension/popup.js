@@ -2,6 +2,15 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
   // 1. Tab Değiştirme
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("batch") === "1") {
+    setTimeout(() => {
+      const batchTabBtn = document.querySelector('[data-tab="tabBatch"]');
+      if (batchTabBtn) batchTabBtn.click();
+      runBatchScrape();
+    }, 500);
+  }
+
   const tabs = document.querySelectorAll(".tab");
   const tabPanes = document.querySelectorAll(".tab-pane");
 
@@ -405,8 +414,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // 11. Toplu Çekim (Kategori) Butonları
-  document.getElementById("btnStartBatch")?.addEventListener("click", () => {
-    runBatchScrape();
+  document.getElementById("btnStartBatch")?.addEventListener("click", async () => {
+    const isPopup = window.innerWidth < 800;
+    if (isPopup) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        await chrome.storage.local.set({ targetBatchTabId: tab.id });
+      }
+      chrome.tabs.create({ url: chrome.runtime.getURL("popup.html") + "?batch=1" });
+    } else {
+      runBatchScrape();
+    }
   });
 
   document.getElementById("btnStopBatch")?.addEventListener("click", () => {
@@ -1019,7 +1037,6 @@ function extractColorAndBaseModel(title, brand) {
 
   // Tüm temizleme regex'leri — sırasıyla ve tekrarlı uygula
   const cleanPatterns = [
-    /\b\d{2,3}\s*cm\b/gi,                   // 61Cm, 71 cm
     /y\.\s*oto/gi,                            // Y.Oto, Y. Oto
   ];
   // Türkçe kelime sınırı (\b) çalışmaz, bu yüzden case-insensitive string replace kullanıyoruz
@@ -1030,8 +1047,7 @@ function extractColorAndBaseModel(title, brand) {
     "yarı otomatik", "yari otomatik",
     "pompalı", "pompali",
     "süperpoze", "superpoze",
-    "çifte", "cifte",
-    "gezli", "slug"
+    "çifte", "cifte"
   ];
 
   // Regex temizlikleri
@@ -1168,7 +1184,13 @@ function groupProductsByVariant(rawProducts, options = {}) {
       const kalibre = primaryItem.specs?.["Kalibre"] || primaryItem.specs?.["kalibre"] || "12 Kalibre";
       const isShotgun = (primaryItem.category && primaryItem.category.startsWith("tufek")) || primaryItem.requires_license;
       const typeSuffix = isShotgun ? "Yarı Otomatik Av Tüfeği" : "";
-      const unifiedTitle = [g.brand, g.baseModel, kalibre, typeSuffix].filter(Boolean).join(" ");
+      
+      let baseModelPart = g.baseModel || "";
+      if (g.brand && baseModelPart.toLowerCase().startsWith(g.brand.toLowerCase())) {
+        baseModelPart = baseModelPart.substring(g.brand.length).trim();
+      }
+      
+      const unifiedTitle = [g.brand, baseModelPart, kalibre, typeSuffix].filter(Boolean).join(" ");
 
       // Ana görseller: ilk varyantın görselleri
       const mainImages = variants[0]?.images?.length > 0 ? variants[0].images : (primaryItem.images || []);
@@ -1180,7 +1202,8 @@ function groupProductsByVariant(rawProducts, options = {}) {
       // Açıklama
       const desc = useSupplierDesc && primaryItem.description
         ? primaryItem.description
-        : `${g.brand} ${g.baseModel} ${kalibre}, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`;
+        : `${g.brand} ${baseModelPart} ${kalibre}, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`;
+
 
       finalProducts.push({
         ...primaryItem,
@@ -1272,10 +1295,25 @@ async function runBatchScrape() {
   updateBatchProgress(5, "Sayfadaki ürün linkleri toplanıyor...", "0 / 0", "0");
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) {
+    let targetTab = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("batch") === "1") {
+      const { targetBatchTabId } = await chrome.storage.local.get("targetBatchTabId");
+      if (targetBatchTabId) {
+        try { targetTab = await chrome.tabs.get(targetBatchTabId); } catch(e){}
+      }
+    }
+    
+    if (!targetTab) {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      targetTab = activeTab;
+    }
+
+    if (!targetTab?.id) {
       throw new Error("Aktif tarayıcı sekmesi bulunamadı.");
     }
+    
+    const tab = targetTab;
 
     // Özel URL girilmişse ve aktif sekme o URL'de değilse
     const customUrl = document.getElementById("fldBatchUrl")?.value.trim();
