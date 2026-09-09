@@ -23,6 +23,34 @@ declare global {
 const LOCAL_STORAGE_LOG_KEY = "gunerav_analytics_log";
 const MAX_LOCAL_LOGS = 100;
 
+function getVisitorId(): string {
+  if (typeof window === "undefined") return "anon";
+  try {
+    let vid = localStorage.getItem("gunerav_visitor_id");
+    if (!vid) {
+      vid = "vis_" + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+      localStorage.setItem("gunerav_visitor_id", vid);
+    }
+    return vid;
+  } catch {
+    return "vis_anon";
+  }
+}
+
+function getSessionId(): string {
+  if (typeof window === "undefined") return "sess";
+  try {
+    let sid = sessionStorage.getItem("gunerav_session_id");
+    if (!sid) {
+      sid = "sess_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+      sessionStorage.setItem("gunerav_session_id", sid);
+    }
+    return sid;
+  } catch {
+    return "sess_anon";
+  }
+}
+
 /**
  * Core event tracking dispatcher
  */
@@ -33,9 +61,13 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
   const screenWidth = window.innerWidth;
   const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0);
   const deviceType = screenWidth < 768 ? "mobile" : (screenWidth < 1024 || (isTouch && screenWidth <= 1366)) ? "tablet" : "desktop";
+  const visitorId = getVisitorId();
+  const sessionId = getSessionId();
 
   const eventPayload = {
     event: eventName,
+    visitor_id: visitorId,
+    session_id: sessionId,
     device_type: deviceType,
     screen_resolution: `${window.screen.width}x${window.screen.height}`,
     viewport: `${window.innerWidth}x${window.innerHeight}`,

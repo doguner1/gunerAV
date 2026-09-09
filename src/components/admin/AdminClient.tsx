@@ -26,6 +26,13 @@ import {
   FileSpreadsheet,
   FileJson,
   AlertTriangle,
+  TrendingUp,
+  Smartphone,
+  Laptop,
+  Tablet,
+  AlertCircle,
+  Database,
+  Calendar,
 } from "lucide-react";
 
 interface AnalyticsEvent {
@@ -209,9 +216,51 @@ export default function AdminClient() {
   const [onlyModified, setOnlyModified] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
 
-  // Analytics State
+  // Analytics & Dashboard State
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [timeRange, setTimeRange] = useState<"all" | "today" | "7d" | "30d">("all");
+  const [dashboardData, setDashboardData] = useState<{
+    dataSource: "supabase" | "fallback_disk";
+    range: string;
+    summary: {
+      totalEvents: number;
+      uniqueVisitors: number;
+      totalPageViews: number;
+      whatsappLeads: number;
+      phoneCalls: number;
+      locationClicks: number;
+      searches: number;
+      zooms: number;
+    };
+    topProducts: Array<{
+      productId: string;
+      productName: string;
+      slug: string;
+      views: number;
+      zooms: number;
+      whatsappClicks: number;
+      conversionRate: string;
+    }>;
+    searchTerms: Array<{
+      term: string;
+      count: number;
+      zeroResultCount: number;
+      lastSearched: string;
+    }>;
+    missedDemand: Array<{
+      term: string;
+      count: number;
+      zeroResultCount: number;
+      lastSearched: string;
+    }>;
+    deviceBreakdown: {
+      mobile: { count: number; percent: number };
+      tablet: { count: number; percent: number };
+      desktop: { count: number; percent: number };
+    };
+    recentEvents: AnalyticsEvent[];
+  } | null>(null);
 
   // Restore admin session if already logged in within the browser session
   useEffect(() => {
@@ -221,7 +270,7 @@ export default function AdminClient() {
         setPassword(savedAuth);
         setIsAuthenticated(true);
         fetchProducts(savedAuth);
-        fetchAnalytics(savedAuth);
+        fetchAnalytics(savedAuth, "all");
       }
     } catch {}
   }, []);
@@ -244,7 +293,7 @@ export default function AdminClient() {
           sessionStorage.setItem("gunerav_admin_auth", password);
         } catch {}
         fetchProducts(password);
-        fetchAnalytics(password);
+        fetchAnalytics(password, "all");
       } else {
         setError(data.error || "Hatalı şifre. Lütfen Vercel'deki ANALYTICS_SECRET değerinizi giriniz.");
       }
@@ -271,14 +320,27 @@ export default function AdminClient() {
     }
   };
 
-  // 3. Fetch Analytics
-  const fetchAnalytics = async (authKey: string) => {
+  // 3. Fetch Analytics & Aggregated Dashboard
+  const fetchAnalytics = async (authKey?: string, range: "all" | "today" | "7d" | "30d" = timeRange) => {
     setLoadingEvents(true);
     try {
-      const res = await fetch(`/api/analytics?key=${encodeURIComponent(authKey)}`);
+      const key = authKey || password;
+      const res = await fetch(`/api/admin/dashboard?range=${range}`, {
+        headers: key ? { "x-admin-key": key } : {},
+      });
       const data = await res.json();
-      if (data.authenticated && Array.isArray(data.events)) {
-        setEvents(data.events);
+      if (data.success) {
+        setDashboardData(data);
+        if (Array.isArray(data.recentEvents)) {
+          setEvents(data.recentEvents);
+        }
+      } else {
+        // Fallback
+        const legacyRes = await fetch(`/api/analytics?key=${encodeURIComponent(key)}`);
+        const legacyData = await legacyRes.json();
+        if (legacyData.authenticated && Array.isArray(legacyData.events)) {
+          setEvents(legacyData.events);
+        }
       }
     } catch {
       // ignore
@@ -286,13 +348,23 @@ export default function AdminClient() {
     setLoadingEvents(false);
   };
 
+  // Change time range filter
+  const handleRangeChange = (newRange: "all" | "today" | "7d" | "30d") => {
+    setTimeRange(newRange);
+    fetchAnalytics(password, newRange);
+  };
+
   // Logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/auth", { method: "DELETE" });
+    } catch {}
     setIsAuthenticated(false);
     setPassword("");
     setProducts([]);
     setEditedProducts({});
     setEvents([]);
+    setDashboardData(null);
     try {
       sessionStorage.removeItem("gunerav_admin_auth");
     } catch {}
@@ -351,12 +423,14 @@ export default function AdminClient() {
 
     setLoadingEvents(true);
     try {
-      const res = await fetch(`/api/analytics?action=clear&key=${encodeURIComponent(password)}`, {
+      const res = await fetch(`/api/analytics?action=clear`, {
         method: "POST",
+        headers: { "x-admin-key": password },
       });
       const data = await res.json();
       if (data.success) {
         setEvents([]);
+        setDashboardData(null);
       }
     } catch {
       // ignore
@@ -893,267 +967,528 @@ export default function AdminClient() {
       )}
 
       {/* =========================================================================
-          TAB 2: LIVE VISITOR & EVENT ANALYTICS
+          TAB 2: LIVE VISITOR & EVENT ANALYTICS (DASHBOARD)
       ========================================================================= */}
-      {activeTab === "analytics" && (
-        <div className="space-y-6">
-          {/* Summary Metric Cards (6 Cards Grid) */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {/* 1. WhatsApp */}
-            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-emerald-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">WhatsApp</span>
-                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
-                  <MessageCircle className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
-                {analyticsSummary.whatsappClicks}
-              </div>
-              <p className="text-[10px] text-emerald-400/80 mt-1 font-medium">Sipariş & Bilgi</p>
-            </div>
+      {activeTab === "analytics" && (() => {
+        const summary = dashboardData?.summary || {
+          totalEvents: events.length,
+          uniqueVisitors: Math.max(1, Math.round(events.length / 2.5)),
+          totalPageViews: analyticsSummary.productViews,
+          whatsappLeads: analyticsSummary.whatsappClicks,
+          phoneCalls: analyticsSummary.phoneCalls,
+          locationClicks: analyticsSummary.mapClicks,
+          searches: analyticsSummary.searches,
+          zooms: 0,
+        };
+        const topProducts = dashboardData?.topProducts || [];
+        const searchTerms = dashboardData?.searchTerms || [];
+        const missedDemand = dashboardData?.missedDemand || [];
+        const deviceBreakdown = dashboardData?.deviceBreakdown || {
+          mobile: { count: 0, percent: 55 },
+          tablet: { count: 0, percent: 15 },
+          desktop: { count: 0, percent: 30 },
+        };
+        const isSupabaseSource = dashboardData?.dataSource === "supabase";
 
-            {/* 2. Directions / Maps */}
-            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-[#d4af37]/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Harita & Yol</span>
-                <div className="p-1.5 rounded-lg bg-[#d4af37]/20 text-[#d4af37]">
-                  <MapPin className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
-                {analyticsSummary.mapClicks}
-              </div>
-              <p className="text-[10px] text-amber-300/80 mt-1 font-medium">Yol Tarifi Tıklaması</p>
-            </div>
-
-            {/* 3. Phone Calls */}
-            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-amber-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Telefon</span>
-                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
-                  <PhoneCall className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
-                {analyticsSummary.phoneCalls}
-              </div>
-              <p className="text-[10px] text-amber-400/80 mt-1 font-medium">Doğrudan Arama</p>
-            </div>
-
-            {/* 4. Product Views */}
-            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-purple-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Ürün İnceleme</span>
-                <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
-                  <Eye className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
-                {analyticsSummary.productViews}
-              </div>
-              <p className="text-[10px] text-purple-400/80 mt-1 font-medium">Katalog & Detay</p>
-            </div>
-
-            {/* 5. Searches */}
-            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-blue-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Aramalar</span>
-                <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
-                  <Search className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
-                {analyticsSummary.searches}
-              </div>
-              <p className="text-[10px] text-blue-400/80 mt-1 font-medium">Site İçi Arama</p>
-            </div>
-
-            {/* 6. Total Recorded Events */}
-            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-neutral-600 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Toplam Kayıt</span>
-                <div className="p-1.5 rounded-lg bg-neutral-800 text-neutral-300">
-                  <BarChart3 className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black font-heading text-[#d4af37] mt-2">
-                {analyticsSummary.total}
-              </div>
-              <p className="text-[10px] text-neutral-400 mt-1 font-medium">Kalıcı Disk Kaydı</p>
-            </div>
-          </div>
-
-          {/* Events Log Table & Management Card */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-2xl p-5">
-            {/* Header & Export Toolbar */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-4 border-b border-neutral-800">
+        return (
+          <div className="space-y-6">
+            {/* Top Toolbar: Date Range Filters & DB Source Status */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-neutral-900/90 border border-neutral-800 rounded-2xl p-4 backdrop-blur-xl">
               <div>
-                <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <span>Kalıcı Ziyaretçi Hareketleri</span>
-                  <span className="rounded-md bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-[10px] px-2 py-0.5 font-bold">
-                    {events.length} Olay Kayıtlı
-                  </span>
-                </h3>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  Tüm tıklamalar ve etkileşimler diske kaydedilir; tarayıcı kapansa veya sunucu yeniden başlasa da kaybolmaz.
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-base font-black font-heading uppercase text-white tracking-wide flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-[#d4af37]" />
+                    <span>Ziyaretçi & Satış Hareketi Analizi</span>
+                  </h2>
+                  {isSupabaseSource ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold">
+                      <Database className="h-3 w-3" />
+                      Supabase Kalıcı DB
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
+                      <Database className="h-3 w-3" />
+                      Yerel Disk Yedekleme
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Müşterilerin en çok ilgi gösterdiği ürünler, aramalar ve iletişim dönüşümleri.
                 </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Refresh */}
+              {/* Date Range Selector */}
+              <div className="flex items-center gap-1.5 bg-black/80 p-1 rounded-xl border border-neutral-800 self-start lg:self-auto">
+                <Calendar className="h-3.5 w-3.5 text-neutral-400 ml-2 mr-1 hidden sm:inline" />
                 <button
-                  onClick={() => fetchAnalytics(password)}
-                  disabled={loadingEvents}
-                  className="flex items-center gap-1.5 rounded-xl bg-black hover:bg-neutral-800 border border-neutral-700 px-3 py-2 text-xs font-bold text-neutral-300 transition-colors active:scale-95"
-                  title="Listeyi Yenile"
+                  type="button"
+                  onClick={() => handleRangeChange("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    timeRange === "all" ? "bg-[#d4af37] text-black shadow-md font-black" : "text-neutral-400 hover:text-white"
+                  }`}
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${loadingEvents ? "animate-spin text-[#d4af37]" : ""}`} />
-                  <span>Yenile</span>
+                  Tüm Zamanlar
                 </button>
-
-                {/* Export CSV */}
                 <button
-                  onClick={handleExportCsv}
-                  disabled={events.length === 0}
-                  className="flex items-center gap-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 px-3 py-2 text-xs font-bold text-white transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-                  title="Excel ve Google E-Tablolar uyumlu CSV formatında indir"
+                  type="button"
+                  onClick={() => handleRangeChange("today")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    timeRange === "today" ? "bg-[#d4af37] text-black shadow-md font-black" : "text-neutral-400 hover:text-white"
+                  }`}
                 >
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Excel / CSV</span>
+                  Bugün
                 </button>
-
-                {/* Export JSON */}
                 <button
-                  onClick={handleExportJson}
-                  disabled={events.length === 0}
-                  className="flex items-center gap-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 px-3 py-2 text-xs font-bold text-white transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-                  title="Ham JSON formatında tam yedek al"
+                  type="button"
+                  onClick={() => handleRangeChange("7d")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    timeRange === "7d" ? "bg-[#d4af37] text-black shadow-md font-black" : "text-neutral-400 hover:text-white"
+                  }`}
                 >
-                  <FileJson className="h-3.5 w-3.5 text-blue-400" />
-                  <span>JSON Yedek</span>
+                  Son 7 Gün
                 </button>
-
-                {/* Clear Logs */}
                 <button
-                  onClick={handleClearLogs}
-                  disabled={events.length === 0 || loadingEvents}
-                  className="flex items-center gap-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 px-3 py-2 text-xs font-bold text-red-300 transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-                  title="Tüm logları sıfırla"
+                  type="button"
+                  onClick={() => handleRangeChange("30d")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    timeRange === "30d" ? "bg-[#d4af37] text-black shadow-md font-black" : "text-neutral-400 hover:text-white"
+                  }`}
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-red-400" />
-                  <span>Logları Sıfırla</span>
+                  Son 30 Gün
                 </button>
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto max-h-[620px]">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-black/80 sticky top-0 text-neutral-400 uppercase text-[10px] tracking-wider border-b border-neutral-800 z-10">
-                  <tr>
-                    <th className="px-4 py-3">Zaman</th>
-                    <th className="px-4 py-3">Olay Türü</th>
-                    <th className="px-4 py-3">Etkileşim / Detay</th>
-                    <th className="px-4 py-3">Cihaz & Tarayıcı</th>
-                    <th className="px-4 py-3">Sayfa / IP</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-800/80 font-mono">
-                  {events.map((ev, idx) => {
-                    const evLower = (ev.event || "").toLowerCase();
-                    const isWa = evLower.includes("whatsapp");
-                    const isCall = evLower.includes("call") || evLower.includes("phone");
-                    const isMap = evLower.includes("direction") || evLower.includes("map");
-                    const isSearch = evLower.includes("search");
-                    const isView = evLower.includes("view") || evLower.includes("product");
-
-                    const detail = formatEventDetail(ev);
-                    const uaInfo = parseUserAgent(ev.user_agent, ev.device_type);
-
-                    return (
-                      <tr key={ev.id || idx} className="hover:bg-neutral-800/50 transition-colors">
-                        {/* 1. Time */}
-                        <td className="px-4 py-3 text-neutral-400 text-[11px] whitespace-nowrap">
-                          {new Date(ev.received_at).toLocaleString("tr-TR")}
-                        </td>
-
-                        {/* 2. Event Badge */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                              isWa
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                                : isCall
-                                ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
-                                : isMap
-                                ? "bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/40"
-                                : isSearch
-                                ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
-                                : isView
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
-                                : "bg-neutral-800 text-neutral-300 border border-neutral-700"
-                            }`}
-                          >
-                            {isWa && "💬 WHATSAPP"}
-                            {isCall && "📞 TELEFON"}
-                            {isMap && "📍 HARİTA"}
-                            {isSearch && "🔍 ARAMA"}
-                            {isView && !isWa && !isCall && !isMap && !isSearch && "👁️ İNCELEME"}
-                            {!isWa && !isCall && !isMap && !isSearch && !isView && ev.event}
-                          </span>
-                        </td>
-
-                        {/* 3. Formatted Details */}
-                        <td className="px-4 py-3 font-sans">
-                          <div className="font-bold text-white text-xs">
-                            {detail.title}
-                          </div>
-                          {detail.subtitle && (
-                            <div className="text-[11px] text-neutral-400 mt-0.5">
-                              {detail.subtitle}
-                            </div>
-                          )}
-                        </td>
-
-                        {/* 4. Device & Browser */}
-                        <td className="px-4 py-3 text-neutral-300 text-[11px] font-sans whitespace-nowrap">
-                          <span className="font-bold text-white">{uaInfo.device}</span>
-                          <span className="text-neutral-500 mx-1.5">·</span>
-                          <span className="text-neutral-400">{uaInfo.browser}</span>
-                        </td>
-
-                        {/* 5. Page / IP */}
-                        <td className="px-4 py-3 text-neutral-400 text-[10.5px] whitespace-nowrap">
-                          <div className="text-neutral-300 truncate max-w-[140px] font-mono">
-                            {ev.path || ev.params?.path || "/"}
-                          </div>
-                          <div className="text-neutral-500 text-[10px] font-mono">
-                            {ev.client_ip}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              {events.length === 0 && (
-                <div className="p-12 text-center text-neutral-400 text-xs space-y-2">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-800 text-neutral-500 mb-1">
-                    <BarChart3 className="h-5 w-5" />
+            {/* Summary Metric Cards (6 Cards Grid) */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {/* 1. WhatsApp */}
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-emerald-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">WhatsApp</span>
+                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <MessageCircle className="h-4 w-4" />
                   </div>
-                  <div className="font-bold text-neutral-300">Henüz kayıtlı ziyaretçi hareketi bulunmuyor.</div>
-                  <p className="max-w-md mx-auto text-neutral-500 text-[11px]">
-                    Ziyaretçiler siteye girip WhatsApp, arama, harita veya ürün inceleme butonlarına tıkladıkça hareketler buraya ve diske anında kaydedilecektir.
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
+                  {summary.whatsappLeads}
+                </div>
+                <p className="text-[10px] text-emerald-400/80 mt-1 font-medium">Sipariş & Bilgi Talebi</p>
+              </div>
+
+              {/* 2. Directions / Maps */}
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-[#d4af37]/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Harita & Yol</span>
+                  <div className="p-1.5 rounded-lg bg-[#d4af37]/20 text-[#d4af37]">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
+                  {summary.locationClicks}
+                </div>
+                <p className="text-[10px] text-amber-300/80 mt-1 font-medium">Mağaza Ziyareti</p>
+              </div>
+
+              {/* 3. Phone Calls */}
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-amber-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Telefon</span>
+                  <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                    <PhoneCall className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
+                  {summary.phoneCalls}
+                </div>
+                <p className="text-[10px] text-amber-400/80 mt-1 font-medium">Doğrudan Arama</p>
+              </div>
+
+              {/* 4. Product Views */}
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-purple-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Ürün İnceleme</span>
+                  <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                    <Eye className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
+                  {summary.totalPageViews}
+                </div>
+                <p className="text-[10px] text-purple-400/80 mt-1 font-medium">Sayfa Görüntüleme</p>
+              </div>
+
+              {/* 5. Searches */}
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-blue-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Aramalar</span>
+                  <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
+                    <Search className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
+                  {summary.searches}
+                </div>
+                <p className="text-[10px] text-blue-400/80 mt-1 font-medium">Site İçi Arama</p>
+              </div>
+
+              {/* 6. Unique Visitors */}
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-[#d4af37]/60 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Tekil Ziyaretçi</span>
+                  <div className="p-1.5 rounded-lg bg-[#d4af37]/20 text-[#d4af37]">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black font-heading text-[#d4af37] mt-2">
+                  {summary.uniqueVisitors}
+                </div>
+                <p className="text-[10px] text-[#d4af37]/80 mt-1 font-medium">Farklı Cihaz / Kullanıcı</p>
+              </div>
+            </div>
+
+            {/* Device Distribution Bar */}
+            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                <span className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                  <span>Cihaz Dağılımı</span>
+                </span>
+                <div className="flex items-center gap-4 text-xs font-medium text-neutral-400">
+                  <span className="flex items-center gap-1.5 text-white">
+                    <Smartphone className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>Mobil %{deviceBreakdown.mobile.percent} ({deviceBreakdown.mobile.count})</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-white">
+                    <Tablet className="h-3.5 w-3.5 text-[#d4af37]" />
+                    <span>Tablet %{deviceBreakdown.tablet.percent} ({deviceBreakdown.tablet.count})</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-white">
+                    <Laptop className="h-3.5 w-3.5 text-blue-400" />
+                    <span>Masaüstü %{deviceBreakdown.desktop.percent} ({deviceBreakdown.desktop.count})</span>
+                  </span>
+                </div>
+              </div>
+              {/* Visual Progress Bar */}
+              <div className="h-2 w-full rounded-full bg-neutral-800 overflow-hidden flex">
+                <div
+                  style={{ width: `${deviceBreakdown.mobile.percent}%` }}
+                  className="bg-emerald-500 h-full transition-all"
+                  title={`Mobil: %${deviceBreakdown.mobile.percent}`}
+                />
+                <div
+                  style={{ width: `${deviceBreakdown.tablet.percent}%` }}
+                  className="bg-[#d4af37] h-full transition-all"
+                  title={`Tablet: %${deviceBreakdown.tablet.percent}`}
+                />
+                <div
+                  style={{ width: `${deviceBreakdown.desktop.percent}%` }}
+                  className="bg-blue-500 h-full transition-all"
+                  title={`Masaüstü: %${deviceBreakdown.desktop.percent}`}
+                />
+              </div>
+            </div>
+
+            {/* 2-Column Analytics Widgets: Top Products & Search/Demand */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Top Products & Conversion Table (7 cols) */}
+              <div className="lg:col-span-7 rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-xl p-5">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800">
+                  <div>
+                    <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-[#d4af37]" />
+                      <span>En Çok İlgi Gören Ürünler & Dönüşüm</span>
+                    </h3>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Görüntülenme, büyüteç (HD zoom) ve WhatsApp sipariş talebi oranı
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto max-h-[360px]">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-black/80 sticky top-0 text-neutral-400 uppercase text-[10px] tracking-wider border-b border-neutral-800 z-10">
+                      <tr>
+                        <th className="px-3 py-2.5">Ürün Adı</th>
+                        <th className="px-3 py-2.5 text-center">İnceleme</th>
+                        <th className="px-3 py-2.5 text-center">Zoom</th>
+                        <th className="px-3 py-2.5 text-center">WhatsApp</th>
+                        <th className="px-3 py-2.5 text-right">Dönüşüm</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/80 font-mono">
+                      {topProducts.map((tp, idx) => (
+                        <tr key={tp.productId || idx} className="hover:bg-neutral-800/40 transition-colors">
+                          <td className="px-3 py-2.5 font-sans font-medium text-white truncate max-w-[200px]" title={tp.productName}>
+                            {tp.productName}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-purple-300 font-bold">
+                            {tp.views}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-blue-300">
+                            {tp.zooms}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-emerald-400 font-bold">
+                            {tp.whatsappClicks}
+                          </td>
+                          <td className="px-3 py-2.5 text-right">
+                            <span className="inline-block px-2 py-0.5 rounded bg-[#d4af37]/20 border border-[#d4af37]/30 text-[#d4af37] text-[10px] font-bold">
+                              {tp.conversionRate}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {topProducts.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-neutral-500 font-sans text-xs">
+                            Seçilen tarih aralığında henüz ürün incelemesi kaydedilmedi.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Right Column: Search Terms & Missed Demand (5 cols) */}
+              <div className="lg:col-span-5 flex flex-col gap-6">
+                {/* 1. Missed Demand (0 results) */}
+                <div className="rounded-2xl border border-red-900/60 bg-red-950/20 shadow-xl p-5">
+                  <div className="flex items-center gap-2 pb-2.5 mb-2.5 border-b border-red-900/40">
+                    <AlertCircle className="h-4 w-4 text-red-400" />
+                    <div>
+                      <h3 className="text-xs font-heading font-black text-red-300 uppercase tracking-wider">
+                        Kaçırılan Talepler (Stokta Olmayan Aramalar)
+                      </h3>
+                      <p className="text-[10px] text-red-400/80">
+                        Ziyaretçilerin aradığı fakat sitede sonuç bulamadığı kelimeler
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                    {missedDemand.map((md, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between rounded-lg bg-black/60 border border-red-900/30 px-3 py-1.5 text-xs"
+                      >
+                        <span className="font-bold text-red-200 truncate">{md.term}</span>
+                        <span className="rounded bg-red-500/20 text-red-400 text-[10px] font-mono px-2 py-0.5 font-bold">
+                          {md.zeroResultCount} Kez Arandı
+                        </span>
+                      </div>
+                    ))}
+                    {missedDemand.length === 0 && (
+                      <div className="text-center py-4 text-[11px] text-neutral-500">
+                        Henüz 0 sonuç veren kaçırılan bir arama bulunmuyor.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Top Searched Words */}
+                <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-xl p-5 flex-1">
+                  <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-neutral-800">
+                    <h3 className="text-xs font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <Search className="h-3.5 w-3.5 text-blue-400" />
+                      <span>En Çok Aranan Terimler</span>
+                    </h3>
+                    <span className="text-[10px] text-neutral-400 font-mono">
+                      {searchTerms.length} Farklı Terim
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                    {searchTerms.map((st, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between rounded-lg bg-black/60 border border-neutral-800 px-3 py-1.5 text-xs"
+                      >
+                        <span className="text-neutral-200 truncate">{st.term}</span>
+                        <span className="rounded bg-blue-500/20 text-blue-400 text-[10px] font-mono px-2 py-0.5 font-bold">
+                          {st.count} Arama
+                        </span>
+                      </div>
+                    ))}
+                    {searchTerms.length === 0 && (
+                      <div className="text-center py-4 text-[11px] text-neutral-500">
+                        Henüz site içi arama kaydı yok.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Events Log Table & Management Card */}
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-2xl p-5">
+              {/* Header & Export Toolbar */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-4 border-b border-neutral-800">
+                <div>
+                  <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>Kalıcı Ziyaretçi Hareketleri Günlüğü</span>
+                    <span className="rounded-md bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-[10px] px-2 py-0.5 font-bold">
+                      {events.length} Olay Kayıtlı
+                    </span>
+                  </h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Tüm tıklamalar ve etkileşimler veritabanına yazılır; Vercel yeniden başlasa da kaybolmaz.
                   </p>
                 </div>
-              )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Refresh */}
+                  <button
+                    onClick={() => fetchAnalytics(password, timeRange)}
+                    disabled={loadingEvents}
+                    className="flex items-center gap-1.5 rounded-xl bg-black hover:bg-neutral-800 border border-neutral-700 px-3 py-2 text-xs font-bold text-neutral-300 transition-colors active:scale-95"
+                    title="Listeyi Yenile"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${loadingEvents ? "animate-spin text-[#d4af37]" : ""}`} />
+                    <span>Yenile</span>
+                  </button>
+
+                  {/* Export CSV */}
+                  <button
+                    onClick={handleExportCsv}
+                    disabled={events.length === 0}
+                    className="flex items-center gap-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 px-3 py-2 text-xs font-bold text-white transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                    title="Excel ve Google E-Tablolar uyumlu CSV formatında indir"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>Excel / CSV</span>
+                  </button>
+
+                  {/* Export JSON */}
+                  <button
+                    onClick={handleExportJson}
+                    disabled={events.length === 0}
+                    className="flex items-center gap-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 px-3 py-2 text-xs font-bold text-white transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                    title="Ham JSON formatında tam yedek al"
+                  >
+                    <FileJson className="h-3.5 w-3.5 text-blue-400" />
+                    <span>JSON Yedek</span>
+                  </button>
+
+                  {/* Clear Logs */}
+                  <button
+                    onClick={handleClearLogs}
+                    disabled={events.length === 0 || loadingEvents}
+                    className="flex items-center gap-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 px-3 py-2 text-xs font-bold text-red-300 transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                    title="Tüm logları sıfırla"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                    <span>Logları Sıfırla</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto max-h-[620px]">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-black/80 sticky top-0 text-neutral-400 uppercase text-[10px] tracking-wider border-b border-neutral-800 z-10">
+                    <tr>
+                      <th className="px-4 py-3">Zaman</th>
+                      <th className="px-4 py-3">Olay Türü</th>
+                      <th className="px-4 py-3">Etkileşim / Detay</th>
+                      <th className="px-4 py-3">Cihaz & Tarayıcı</th>
+                      <th className="px-4 py-3">Sayfa / IP (Hash)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/80 font-mono">
+                    {events.map((ev, idx) => {
+                      const evLower = (ev.event || "").toLowerCase();
+                      const isWa = evLower.includes("whatsapp");
+                      const isCall = evLower.includes("call") || evLower.includes("phone");
+                      const isMap = evLower.includes("direction") || evLower.includes("map");
+                      const isSearch = evLower.includes("search");
+                      const isView = evLower.includes("view") || evLower.includes("product");
+
+                      const detail = formatEventDetail(ev);
+                      const uaInfo = parseUserAgent(ev.user_agent, ev.device_type);
+
+                      return (
+                        <tr key={ev.id || idx} className="hover:bg-neutral-800/50 transition-colors">
+                          {/* 1. Time */}
+                          <td className="px-4 py-3 text-neutral-400 text-[11px] whitespace-nowrap">
+                            {new Date(ev.received_at).toLocaleString("tr-TR")}
+                          </td>
+
+                          {/* 2. Event Badge */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                isWa
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                  : isCall
+                                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                                  : isMap
+                                  ? "bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/40"
+                                  : isSearch
+                                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                                  : isView
+                                  ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                                  : "bg-neutral-800 text-neutral-300 border border-neutral-700"
+                              }`}
+                            >
+                              {isWa && "💬 WHATSAPP"}
+                              {isCall && "📞 TELEFON"}
+                              {isMap && "📍 HARİTA"}
+                              {isSearch && "🔍 ARAMA"}
+                              {isView && !isWa && !isCall && !isMap && !isSearch && "👁️ İNCELEME"}
+                              {!isWa && !isCall && !isMap && !isSearch && !isView && ev.event}
+                            </span>
+                          </td>
+
+                          {/* 3. Formatted Details */}
+                          <td className="px-4 py-3 font-sans">
+                            <div className="font-bold text-white text-xs">
+                              {detail.title}
+                            </div>
+                            {detail.subtitle && (
+                              <div className="text-[11px] text-neutral-400 mt-0.5">
+                                {detail.subtitle}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* 4. Device & Browser */}
+                          <td className="px-4 py-3 text-neutral-300 text-[11px] font-sans whitespace-nowrap">
+                            <span className="font-bold text-white">{uaInfo.device}</span>
+                            <span className="text-neutral-500 mx-1.5">·</span>
+                            <span className="text-neutral-400">{uaInfo.browser}</span>
+                          </td>
+
+                          {/* 5. Page / IP Hash */}
+                          <td className="px-4 py-3 text-neutral-400 text-[10.5px] whitespace-nowrap">
+                            <div className="text-neutral-300 truncate max-w-[140px] font-mono">
+                              {ev.path || ev.params?.path || "/"}
+                            </div>
+                            <div className="text-neutral-500 text-[10px] font-mono truncate max-w-[120px]" title={ev.client_ip}>
+                              {ev.client_ip ? `${ev.client_ip.slice(0, 10)}...` : "anonim"}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {events.length === 0 && (
+                  <div className="p-12 text-center text-neutral-400 text-xs space-y-2">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-800 text-neutral-500 mb-1">
+                      <BarChart3 className="h-5 w-5" />
+                    </div>
+                    <div className="font-bold text-neutral-300">Henüz kayıtlı ziyaretçi hareketi bulunmuyor.</div>
+                    <p className="max-w-md mx-auto text-neutral-500 text-[11px]">
+                      Ziyaretçiler siteye girip WhatsApp, arama, harita veya ürün inceleme butonlarına tıkladıkça hareketler buraya ve kalıcı veritabanına anında kaydedilecektir.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

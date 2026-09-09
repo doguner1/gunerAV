@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { getSupabaseAdminClient, hashIp } from "@/lib/server-supabase";
+import { isAdminAuthorized } from "@/lib/server-auth";
 
-// 1. Storage Configuration
+// Local Fallback Storage Configuration
 const DATA_DIR = path.join(process.cwd(), "data");
 const PRIMARY_STORAGE_FILE = path.join(DATA_DIR, "analytics_events.json");
 const FALLBACK_STORAGE_FILE = path.join("/tmp", "gunerav_analytics_events.json");
-const MAX_PERSISTED_EVENTS = 2000;
+const MAX_FALLBACK_EVENTS = 1000;
 
 export interface StoredAnalyticsEvent {
   id: string;
@@ -19,9 +21,6 @@ export interface StoredAnalyticsEvent {
   path?: string;
 }
 
-/**
- * Checks whether primary data directory is writable (true locally, false on Vercel read-only root)
- */
 function isPrimaryWritable(): boolean {
   try {
     if (!fs.existsSync(DATA_DIR)) {
@@ -34,15 +33,9 @@ function isPrimaryWritable(): boolean {
   }
 }
 
-/**
- * Loads persisted events from disk.
- * In serverless (Vercel), FALLBACK_STORAGE_FILE (/tmp) is where runtime events and clears are written,
- * so it MUST take precedence over the static bundled PRIMARY_STORAGE_FILE.
- */
-function loadEventsFromDisk(): StoredAnalyticsEvent[] {
+function loadFallbackEvents(): StoredAnalyticsEvent[] {
   const primaryWritable = isPrimaryWritable();
 
-  // 1. In serverless / read-only environments, check /tmp first!
   if (!primaryWritable) {
     try {
       if (fs.existsSync(FALLBACK_STORAGE_FILE)) {
@@ -52,12 +45,9 @@ function loadEventsFromDisk(): StoredAnalyticsEvent[] {
           if (Array.isArray(parsed)) return parsed;
         }
       }
-    } catch (err) {
-      console.warn("[Analytics] Fallback disk read failed:", err);
-    }
+    } catch {}
   }
 
-  // 2. Check primary storage file (data/analytics_events.json)
   try {
     if (fs.existsSync(PRIMARY_STORAGE_FILE)) {
       const content = fs.readFileSync(PRIMARY_STORAGE_FILE, "utf-8");
@@ -66,11 +56,8 @@ function loadEventsFromDisk(): StoredAnalyticsEvent[] {
         if (Array.isArray(parsed)) return parsed;
       }
     }
-  } catch (err) {
-    console.warn("[Analytics] Primary disk read failed:", err);
-  }
+  } catch {}
 
-  // 3. If primary was writable, check fallback as secondary backup
   if (primaryWritable) {
     try {
       if (fs.existsSync(FALLBACK_STORAGE_FILE)) {
@@ -86,133 +73,18 @@ function loadEventsFromDisk(): StoredAnalyticsEvent[] {
   return [];
 }
 
-/**
- * Saves events array to disk.
- * Writes to /tmp (always writable) and to primary if writable.
- */
-function saveEventsToDisk(events: StoredAnalyticsEvent[]): boolean {
+function saveFallbackEvents(events: StoredAnalyticsEvent[]): void {
   const jsonContent = JSON.stringify(events, null, 2);
-  let saved = false;
 
-  // Always write to /tmp
   try {
     fs.writeFileSync(FALLBACK_STORAGE_FILE, jsonContent, "utf-8");
-    saved = true;
-  } catch (err) {
-    console.warn("[Analytics] Failed to write fallback storage (/tmp):", err);
-  }
+  } catch {}
 
-  // If primary is writable, write to primary as well
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     fs.writeFileSync(PRIMARY_STORAGE_FILE, jsonContent, "utf-8");
-    saved = true;
-  } catch {
-    // Read-only filesystem in serverless
-  }
-
-  return saved;
-}
-
-// In-memory cache for ultra-fast reads within the active container
-let memoryCache: StoredAnalyticsEvent[] | null = null;
-
-/**
- * Helper to get Supabase connection details if configured
- */
-function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return { url, key };
-}
-
-/**
- * Forward event to Supabase if configured in environment
- */
-async function syncToSupabaseIfAvailable(entry: StoredAnalyticsEvent) {
-  const config = getSupabaseConfig();
-  if (!config) return;
-
-  try {
-    await fetch(`${config.url}/rest/v1/analytics_events`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        id: entry.id,
-        event: entry.event,
-        params: entry.params,
-        client_ip: entry.client_ip,
-        user_agent: entry.user_agent,
-        device_type: entry.device_type,
-        path: entry.path,
-        created_at: entry.received_at,
-      }),
-    });
-  } catch {}
-}
-
-/**
- * Fetch events from Supabase if configured
- */
-async function getEventsFromSupabase(): Promise<StoredAnalyticsEvent[] | null> {
-  const config = getSupabaseConfig();
-  if (!config) return null;
-
-  try {
-    const res = await fetch(`${config.url}/rest/v1/analytics_events?select=*&order=created_at.desc&limit=1000`, {
-      headers: {
-        apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!Array.isArray(data)) return null;
-
-    return data.map((row: any) => ({
-      id: row.id || `evt_${row.created_at}`,
-      received_at: row.created_at || row.received_at || new Date().toISOString(),
-      client_ip: row.client_ip || "unknown",
-      user_agent: row.user_agent || "unknown",
-      event: row.event || "unknown",
-      params: typeof row.params === "object" && row.params !== null ? row.params : {},
-      device_type: row.device_type,
-      path: row.path,
-    }));
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Delete all events from Supabase if configured
- */
-async function clearSupabaseEvents() {
-  const config = getSupabaseConfig();
-  if (!config) return;
-
-  try {
-    await fetch(`${config.url}/rest/v1/analytics_events?id=neq.none`, {
-      method: "DELETE",
-      headers: {
-        apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
-      },
-    });
   } catch {}
 }
 
@@ -223,18 +95,25 @@ export async function POST(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
-    const secret = searchParams.get("key");
-    const validSecret = process.env.ANALYTICS_SECRET;
 
     // Authenticated wipe/reset from Admin Panel
     if (action === "clear") {
-      if (!validSecret || !secret || secret !== validSecret) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      if (!isAdminAuthorized(req)) {
+        return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
       }
-      memoryCache = [];
-      saveEventsToDisk([]);
-      await clearSupabaseEvents();
-      return NextResponse.json({ success: true, message: "Analytics logs cleared successfully." });
+
+      saveFallbackEvents([]);
+
+      const supabase = getSupabaseAdminClient();
+      if (supabase) {
+        try {
+          await supabase.from("analytics_events").delete().neq("event_type", "___never___");
+        } catch (dbErr) {
+          console.error("[Analytics Clear Supabase Error]:", dbErr);
+        }
+      }
+
+      return NextResponse.json({ success: true, message: "Analitik logları sıfırlandı." });
     }
 
     let body: any = {};
@@ -247,58 +126,92 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const rawIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const clientIp = rawIp.split(",")[0].trim();
+    const hashedClientIp = hashIp(clientIp);
     const userAgent = req.headers.get("user-agent") || "unknown";
-    const clientIp = ip.split(",")[0].trim();
+    const referrer = req.headers.get("referer") || null;
 
-    const entryId = `evt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const eventName = body.event || "unknown";
-    const params = body.params || {};
+    const p = body.params || {};
 
     const uaLower = userAgent.toLowerCase();
     const isTablet =
-      params.device_type === "tablet" ||
+      p.device_type === "tablet" ||
       uaLower.includes("ipad") ||
       uaLower.includes("tablet") ||
       (uaLower.includes("android") && !uaLower.includes("mobile"));
     const isMobile =
-      params.device_type === "mobile" ||
+      p.device_type === "mobile" ||
       uaLower.includes("iphone") ||
       uaLower.includes("mobile") ||
       uaLower.includes("ipod");
 
-    const deviceType = params.device_type || (isTablet ? "tablet" : isMobile ? "mobile" : "desktop");
+    const deviceType = p.device_type || (isTablet ? "tablet" : isMobile ? "mobile" : "desktop");
+    const entryId = `evt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const receivedAt = new Date().toISOString();
 
-    const entry: StoredAnalyticsEvent = {
-      id: entryId,
-      received_at: new Date().toISOString(),
-      client_ip: clientIp,
-      user_agent: userAgent,
-      event: eventName,
-      params,
-      device_type: deviceType,
-      path: params.path || "/",
-    };
+    // 1. Supabase Kalıcı Veritabanı Yazımı
+    const supabase = getSupabaseAdminClient();
+    let supabaseSaved = false;
 
-    // Load existing events from disk to ensure fresh sync across invocations
-    const events = loadEventsFromDisk();
-    events.unshift(entry);
+    if (supabase) {
+      try {
+        const { error } = await supabase.from("analytics_events").insert({
+          event_type: eventName,
+          visitor_id: p.visitor_id || null,
+          session_id: p.session_id || null,
+          product_id: p.item_id || null,
+          product_slug: p.slug || null,
+          product_name: p.item_name || null,
+          category: p.item_category || p.category_id || null,
+          search_term: p.search_term || null,
+          results_count: typeof p.results_count === "number" ? p.results_count : null,
+          whatsapp_source: eventName === "contact_whatsapp" ? (p.source || null) : null,
+          path: p.path || null,
+          device_type: deviceType,
+          referrer,
+          ip_hash: hashedClientIp,
+          user_agent: userAgent,
+          raw_params: p,
+        });
 
-    if (events.length > MAX_PERSISTED_EVENTS) {
-      events.length = MAX_PERSISTED_EVENTS;
+        if (error) {
+          console.error("[Supabase Analytics Insert Error]:", error);
+        } else {
+          supabaseSaved = true;
+        }
+      } catch (err) {
+        console.error("[Supabase Analytics Insert Exception]:", err);
+      }
     }
 
-    // Update memory and write to disk
-    memoryCache = events;
-    saveEventsToDisk(events);
+    // 2. Yedek Fallback Disk Saklama (Yerel geliştirme & bağlantı kopmaları için)
+    const fallbackEntry: StoredAnalyticsEvent = {
+      id: entryId,
+      received_at: receivedAt,
+      client_ip: hashedClientIp,
+      user_agent: userAgent,
+      event: eventName,
+      params: p,
+      device_type: deviceType,
+      path: p.path || "/",
+    };
 
-    // Sync to Supabase in background
-    syncToSupabaseIfAvailable(entry).catch(() => {});
+    const fallbackEvents = loadFallbackEvents();
+    fallbackEvents.unshift(fallbackEntry);
+    if (fallbackEvents.length > MAX_FALLBACK_EVENTS) {
+      fallbackEvents.length = MAX_FALLBACK_EVENTS;
+    }
+    saveFallbackEvents(fallbackEvents);
 
-    return NextResponse.json({ success: true, count: events.length });
+    return NextResponse.json({
+      success: true,
+      persisted: supabaseSaved ? "supabase" : "fallback_disk",
+    });
   } catch (error) {
     console.error("[Analytics POST Error]:", error);
-    return NextResponse.json({ success: false, error: "Failed to record event" }, { status: 400 });
+    return NextResponse.json({ success: false, error: "Event kaydedilemedi" }, { status: 400 });
   }
 }
 
@@ -306,35 +219,62 @@ export async function POST(req: NextRequest) {
 // GET: Retrieve Authenticated Analytics Log for Admin Panel
 // =========================================================================
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const secret = searchParams.get("key");
-  const validSecret = process.env.ANALYTICS_SECRET;
-
-  // Block unauthorized public access
-  if (!validSecret || !secret || secret !== validSecret) {
-    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
-  // 1. First attempt to load from Supabase if configured
-  const supabaseEvents = await getEventsFromSupabase();
-  if (supabaseEvents !== null) {
-    return NextResponse.json({
-      authenticated: true,
-      source: "supabase",
-      total_cached: supabaseEvents.length,
-      events: supabaseEvents,
-    });
+  // 1. Supabase Kalıcı Veritabanından Oku
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("analytics_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+
+      if (!error && Array.isArray(data)) {
+        const mappedEvents: StoredAnalyticsEvent[] = data.map((row: any) => ({
+          id: row.id,
+          received_at: row.created_at,
+          client_ip: row.ip_hash || "gizli",
+          user_agent: row.user_agent || "unknown",
+          event: row.event_type,
+          params: {
+            ...row.raw_params,
+            item_id: row.product_id || row.raw_params?.item_id,
+            item_name: row.product_name || row.raw_params?.item_name,
+            item_category: row.category || row.raw_params?.item_category,
+            slug: row.product_slug || row.raw_params?.slug,
+            search_term: row.search_term || row.raw_params?.search_term,
+            results_count: row.results_count ?? row.raw_params?.results_count,
+            source: row.whatsapp_source || row.raw_params?.source,
+            visitor_id: row.visitor_id,
+            session_id: row.session_id,
+          },
+          device_type: row.device_type,
+          path: row.path,
+        }));
+
+        return NextResponse.json({
+          authenticated: true,
+          source: "supabase",
+          total_cached: mappedEvents.length,
+          events: mappedEvents,
+        });
+      }
+    } catch (err) {
+      console.warn("[Analytics Supabase Read Fallback]:", err);
+    }
   }
 
-  // 2. Otherwise load from disk
-  const events = loadEventsFromDisk();
-  memoryCache = events;
-
+  // 2. Yedek Fallback Disk Dosyasından Oku
+  const fallbackEvents = loadFallbackEvents();
   return NextResponse.json({
     authenticated: true,
-    source: "disk",
-    total_cached: events.length,
-    events,
+    source: "fallback_disk",
+    total_cached: fallbackEvents.length,
+    events: fallbackEvents,
   });
 }
 
@@ -342,17 +282,18 @@ export async function GET(req: NextRequest) {
 // DELETE: Authenticated Log Reset
 // =========================================================================
 export async function DELETE(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const secret = searchParams.get("key");
-  const validSecret = process.env.ANALYTICS_SECRET;
-
-  if (!validSecret || !secret || secret !== validSecret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
-  memoryCache = [];
-  saveEventsToDisk([]);
-  await clearSupabaseEvents();
+  saveFallbackEvents([]);
 
-  return NextResponse.json({ success: true, message: "Logs reset successfully" });
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("analytics_events").delete().neq("event_type", "___never___");
+    } catch {}
+  }
+
+  return NextResponse.json({ success: true, message: "Tüm loglar temizlendi" });
 }
