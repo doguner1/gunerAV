@@ -20,9 +20,9 @@ interface HeroSpotlightStudioProps {
 }
 
 interface DesignConfig {
-  width: number;        // px (lg:w)
-  marginTop: number;    // px (lg:mt offset)
-  marginRight: number;  // px (lg:mr offset)
+  width: number;        // px
+  offsetX: number;      // px (translate X: negative = left/center, positive = right)
+  offsetY: number;      // px (translate Y: negative = up, positive = down)
   imageHeight: number;  // px
   borderRadius: number; // px
   bgOpacity: number;    // %
@@ -30,10 +30,10 @@ interface DesignConfig {
 }
 
 const DEFAULT_CONFIG: DesignConfig = {
-  width: 420,
-  marginTop: -40,
-  marginRight: 0,
-  imageHeight: 220,
+  width: 440,
+  offsetX: -120,
+  offsetY: -40,
+  imageHeight: 230,
   borderRadius: 24,
   bgOpacity: 65,
   padding: 18,
@@ -59,7 +59,7 @@ export default function HeroSpotlightStudio({
   // Load from localStorage if user previously tweaked it
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("gunerav_hero_design_config");
+      const saved = localStorage.getItem("gunerav_hero_design_config_v2");
       if (saved) {
         setConfig(JSON.parse(saved));
       }
@@ -72,7 +72,19 @@ export default function HeroSpotlightStudio({
     setConfig((prev) => {
       const next = { ...prev, [key]: value };
       try {
-        localStorage.setItem("gunerav_hero_design_config", JSON.stringify(next));
+        localStorage.setItem("gunerav_hero_design_config_v2", JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const applyPreset = (preset: Partial<DesignConfig>) => {
+    setConfig((prev) => {
+      const next = { ...prev, ...preset };
+      try {
+        localStorage.setItem("gunerav_hero_design_config_v2", JSON.stringify(next));
       } catch {
         // ignore
       }
@@ -83,7 +95,7 @@ export default function HeroSpotlightStudio({
   const resetDefaults = () => {
     setConfig(DEFAULT_CONFIG);
     try {
-      localStorage.removeItem("gunerav_hero_design_config");
+      localStorage.removeItem("gunerav_hero_design_config_v2");
     } catch {
       // ignore
     }
@@ -93,8 +105,8 @@ export default function HeroSpotlightStudio({
     return JSON.stringify(
       {
         kartGenislik: `${config.width}px`,
-        ustKonumDikey: `${config.marginTop}px`,
-        sagKonumYatay: `${config.marginRight}px`,
+        yatayKonum: `${config.offsetX}px (${config.offsetX < 0 ? `${Math.abs(config.offsetX)}px Sola/Ortaya` : `${config.offsetX}px Sağa`})`,
+        dikeyKonum: `${config.offsetY}px (${config.offsetY < 0 ? `${Math.abs(config.offsetY)}px Yukarı` : `${config.offsetY}px Aşağı`})`,
         resimYukseklik: `${config.imageHeight}px`,
         koseYuvarlakligi: `${config.borderRadius}px`,
         arkaplanSaydamlik: `%${config.bgOpacity}`,
@@ -119,20 +131,16 @@ export default function HeroSpotlightStudio({
 
   return (
     <>
-      {/* 1. SPOTLIGHT CARD CONTAINER */}
+      {/* 1. SPOTLIGHT CARD CONTAINER (Serbest Masaüstü Konumlandırma) */}
       <div
-        className="w-full sm:max-w-md lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 transition-all duration-75"
-        style={{
-          maxWidth: "100%",
-        }}
+        className="w-full sm:max-w-md lg:max-w-none lg:w-auto lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-75"
       >
-        {/* Dynamic Desktop Sizing Wrapper */}
+        {/* Dynamic Desktop Sizing & Translation Wrapper */}
         <div
           className="w-full transition-all duration-75"
           style={{
             maxWidth: `${config.width}px`,
-            marginTop: `${config.marginTop}px`,
-            marginRight: `${config.marginRight}px`,
+            transform: `translate(${config.offsetX}px, ${config.offsetY}px)`,
             marginLeft: "auto",
           }}
         >
@@ -256,8 +264,45 @@ export default function HeroSpotlightStudio({
               </button>
             </div>
 
+            {/* Quick Presets */}
+            <div className="mb-3 pb-3 border-b border-neutral-800">
+              <span className="text-[10px] uppercase font-bold text-[#d4af37] block mb-1.5">
+                ⚡ Hızlı Hazır Konumlar:
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => applyPreset({ width: 440, offsetX: -140, offsetY: -40, imageHeight: 230 })}
+                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                >
+                  🎯 Namlu Üzeri (Dengeli)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset({ width: 460, offsetX: -320, offsetY: -20, imageHeight: 250 })}
+                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                >
+                  🎯 Ortaya Doğru
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset({ width: 400, offsetX: 0, offsetY: -80, imageHeight: 210 })}
+                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                >
+                  🎯 Tam Sağ Üst
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset({ width: 520, offsetX: -160, offsetY: -30, imageHeight: 280 })}
+                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                >
+                  🎯 Geniş & Büyük Vitrin
+                </button>
+              </div>
+            </div>
+
             {/* Controls */}
-            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 text-xs">
+            <div className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1 text-xs">
               {/* 1. Genişlik (En) */}
               <div>
                 <div className="flex justify-between text-[11px] mb-1">
@@ -266,8 +311,8 @@ export default function HeroSpotlightStudio({
                 </div>
                 <input
                   type="range"
-                  min="320"
-                  max="540"
+                  min="300"
+                  max="650"
                   step="5"
                   value={config.width}
                   onChange={(e) => updateParam("width", Number(e.target.value))}
@@ -275,45 +320,49 @@ export default function HeroSpotlightStudio({
                 />
               </div>
 
-              {/* 2. Dikey Konum (Yukarı / Aşağı) */}
+              {/* 2. Yatay Konum (Sağa / Sola / Ortaya) */}
               <div>
                 <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">↕️ Dikey Konum (Yukarı-Aşağı):</span>
-                  <span className="font-mono text-[#d4af37] font-bold">{config.marginTop}px</span>
+                  <span className="text-neutral-300 font-bold">↔️ Yatay Konum (Sola / Sağa):</span>
+                  <span className="font-mono text-[#d4af37] font-bold">
+                    {config.offsetX < 0 ? `${Math.abs(config.offsetX)}px Sola` : `${config.offsetX}px Sağa`}
+                  </span>
                 </div>
                 <input
                   type="range"
-                  min="-120"
-                  max="40"
-                  step="2"
-                  value={config.marginTop}
-                  onChange={(e) => updateParam("marginTop", Number(e.target.value))}
+                  min="-650"
+                  max="150"
+                  step="5"
+                  value={config.offsetX}
+                  onChange={(e) => updateParam("offsetX", Number(e.target.value))}
                   className="w-full accent-[#d4af37] cursor-pointer"
                 />
-                <div className="flex justify-between text-[9px] text-neutral-500 mt-0.5">
-                  <span>Daha Yukarı</span>
-                  <span>Daha Aşağı</span>
+                <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                  <span>⬅️ Ekranın Ortasına (Sola)</span>
+                  <span>Sağa Doğru ➡️</span>
                 </div>
               </div>
 
-              {/* 3. Yatay Konum (Sağa / Sola) */}
+              {/* 3. Dikey Konum (Yukarı / Aşağı) */}
               <div>
                 <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">↔️ Yatay Konum (Sağa-Sola):</span>
-                  <span className="font-mono text-[#d4af37] font-bold">{config.marginRight}px</span>
+                  <span className="text-neutral-300 font-bold">↕️ Dikey Konum (Yukarı / Aşağı):</span>
+                  <span className="font-mono text-[#d4af37] font-bold">
+                    {config.offsetY < 0 ? `${Math.abs(config.offsetY)}px Yukarı` : `${config.offsetY}px Aşağı`}
+                  </span>
                 </div>
                 <input
                   type="range"
-                  min="-100"
-                  max="40"
-                  step="2"
-                  value={config.marginRight}
-                  onChange={(e) => updateParam("marginRight", Number(e.target.value))}
+                  min="-200"
+                  max="150"
+                  step="5"
+                  value={config.offsetY}
+                  onChange={(e) => updateParam("offsetY", Number(e.target.value))}
                   className="w-full accent-[#d4af37] cursor-pointer"
                 />
-                <div className="flex justify-between text-[9px] text-neutral-500 mt-0.5">
-                  <span>Daha Sağa</span>
-                  <span>Daha Sola</span>
+                <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                  <span>⬆️ Daha Yukarı</span>
+                  <span>Daha Aşağı ⬇️</span>
                 </div>
               </div>
 
@@ -326,7 +375,7 @@ export default function HeroSpotlightStudio({
                 <input
                   type="range"
                   min="140"
-                  max="320"
+                  max="400"
                   step="5"
                   value={config.imageHeight}
                   onChange={(e) => updateParam("imageHeight", Number(e.target.value))}
@@ -343,7 +392,7 @@ export default function HeroSpotlightStudio({
                 <input
                   type="range"
                   min="8"
-                  max="36"
+                  max="40"
                   step="2"
                   value={config.borderRadius}
                   onChange={(e) => updateParam("borderRadius", Number(e.target.value))}
