@@ -1017,30 +1017,68 @@ function extractColorAndBaseModel(title, brand) {
     clean = clean.replace(bRegex, "").trim();
   }
 
-  // Kalibre ve tüfek terimlerini temizle
-  clean = clean.replace(/\b(12|20|28|36|410)\s*(kalibre|cal|ga)\b/gi, "");
-  clean = clean.replace(/\b(av tüfeği|av tufegi|yarı otomatik|yari otomatik|pompalı|pompali|süperpoze|superpoze|çifte|cifte|y\.\s*oto|y\.oto)\b/gi, "");
-  // Namlu uzunluğu ve ek özellik terimlerini temizle
-  clean = clean.replace(/\b(gezli|slug|\d{2,3}\s*cm)\b/gi, "");
-  clean = clean.replace(/\s+/g, " ").trim();
+  // Tüm temizleme regex'leri — sırasıyla ve tekrarlı uygula
+  const cleanPatterns = [
+    /\b\d{2,3}\s*cm\b/gi,                   // 61Cm, 71 cm
+    /y\.\s*oto/gi,                            // Y.Oto, Y. Oto
+  ];
+  // Türkçe kelime sınırı (\b) çalışmaz, bu yüzden case-insensitive string replace kullanıyoruz
+  const stripTerms = [
+    "12 kalibre", "20 kalibre", "28 kalibre", "36 kalibre", "410 kalibre",
+    "12 cal", "20 cal", "12 ga", "20 ga",
+    "av tüfeği", "av tufegi",
+    "yarı otomatik", "yari otomatik",
+    "pompalı", "pompali",
+    "süperpoze", "superpoze",
+    "çifte", "cifte",
+    "gezli", "slug"
+  ];
 
-  // Renk kalıbını ara (longest match first - COLOR_KEYWORDS zaten sıralı)
-  let detectedColor = "";
-  for (const c of COLOR_KEYWORDS) {
-    const regex = new RegExp(`\\b${c}\\b`, "i");
-    if (regex.test(clean)) {
-      const match = clean.match(regex);
-      if (match) {
-        detectedColor = match[0];
-        clean = clean.replace(regex, "").replace(/\s+/g, " ").trim();
+  // Regex temizlikleri
+  cleanPatterns.forEach(pat => { clean = clean.replace(pat, " "); });
+
+  // String bazlı temizlikler (Türkçe-uyumlu)
+  stripTerms.forEach(term => {
+    const termLower = term.toLowerCase();
+    let lower = clean.toLowerCase();
+    let idx = lower.indexOf(termLower);
+    while (idx !== -1) {
+      const before = idx === 0 || lower[idx - 1] === " ";
+      const afterIdx = idx + termLower.length;
+      const after = afterIdx >= lower.length || lower[afterIdx] === " ";
+      if (before && after) {
+        clean = (clean.substring(0, idx) + " " + clean.substring(afterIdx)).trim();
+        lower = clean.toLowerCase();
+        idx = lower.indexOf(termLower);
+      } else {
         break;
       }
+    }
+  });
+  clean = clean.replace(/\s+/g, " ").trim();
+
+  // Renk kalıbını ara (longest match first - COLOR_KEYWORDS uzundan kısaya sıralı)
+  let detectedColor = "";
+  const cleanLower = clean.toLowerCase();
+  for (const c of COLOR_KEYWORDS) {
+    const cLower = c.toLowerCase();
+    const idx = cleanLower.indexOf(cLower);
+    if (idx === -1) continue;
+
+    const before = idx === 0 || cleanLower[idx - 1] === " ";
+    const afterIdx = idx + cLower.length;
+    const after = afterIdx >= cleanLower.length || cleanLower[afterIdx] === " ";
+
+    if (before && after) {
+      detectedColor = clean.substring(idx, idx + cLower.length);
+      clean = (clean.substring(0, idx) + " " + clean.substring(afterIdx)).replace(/\s+/g, " ").trim();
+      break;
     }
   }
 
   const baseModel = clean.trim();
   return {
-    baseModel: baseModel || title,
+    baseModel: baseModel || (brand ? brand + " (Model)" : title),
     detectedColor: detectedColor ? capitalizeWords(detectedColor) : ""
   };
 }
@@ -1058,7 +1096,17 @@ function groupProductsByVariant(rawProducts, options = {}) {
   const groups = new Map();
 
   rawProducts.forEach((p) => {
-    const brand = p.brand || (p.specs && (p.specs["Marka"] || p.specs["Brand"])) || "";
+    let brand = p.brand || (p.specs && (p.specs["Marka"] || p.specs["Brand"])) || "";
+
+    // Dinamik marka algılama: Marka boşsa başlığın ilk kelimesini marka olarak kullan
+    // Böylece "Garcia p202 Kırmızı" gibi bilinmeyen markalarda da varyant gruplama çalışır
+    if (!brand && p.title) {
+      const words = p.title.trim().split(/\s+/);
+      if (words.length > 1 && words[0].length >= 3 && /^[A-ZÇĞİÖŞÜa-zçğıöşü]+$/i.test(words[0])) {
+        brand = words[0];
+      }
+    }
+
     const { baseModel, detectedColor } = extractColorAndBaseModel(p.title, brand);
 
     // Gruplama anahtarı: Marka + Baz Model (örn: "retay::air control extreme r")
@@ -1326,6 +1374,17 @@ async function runBatchScrape() {
     // 3. Akıllı Renk Varyantı Gruplama
     const groupVariants = document.getElementById("chkBatchGroupVariants")?.checked ?? true;
     const useSupplierDesc = document.getElementById("chkBatchUseSupplierDesc")?.checked ?? false;
+    const batchCategory = document.getElementById("fldBatchCategory")?.value || "auto";
+
+    // Eğer kategori manuel seçilmişse tüm ürünlere uygula
+    if (batchCategory !== "auto") {
+      const isFirearmCat = batchCategory.startsWith("tufek");
+      rawProducts.forEach((p) => {
+        p.category = batchCategory;
+        if (isFirearmCat) p.requires_license = true;
+      });
+      appendBatchLog(`📁 Tüm ürünlere kategori atandı: ${batchCategory}`, "info");
+    }
 
     let finalProducts = [];
     if (groupVariants) {

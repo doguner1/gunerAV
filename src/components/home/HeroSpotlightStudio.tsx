@@ -114,8 +114,9 @@ export default function HeroSpotlightStudio({
       setIsDesktop(w >= 1024);
       setScreenSize({ width: w, height: h });
 
-      // Eğer ekran 1920x1080 tam ekran değilse (pencere / laptop) pencere moduna geç
-      if (w < 1880 || h < 940) {
+      // 1600px ve üzeri: Tam Ekran Masaüstü (1871px, 1920px, 2K vb.)
+      // 1024px - 1599px: Yarım Ekran / Pencere Modu (pencere küçüldüğünde)
+      if (w < 1600) {
         setEditMode("windowed");
       } else {
         setEditMode("fullscreen");
@@ -128,16 +129,18 @@ export default function HeroSpotlightStudio({
   }, []);
 
   // Şu anki ekran pencere / yarım ekran modunda mı?
-  const isCurrentlyWindowed = isDesktop && (screenSize.width < 1880 || screenSize.height < 940);
+  // w < 1600px (1024px - 1599px): Pencere / Yarım Ekran modu (offsetY: -180px, width: 430px, bgOpacity: 20%)
+  // w >= 1600px: Tam Ekran modu (offsetY: -200px, width: 445px, bgOpacity: 30%)
+  const isCurrentlyWindowed = isDesktop && screenSize.width < 1600;
 
-  // Önceden ayarlanmış değerler varsa yükle
+  // Önceden ayarlanmış değerler varsa yükle (v4 temiz başlangıç)
   useEffect(() => {
     try {
-      const savedWin = localStorage.getItem("gunerav_hero_windowed_config_v3");
+      const savedWin = localStorage.getItem("gunerav_hero_windowed_config_v4");
       if (savedWin) {
         setWindowedConfig(JSON.parse(savedWin));
       }
-      const savedFull = localStorage.getItem("gunerav_hero_fullscreen_config_v3");
+      const savedFull = localStorage.getItem("gunerav_hero_fullscreen_config_v4");
       if (savedFull) {
         setFullscreenConfig(JSON.parse(savedFull));
       }
@@ -152,7 +155,7 @@ export default function HeroSpotlightStudio({
       setWindowedConfig((prev) => {
         const next = { ...prev, [key]: value };
         try {
-          localStorage.setItem("gunerav_hero_windowed_config_v3", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_windowed_config_v4", JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -160,7 +163,7 @@ export default function HeroSpotlightStudio({
       setFullscreenConfig((prev) => {
         const next = { ...prev, [key]: value };
         try {
-          localStorage.setItem("gunerav_hero_fullscreen_config_v3", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_fullscreen_config_v4", JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -173,7 +176,7 @@ export default function HeroSpotlightStudio({
       setWindowedConfig((prev) => {
         const next = { ...prev, ...preset };
         try {
-          localStorage.setItem("gunerav_hero_windowed_config_v3", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_windowed_config_v4", JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -181,7 +184,7 @@ export default function HeroSpotlightStudio({
       setFullscreenConfig((prev) => {
         const next = { ...prev, ...preset };
         try {
-          localStorage.setItem("gunerav_hero_fullscreen_config_v3", JSON.stringify(next));
+          localStorage.setItem("gunerav_hero_fullscreen_config_v4", JSON.stringify(next));
           return next;
         } catch {}
         return next;
@@ -194,12 +197,12 @@ export default function HeroSpotlightStudio({
     if (editMode === "windowed") {
       setWindowedConfig(DEFAULT_WINDOWED_CONFIG);
       try {
-        localStorage.removeItem("gunerav_hero_windowed_config_v3");
+        localStorage.removeItem("gunerav_hero_windowed_config_v4");
       } catch {}
     } else {
       setFullscreenConfig(FULLSCREEN_CONFIG);
       try {
-        localStorage.removeItem("gunerav_hero_fullscreen_config_v3");
+        localStorage.removeItem("gunerav_hero_fullscreen_config_v4");
       } catch {}
     }
   };
