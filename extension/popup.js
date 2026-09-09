@@ -351,7 +351,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         name_tr: nameTr,
         description_tr: finalDescription,
         description_en: finalDescription,
-        price,
+        price: requiresLicense ? null : price,
         discount_percent: discountPercent,
         images: images.length > 0 ? images : ["/images/products/optics-1.webp"],
         variants: variants.length > 0 ? variants : [],
@@ -935,6 +935,15 @@ let isBatchRunning = false;
 let cancelBatchRequested = false;
 
 const COLOR_KEYWORDS = [
+  // Compound color+material patterns (MUST be first, longest match wins)
+  "siyah ahşap gezli slug",
+  "siyah ahsap gezli slug",
+  "gri ahşap gezli slug",
+  "gri ahsap gezli slug",
+  "bronz ahşap gezli slug",
+  "bronz ahsap gezli slug",
+  "siyah ahşap sentetik",
+  "siyah ahsap sentetik",
   "bottomland bronz kamuflaj",
   "bottomland kamuflaj",
   "bottomland bronz",
@@ -952,12 +961,27 @@ const COLOR_KEYWORDS = [
   "optifade",
   "sentetik siyah",
   "siyah sentetik",
+  "gri sentetik",
+  "bronz sentetik",
+  "siyah ahşap",
+  "siyah ahsap",
+  "gri ahşap",
+  "gri ahsap",
+  "bronz ahşap",
+  "bronz ahsap",
   "ahşap bronz",
-  "ahşap gri",
   "ahsap bronz",
+  "ahşap gri",
+  "ahsap gri",
+  "ahşap siyah",
+  "ahsap siyah",
+  "ceviz bronz",
+  "ceviz gri",
+  "ceviz siyah",
+  "mat siyah",
+  "parlak siyah",
   "ahşap",
   "ahsap",
-  "ceviz bronz",
   "ceviz",
   "bronz",
   "bronze",
@@ -979,7 +1003,6 @@ const COLOR_KEYWORDS = [
   "coyote",
   "gri",
   "siyah",
-  "mat siyah",
   "karbon",
   "carbon",
   "beyaz",
@@ -996,10 +1019,12 @@ function extractColorAndBaseModel(title, brand) {
 
   // Kalibre ve tüfek terimlerini temizle
   clean = clean.replace(/\b(12|20|28|36|410)\s*(kalibre|cal|ga)\b/gi, "");
-  clean = clean.replace(/\b(av tüfeği|av tufegi|yarı otomatik|yari otomatik|pompalı|pompali|süperpoze|superpoze|çifte|cifte)\b/gi, "");
+  clean = clean.replace(/\b(av tüfeği|av tufegi|yarı otomatik|yari otomatik|pompalı|pompali|süperpoze|superpoze|çifte|cifte|y\.\s*oto|y\.oto)\b/gi, "");
+  // Namlu uzunluğu ve ek özellik terimlerini temizle
+  clean = clean.replace(/\b(gezli|slug|\d{2,3}\s*cm)\b/gi, "");
   clean = clean.replace(/\s+/g, " ").trim();
 
-  // Renk kalıbını ara
+  // Renk kalıbını ara (longest match first - COLOR_KEYWORDS zaten sıralı)
   let detectedColor = "";
   for (const c of COLOR_KEYWORDS) {
     const regex = new RegExp(`\\b${c}\\b`, "i");
@@ -1354,7 +1379,7 @@ async function runBatchScrape() {
         name_tr: nameTr,
         description_tr: p.description_tr || generateStandardDescription(p, specs),
         description_en: p.description_en || generateStandardDescription(p, specs),
-        price: p.price ?? null,
+        price: (p.requires_license === true) ? null : (p.price ?? null),
         discount_percent: null,
         images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ["/images/products/optics-1.webp"],
         variants: variants,

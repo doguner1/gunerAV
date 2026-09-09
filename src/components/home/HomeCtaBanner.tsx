@@ -1,6 +1,9 @@
+"use client";
+
 import { Link } from "@/i18n/routing";
 import { STORE_INFO } from "@/lib/store";
 import { generateWhatsAppLink } from "@/lib/utils";
+import { trackWhatsAppClick, trackPhoneClick, trackMapClick } from "@/lib/analytics";
 import { MessageCircle, Phone, MapPin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -40,6 +43,7 @@ export default function HomeCtaBanner() {
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClick("home_cta_banner")}
                 className="inline-flex items-center gap-2.5 rounded-xl bg-[#25D366] px-6 py-3.5 text-xs font-black uppercase tracking-wider text-neutral-950 shadow-xl transition-all hover:bg-[#20ba59] active:scale-95"
               >
                 <MessageCircle className="h-4 w-4 fill-neutral-950 text-neutral-950" />
@@ -48,6 +52,7 @@ export default function HomeCtaBanner() {
 
               <a
                 href={`tel:${STORE_INFO.phone}`}
+                onClick={() => trackPhoneClick("home_cta_banner")}
                 className="inline-flex items-center gap-2.5 rounded-xl border border-neutral-700 bg-neutral-900 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:border-neutral-600 hover:bg-neutral-800"
               >
                 <Phone className="h-4 w-4 text-[#d4af37]" />
@@ -56,6 +61,7 @@ export default function HomeCtaBanner() {
 
               <Link
                 href="/contact"
+                onClick={() => trackMapClick("home_cta_banner_to_contact")}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-800 px-5 py-3.5 text-xs font-semibold text-neutral-300 hover:text-white transition-colors"
               >
                 <MapPin className="h-4 w-4 text-[#d4af37]" />

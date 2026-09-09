@@ -193,7 +193,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
 
   // Bilinen Av & Silah Markaları Listesi ve Başlıktan Marka Çıkarımı
   const KNOWN_BRANDS = [
-    "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata",
+    "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
     "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
     "Kral Arms", "Kral", "Retay", "Huğlu", "Huglu", "Akdaş", "Akdas",
     "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
@@ -510,7 +510,11 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
         key.length < 40 &&
         val.length < 150 &&
         !key.toLowerCase().includes("havale") &&
-        !key.toLowerCase().includes("taksit")
+        !key.toLowerCase().includes("taksit") &&
+        !key.toLowerCase().includes("kdv") &&
+        !key.toLowerCase().includes("fiyat") &&
+        !key.toLowerCase().includes("net fiyat") &&
+        !key.toLowerCase().includes("adet")
       ) {
         specs[key] = val;
       }
@@ -539,7 +543,11 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
           !keyLower.includes("banka") &&
           !keyLower.includes("vade") &&
           !keyLower.includes("tek çekim") &&
-          !keyLower.includes("finans")
+          !keyLower.includes("finans") &&
+          !keyLower.includes("kdv") &&
+          !keyLower.includes("net fiyat") &&
+          !keyLower.includes("adet") &&
+          !keyLower.includes("fiyat")
         ) {
           specs[key] = value;
         }
@@ -601,7 +609,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
         descList.push("Özellikler:");
         return;
       }
-      if (lower.includes("taksit") || lower.includes("havale") || lower.includes("kargo")) return;
+      if (lower.includes("taksit") || lower.includes("havale") || lower.includes("kargo") || lower.includes("kdv dahil") || lower.includes("net fiyat")) return;
 
       descList.push(line);
 
@@ -610,7 +618,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
         const k = parts[0].trim();
         const v = parts.slice(1).join(":").trim();
         if (k.length > 1 && k.length < 35 && v.length > 0 && v.length < 100) {
-          if (!k.toLowerCase().includes("stok") && !k.toLowerCase().includes("sku") && !k.toLowerCase().includes("ürün kodu")) {
+          if (!k.toLowerCase().includes("stok") && !k.toLowerCase().includes("sku") && !k.toLowerCase().includes("ürün kodu") && !k.toLowerCase().includes("kdv") && !k.toLowerCase().includes("fiyat") && !k.toLowerCase().includes("adet")) {
             specs[k] = v;
           }
         }
@@ -694,6 +702,13 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   delete specs["SKU"];
   delete specs["sku"];
   delete specs["Kategori"];
+  // Fiyat bilgisi specs'lerden kesinlikle çıkarılır (yasal gereklilik)
+  Object.keys(specs).forEach(k => {
+    const kl = k.toLowerCase();
+    if (kl.includes("kdv") || kl.includes("net fiyat") || kl.includes("fiyat") && kl.includes("adet")) {
+      delete specs[k];
+    }
+  });
 
   // Eğer model bir dahili depo stok koduysa (yb_..., stk_...), modeli temizle
   if (result.model && /^yb_|^stk_|^prd_|^art_/i.test(result.model)) {

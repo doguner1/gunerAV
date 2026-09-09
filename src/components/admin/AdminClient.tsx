@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Product } from "@/types/product";
 import {
@@ -21,14 +21,149 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
+  Download,
+  Trash2,
+  FileSpreadsheet,
+  FileJson,
+  AlertTriangle,
 } from "lucide-react";
 
 interface AnalyticsEvent {
+  id?: string;
   received_at: string;
   client_ip: string;
   user_agent: string;
   event: string;
   params: Record<string, any>;
+  device_type?: string;
+  path?: string;
+}
+
+function formatEventDetail(ev: AnalyticsEvent): { title: string; subtitle?: string } {
+  const p = ev.params || {};
+  const evName = (ev.event || "").toLowerCase();
+
+  if (evName.includes("whatsapp")) {
+    const item = p.item_name ? `"${p.item_name}" için ` : "";
+    const srcMap: Record<string, string> = {
+      floating_button: "Sağ Alt WhatsApp Butonu",
+      home_cta_banner: "Ana Sayfa Alt Bilgi Bandı",
+      product_detail_main: "Ürün Detay Sayfası",
+      product_card_inquire: "Katalog Ürün Kartı",
+      contact_page: "İletişim Sayfası",
+    };
+    const srcText = srcMap[p.source] || p.source || "Web Sitesi";
+    return {
+      title: `${item}WhatsApp Sipariş / Bilgi Talebi`,
+      subtitle: `Kaynak: ${srcText}`,
+    };
+  }
+
+  if (evName.includes("call") || evName.includes("phone")) {
+    const srcMap: Record<string, string> = {
+      header_desktop: "Üst Menü (Masaüstü)",
+      header_mobile: "Üst Menü (Mobil)",
+      hero_tablet_call: "Hero Alanı (Hemen Ara)",
+      home_cta_banner: "Ana Sayfa Arama Bandı",
+      footer_phone: "Alt Bilgi (Footer)",
+      contact_page: "İletişim Sayfası",
+    };
+    const srcText = srcMap[p.source] || p.source || "Web Sitesi";
+    return {
+      title: "Telefonla Doğrudan Arama",
+      subtitle: `Kaynak: ${srcText}`,
+    };
+  }
+
+  if (evName.includes("direction") || evName.includes("map")) {
+    const srcMap: Record<string, string> = {
+      hero_desktop_maps: "Hero Bölümü (Mağazayı Ziyaret Et)",
+      hero_tablet_directions: "Hero Alanı (Yol Tarifi Al)",
+      hero_spotlight_google_badge: "Hero 5.0 Google Rozeti",
+      home_cta_banner_to_contact: "Ana Sayfa Alt Harita Linki",
+      footer_google_business: "Alt Bilgi Google İşletmem",
+      footer_google_maps: "Alt Bilgi Harita Linki",
+      contact_page_directions: "İletişim Sayfası Yol Tarifi",
+    };
+    const srcText = srcMap[p.source] || p.source || "Google Haritalar";
+    return {
+      title: "Mağazaya Yol Tarifi & Harita Açıldı",
+      subtitle: `Kaynak: ${srcText}`,
+    };
+  }
+
+  if (evName === "view_item") {
+    return {
+      title: p.item_name || "Ürün İnceleme",
+      subtitle: p.item_category ? `Kategori: ${p.item_category}${p.price ? ` · Fiyat: ${p.price} ₺` : ""}` : undefined,
+    };
+  }
+
+  if (evName === "click_product_card") {
+    return {
+      title: p.item_name || "Ürün Kartı Tıklandı",
+      subtitle: p.slug ? `Sayfa: /products/${p.slug}` : undefined,
+    };
+  }
+
+  if (evName === "select_category") {
+    return {
+      title: `Kategori Görüntülendi: ${p.category_name || p.category_id}`,
+      subtitle: `Kategori ID: ${p.category_id}`,
+    };
+  }
+
+  if (evName === "search") {
+    return {
+      title: `Ürün Araması: "${p.search_term}"`,
+      subtitle: `${p.results_count ?? 0} Sonuç Bulundu`,
+    };
+  }
+
+  if (evName === "product_zoom") {
+    return {
+      title: `HD Görsel Büyüteç / Yakınlaştırma`,
+      subtitle: `${p.item_name || "Ürün"} (${p.zoom_type || "lens"})`,
+    };
+  }
+
+  if (evName === "select_variant") {
+    return {
+      title: `Model / Varyant Seçimi: ${p.variant}`,
+      subtitle: p.item_name,
+    };
+  }
+
+  return {
+    title: p.item_name || p.label || ev.event,
+    subtitle: typeof p === "object" && Object.keys(p).length > 0 ? JSON.stringify(p) : undefined,
+  };
+}
+
+function parseUserAgent(ua: string, deviceType?: string): { device: string; browser: string } {
+  if (!ua || ua === "unknown") {
+    return {
+      device: deviceType === "mobile" ? "📱 Mobil" : deviceType === "tablet" ? "📲 Tablet" : "💻 Masaüstü",
+      browser: "Tarayıcı",
+    };
+  }
+
+  let device = "💻 Masaüstü";
+  if (/iPhone/i.test(ua)) device = "📱 iPhone";
+  else if (/iPad/i.test(ua)) device = "📲 iPad";
+  else if (/Android/i.test(ua)) device = /Mobile/i.test(ua) ? "📱 Android" : "📲 Android Tablet";
+  else if (/Macintosh/i.test(ua)) device = "💻 macOS";
+  else if (/Windows/i.test(ua)) device = "💻 Windows";
+  else if (/Linux/i.test(ua)) device = "💻 Linux";
+
+  let browser = "Tarayıcı";
+  if (/Edg/i.test(ua)) browser = "Edge";
+  else if (/OPR|Opera/i.test(ua)) browser = "Opera";
+  else if (/Chrome/i.test(ua)) browser = "Chrome";
+  else if (/Safari/i.test(ua)) browser = "Safari";
+  else if (/Firefox/i.test(ua)) browser = "Firefox";
+
+  return { device, browser };
 }
 
 export default function AdminClient() {
@@ -55,6 +190,19 @@ export default function AdminClient() {
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
+  // Restore admin session if already logged in within the browser session
+  useEffect(() => {
+    try {
+      const savedAuth = sessionStorage.getItem("gunerav_admin_auth");
+      if (savedAuth) {
+        setPassword(savedAuth);
+        setIsAuthenticated(true);
+        fetchProducts(savedAuth);
+        fetchAnalytics(savedAuth);
+      }
+    } catch {}
+  }, []);
+
   // 1. Login Handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +217,9 @@ export default function AdminClient() {
       const data = await res.json();
       if (data.success) {
         setIsAuthenticated(true);
+        try {
+          sessionStorage.setItem("gunerav_admin_auth", password);
+        } catch {}
         fetchProducts(password);
         fetchAnalytics(password);
       } else {
@@ -119,6 +270,75 @@ export default function AdminClient() {
     setProducts([]);
     setEditedProducts({});
     setEvents([]);
+    try {
+      sessionStorage.removeItem("gunerav_admin_auth");
+    } catch {}
+  };
+
+  // Export Analytics as Excel/Sheets-compatible CSV (UTF-8 BOM)
+  const handleExportCsv = () => {
+    if (events.length === 0) return;
+    const headers = ["Zaman", "Olay Türü", "Detay", "Cihaz", "Tarayıcı", "IP Adresi", "Sayfa"];
+    const rows = events.map((ev) => {
+      const detail = formatEventDetail(ev);
+      const uaInfo = parseUserAgent(ev.user_agent, ev.device_type);
+      return [
+        `"${new Date(ev.received_at).toLocaleString("tr-TR").replace(/"/g, '""')}"`,
+        `"${ev.event.replace(/"/g, '""')}"`,
+        `"${(detail.title + (detail.subtitle ? ` (${detail.subtitle})` : "")).replace(/"/g, '""')}"`,
+        `"${uaInfo.device.replace(/"/g, '""')}"`,
+        `"${uaInfo.browser.replace(/"/g, '""')}"`,
+        `"${(ev.client_ip || "").replace(/"/g, '""')}"`,
+        `"${(ev.path || ev.params?.path || "").replace(/"/g, '""')}"`,
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().split("T")[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `gunerav-ziyaretci-raporu-${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export Analytics as JSON Backup
+  const handleExportJson = () => {
+    if (events.length === 0) return;
+    const blob = new Blob([JSON.stringify(events, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().split("T")[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `gunerav-analiz-yedek-${dateStr}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Clear Analytics with Confirmation
+  const handleClearLogs = async () => {
+    const confirmClear = window.confirm(
+      "⚠️ DİKKAT: Kayıtlı tüm ziyaretçi hareketleri kalıcı olarak sıfırlanacaktır.\n\nEmin misiniz?"
+    );
+    if (!confirmClear) return;
+
+    setLoadingEvents(true);
+    try {
+      const res = await fetch(`/api/analytics?action=clear&key=${encodeURIComponent(password)}`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEvents([]);
+      }
+    } catch {
+      // ignore
+    }
+    setLoadingEvents(false);
   };
 
   // Handle Edit Field
@@ -236,12 +456,14 @@ export default function AdminClient() {
     let mapClicks = 0;
     let phoneCalls = 0;
     let productViews = 0;
+    let searches = 0;
 
     events.forEach((ev) => {
       const evName = (ev.event || "").toLowerCase();
       if (evName.includes("whatsapp")) whatsappClicks++;
       else if (evName.includes("direction") || evName.includes("map") || evName.includes("store")) mapClicks++;
       else if (evName.includes("call") || evName.includes("phone")) phoneCalls++;
+      else if (evName.includes("search")) searches++;
       else if (evName.includes("product") || evName.includes("view")) productViews++;
     });
 
@@ -251,6 +473,7 @@ export default function AdminClient() {
       mapClicks,
       phoneCalls,
       productViews,
+      searches,
     };
   }, [events]);
 
@@ -651,112 +874,189 @@ export default function AdminClient() {
       ========================================================================= */}
       {activeTab === "analytics" && (
         <div className="space-y-6">
-          {/* Summary Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* WhatsApp */}
-            <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-5">
+          {/* Summary Metric Cards (6 Cards Grid) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* 1. WhatsApp */}
+            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-emerald-500/40 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-400 uppercase">WhatsApp Etkileşimi</span>
-                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-                  <MessageCircle className="h-5 w-5" />
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">WhatsApp</span>
+                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                  <MessageCircle className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-3xl font-black font-heading text-white mt-3">
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
                 {analyticsSummary.whatsappClicks}
               </div>
-              <p className="text-[10px] text-neutral-500 mt-1">Sipariş & Bilgi Talepleri</p>
+              <p className="text-[10px] text-emerald-400/80 mt-1 font-medium">Sipariş & Bilgi</p>
             </div>
 
-            {/* Directions / Maps */}
-            <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-5">
+            {/* 2. Directions / Maps */}
+            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-[#d4af37]/40 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-400 uppercase">Harita & Yol Tarifi</span>
-                <div className="p-2 rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
-                  <MapPin className="h-5 w-5" />
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Harita & Yol</span>
+                <div className="p-1.5 rounded-lg bg-[#d4af37]/20 text-[#d4af37]">
+                  <MapPin className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-3xl font-black font-heading text-white mt-3">
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
                 {analyticsSummary.mapClicks}
               </div>
-              <p className="text-[10px] text-neutral-500 mt-1">Mağazaya Yol Tarifi Tıklamaları</p>
+              <p className="text-[10px] text-amber-300/80 mt-1 font-medium">Yol Tarifi Tıklaması</p>
             </div>
 
-            {/* Phone Calls */}
-            <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-5">
+            {/* 3. Phone Calls */}
+            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-amber-500/40 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-400 uppercase">Telefon Aramaları</span>
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-                  <PhoneCall className="h-5 w-5" />
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Telefon</span>
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                  <PhoneCall className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-3xl font-black font-heading text-white mt-3">
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
                 {analyticsSummary.phoneCalls}
               </div>
-              <p className="text-[10px] text-neutral-500 mt-1">Doğrudan Arama Butonu</p>
+              <p className="text-[10px] text-amber-400/80 mt-1 font-medium">Doğrudan Arama</p>
             </div>
 
-            {/* Product Views */}
-            <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-5">
+            {/* 4. Product Views */}
+            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-purple-500/40 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-400 uppercase">Ürün Görüntülemeleri</span>
-                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
-                  <Eye className="h-5 w-5" />
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Ürün İnceleme</span>
+                <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                  <Eye className="h-4 w-4" />
                 </div>
               </div>
-              <div className="text-3xl font-black font-heading text-white mt-3">
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
                 {analyticsSummary.productViews}
               </div>
-              <p className="text-[10px] text-neutral-500 mt-1">Katalog & Detay Sayfa Tıklamaları</p>
+              <p className="text-[10px] text-purple-400/80 mt-1 font-medium">Katalog & Detay</p>
+            </div>
+
+            {/* 5. Searches */}
+            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-blue-500/40 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Aramalar</span>
+                <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
+                  <Search className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white mt-2">
+                {analyticsSummary.searches}
+              </div>
+              <p className="text-[10px] text-blue-400/80 mt-1 font-medium">Site İçi Arama</p>
+            </div>
+
+            {/* 6. Total Recorded Events */}
+            <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-4 shadow-lg hover:border-neutral-600 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Toplam Kayıt</span>
+                <div className="p-1.5 rounded-lg bg-neutral-800 text-neutral-300">
+                  <BarChart3 className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-heading text-[#d4af37] mt-2">
+                {analyticsSummary.total}
+              </div>
+              <p className="text-[10px] text-neutral-400 mt-1 font-medium">Kalıcı Disk Kaydı</p>
             </div>
           </div>
 
-          {/* Events Log Table */}
+          {/* Events Log Table & Management Card */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-2xl p-5">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-neutral-800">
+            {/* Header & Export Toolbar */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-4 border-b border-neutral-800">
               <div>
-                <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider">
-                  Son Kaydedilen Ziyaretçi Hareketleri (En Son {events.length} Olay)
+                <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>Kalıcı Ziyaretçi Hareketleri</span>
+                  <span className="rounded-md bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-[10px] px-2 py-0.5 font-bold">
+                    {events.length} Olay Kayıtlı
+                  </span>
                 </h3>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Sitenizdeki tıklamalar ve etkileşimler anlık olarak listelenmektedir.
+                  Tüm tıklamalar ve etkileşimler diske kaydedilir; tarayıcı kapansa veya sunucu yeniden başlasa da kaybolmaz.
                 </p>
               </div>
 
-              <button
-                onClick={() => fetchAnalytics(password)}
-                disabled={loadingEvents}
-                className="flex items-center gap-1.5 rounded-xl bg-black hover:bg-neutral-800 border border-neutral-700 px-3.5 py-2 text-xs font-bold text-neutral-300 transition-colors"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${loadingEvents ? "animate-spin" : ""}`} />
-                <span>Yenile</span>
-              </button>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Refresh */}
+                <button
+                  onClick={() => fetchAnalytics(password)}
+                  disabled={loadingEvents}
+                  className="flex items-center gap-1.5 rounded-xl bg-black hover:bg-neutral-800 border border-neutral-700 px-3 py-2 text-xs font-bold text-neutral-300 transition-colors active:scale-95"
+                  title="Listeyi Yenile"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${loadingEvents ? "animate-spin text-[#d4af37]" : ""}`} />
+                  <span>Yenile</span>
+                </button>
+
+                {/* Export CSV */}
+                <button
+                  onClick={handleExportCsv}
+                  disabled={events.length === 0}
+                  className="flex items-center gap-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 px-3 py-2 text-xs font-bold text-white transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                  title="Excel ve Google E-Tablolar uyumlu CSV formatında indir"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Excel / CSV</span>
+                </button>
+
+                {/* Export JSON */}
+                <button
+                  onClick={handleExportJson}
+                  disabled={events.length === 0}
+                  className="flex items-center gap-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 px-3 py-2 text-xs font-bold text-white transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                  title="Ham JSON formatında tam yedek al"
+                >
+                  <FileJson className="h-3.5 w-3.5 text-blue-400" />
+                  <span>JSON Yedek</span>
+                </button>
+
+                {/* Clear Logs */}
+                <button
+                  onClick={handleClearLogs}
+                  disabled={events.length === 0 || loadingEvents}
+                  className="flex items-center gap-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 px-3 py-2 text-xs font-bold text-red-300 transition-colors active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                  title="Tüm logları sıfırla"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                  <span>Logları Sıfırla</span>
+                </button>
+              </div>
             </div>
 
-            <div className="overflow-x-auto max-h-[600px]">
+            {/* Table */}
+            <div className="overflow-x-auto max-h-[620px]">
               <table className="w-full text-left text-xs">
-                <thead className="bg-black/60 sticky top-0 text-neutral-400 uppercase text-[10px] tracking-wider border-b border-neutral-800">
+                <thead className="bg-black/80 sticky top-0 text-neutral-400 uppercase text-[10px] tracking-wider border-b border-neutral-800 z-10">
                   <tr>
                     <th className="px-4 py-3">Zaman</th>
                     <th className="px-4 py-3">Olay Türü</th>
-                    <th className="px-4 py-3">Detaylar</th>
-                    <th className="px-4 py-3">Cihaz / Tarayıcı</th>
-                    <th className="px-4 py-3">IP Adresi</th>
+                    <th className="px-4 py-3">Etkileşim / Detay</th>
+                    <th className="px-4 py-3">Cihaz & Tarayıcı</th>
+                    <th className="px-4 py-3">Sayfa / IP</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800/80">
+                <tbody className="divide-y divide-neutral-800/80 font-mono">
                   {events.map((ev, idx) => {
-                    const isWa = ev.event.includes("whatsapp");
-                    const isCall = ev.event.includes("call");
-                    const isMap = ev.event.includes("direction") || ev.event.includes("map");
+                    const evLower = (ev.event || "").toLowerCase();
+                    const isWa = evLower.includes("whatsapp");
+                    const isCall = evLower.includes("call") || evLower.includes("phone");
+                    const isMap = evLower.includes("direction") || evLower.includes("map");
+                    const isSearch = evLower.includes("search");
+                    const isView = evLower.includes("view") || evLower.includes("product");
+
+                    const detail = formatEventDetail(ev);
+                    const uaInfo = parseUserAgent(ev.user_agent, ev.device_type);
 
                     return (
-                      <tr key={idx} className="hover:bg-neutral-800/40 transition-colors font-mono">
-                        {/* Time */}
+                      <tr key={ev.id || idx} className="hover:bg-neutral-800/50 transition-colors">
+                        {/* 1. Time */}
                         <td className="px-4 py-3 text-neutral-400 text-[11px] whitespace-nowrap">
                           {new Date(ev.received_at).toLocaleString("tr-TR")}
                         </td>
 
-                        {/* Event Badge */}
+                        {/* 2. Event Badge */}
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
@@ -766,35 +1066,49 @@ export default function AdminClient() {
                                 ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
                                 : isMap
                                 ? "bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/40"
+                                : isSearch
+                                ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                                : isView
+                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
                                 : "bg-neutral-800 text-neutral-300 border border-neutral-700"
                             }`}
                           >
-                            {ev.event}
+                            {isWa && "💬 WHATSAPP"}
+                            {isCall && "📞 TELEFON"}
+                            {isMap && "📍 HARİTA"}
+                            {isSearch && "🔍 ARAMA"}
+                            {isView && !isWa && !isCall && !isMap && !isSearch && "👁️ İNCELEME"}
+                            {!isWa && !isCall && !isMap && !isSearch && !isView && ev.event}
                           </span>
                         </td>
 
-                        {/* Details */}
-                        <td className="px-4 py-3 text-white font-sans text-xs">
-                          {ev.params?.item_name ? (
-                            <span className="font-bold text-[#d4af37]">{ev.params.item_name}</span>
-                          ) : ev.params?.label ? (
-                            <span>{ev.params.label}</span>
-                          ) : (
-                            <span className="text-neutral-500 font-mono text-[11px]">
-                              {JSON.stringify(ev.params)}
-                            </span>
+                        {/* 3. Formatted Details */}
+                        <td className="px-4 py-3 font-sans">
+                          <div className="font-bold text-white text-xs">
+                            {detail.title}
+                          </div>
+                          {detail.subtitle && (
+                            <div className="text-[11px] text-neutral-400 mt-0.5">
+                              {detail.subtitle}
+                            </div>
                           )}
                         </td>
 
-                        {/* User Agent */}
-                        <td className="px-4 py-3 text-neutral-400 text-[10.5px] truncate max-w-xs font-sans">
-                          {ev.user_agent.includes("Mobile") ? "📱 Mobil" : "💻 Masaüstü / PC"}
-                          <span className="text-neutral-500 ml-1.5 truncate">({ev.user_agent.slice(0, 40)}...)</span>
+                        {/* 4. Device & Browser */}
+                        <td className="px-4 py-3 text-neutral-300 text-[11px] font-sans whitespace-nowrap">
+                          <span className="font-bold text-white">{uaInfo.device}</span>
+                          <span className="text-neutral-500 mx-1.5">·</span>
+                          <span className="text-neutral-400">{uaInfo.browser}</span>
                         </td>
 
-                        {/* IP */}
-                        <td className="px-4 py-3 text-neutral-400 text-[11px] whitespace-nowrap">
-                          {ev.client_ip}
+                        {/* 5. Page / IP */}
+                        <td className="px-4 py-3 text-neutral-400 text-[10.5px] whitespace-nowrap">
+                          <div className="text-neutral-300 truncate max-w-[140px] font-mono">
+                            {ev.path || ev.params?.path || "/"}
+                          </div>
+                          <div className="text-neutral-500 text-[10px] font-mono">
+                            {ev.client_ip}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -803,8 +1117,14 @@ export default function AdminClient() {
               </table>
 
               {events.length === 0 && (
-                <div className="p-8 text-center text-neutral-400 text-xs">
-                  Henüz kaydedilmiş ziyaretçi hareketi bulunmuyor. Ziyaretçiler siteye girip butonlara tıkladıkça burası otomatik dolacaktır.
+                <div className="p-12 text-center text-neutral-400 text-xs space-y-2">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-800 text-neutral-500 mb-1">
+                    <BarChart3 className="h-5 w-5" />
+                  </div>
+                  <div className="font-bold text-neutral-300">Henüz kayıtlı ziyaretçi hareketi bulunmuyor.</div>
+                  <p className="max-w-md mx-auto text-neutral-500 text-[11px]">
+                    Ziyaretçiler siteye girip WhatsApp, arama, harita veya ürün inceleme butonlarına tıkladıkça hareketler buraya ve diske anında kaydedilecektir.
+                  </p>
                 </div>
               )}
             </div>

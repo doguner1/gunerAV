@@ -1,7 +1,10 @@
+"use client";
+
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { STORE_INFO } from "@/lib/store";
 import { getAllCategories } from "@/lib/products";
+import { trackMapClick, trackPhoneClick } from "@/lib/analytics";
 import {
   ShieldAlert,
   Phone,
@@ -56,6 +59,7 @@ export default function Footer() {
                 href={STORE_INFO.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackMapClick("footer_google_business")}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-neutral-800 dark:text-neutral-300 hover:text-black dark:hover:text-white transition-colors"
               >
                 <span>{tCommon("googleBusiness")}</span>
@@ -150,6 +154,7 @@ export default function Footer() {
                 <Phone className="h-4 w-4 shrink-0 text-[#b45309] dark:text-[#d4af37]" />
                 <a
                   href={`tel:${STORE_INFO.phone}`}
+                  onClick={() => trackPhoneClick("footer_phone")}
                   className="font-bold text-neutral-900 dark:text-neutral-200 hover:text-black dark:hover:text-white"
                 >
                   {STORE_INFO.phone}

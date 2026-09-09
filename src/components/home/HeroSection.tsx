@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { STORE_INFO } from "@/lib/store";
+import { trackMapClick, trackPhoneClick, trackEvent } from "@/lib/analytics";
 import {
   ArrowRight,
   ShieldCheck,
@@ -105,6 +108,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 href={STORE_INFO.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackMapClick("hero_desktop_maps")}
                 className="hidden lg:inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-black/40 hover:bg-black/60 px-6 py-4 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:border-[#d4af37] hover:scale-[1.02] active:scale-95 shadow-lg"
               >
                 <MapPin className="h-4 w-4 text-[#d4af37]" />
@@ -133,6 +137,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                   href={STORE_INFO.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackMapClick("hero_tablet_directions")}
                   className="group flex-1 sm:flex-initial flex items-center gap-3.5 px-5 sm:px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] group-hover:scale-110 transition-transform shadow-inner shrink-0">
@@ -153,6 +158,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 {/* Hemen Ara Butonu */}
                 <a
                   href={`tel:${STORE_INFO.phoneIntl || STORE_INFO.phone}`}
+                  onClick={() => trackPhoneClick("hero_tablet_call")}
                   className="group flex-1 sm:flex-initial flex items-center gap-3.5 px-5 sm:px-6 py-3.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 text-white group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30 shrink-0">
@@ -206,6 +212,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       <div className="hidden sm:flex absolute bottom-3 sm:bottom-5 inset-x-0 justify-center items-center z-20 pointer-events-none">
         <a
           href="#categories"
+          onClick={() => trackEvent("click_start_hunting_arrow")}
           className="group pointer-events-auto flex flex-col items-center gap-1.5 px-4 py-1.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer select-none"
           aria-label={t("startHunting")}
         >

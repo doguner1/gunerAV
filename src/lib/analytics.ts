@@ -68,16 +68,21 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
 
   // 4. Send background beacon to server API
   try {
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(
-        "/api/analytics",
-        JSON.stringify({ event: eventName, params: eventPayload })
-      );
-    } else {
+    const bodyStr = JSON.stringify({ event: eventName, params: eventPayload });
+    let sent = false;
+    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+      try {
+        const blob = new Blob([bodyStr], { type: "application/json" });
+        sent = navigator.sendBeacon("/api/analytics", blob);
+      } catch {
+        sent = false;
+      }
+    }
+    if (!sent) {
       fetch("/api/analytics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: eventName, params: eventPayload }),
+        body: bodyStr,
         keepalive: true,
       }).catch(() => {});
     }
@@ -193,6 +198,13 @@ export function trackVariantSelect(product: { id: string; name: string }, varian
 /**
  * 7. Phone Call Click
  */
-export function trackPhoneClick(source: string) {
-  trackEvent("click_phone", { source });
+export function trackPhoneClick(source: string, details: Record<string, any> = {}) {
+  trackEvent("click_phone", { source, ...details });
+}
+
+/**
+ * 8. Map & Store Directions Click
+ */
+export function trackMapClick(source: string, details: Record<string, any> = {}) {
+  trackEvent("click_map_directions", { source, ...details });
 }

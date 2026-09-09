@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye, Monitor, Smartphone, Star, Sparkles } from "lucide-react";
 import { Product } from "@/types/product";
+import { trackMapClick } from "@/lib/analytics";
 
 interface HeroSpotlightStudioProps {
   spotlightProduct?: Product;
@@ -349,6 +350,7 @@ export default function HeroSpotlightStudio({
             href={mapsUrl || "https://maps.google.com"}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackMapClick("hero_spotlight_google_badge")}
             className="hidden sm:flex items-center gap-2.5 absolute -bottom-10 -left-4 z-20 rounded-2xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-2 px-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-105 group cursor-pointer"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-[#d4af37] group-hover:scale-110 transition-transform shrink-0">

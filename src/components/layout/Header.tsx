@@ -8,6 +8,7 @@ import ThemeToggle from "@/components/common/ThemeToggle";
 import { STORE_INFO } from "@/lib/store";
 import { Menu, X, Phone, ChevronDown, ChevronRight } from "lucide-react";
 import { getAllCategories } from "@/lib/products";
+import { trackPhoneClick } from "@/lib/analytics";
 
 export default function Header() {
   const t = useTranslations("Navigation");
@@ -192,6 +193,7 @@ export default function Header() {
             {/* Phone */}
             <a
               href={`tel:${STORE_INFO.phone}`}
+              onClick={() => trackPhoneClick("header_desktop")}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition-colors ${
                 isHeroOverlay
                   ? "text-neutral-200 hover:text-white"
@@ -230,6 +232,7 @@ export default function Header() {
           <div className="flex items-center gap-1.5 lg:hidden">
             <a
               href={`tel:${STORE_INFO.phone}`}
+              onClick={() => trackPhoneClick("header_mobile")}
               className={`rounded-lg p-2 ${
                 isHeroOverlay ? "text-white" : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
               }`}
