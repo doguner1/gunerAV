@@ -1,5 +1,359 @@
 [
   {
+    "id": "rc-caccia-bior-32-gr-av-fisegi-12-cal",
+    "category": "muhimmat-32-gram",
+    "name_tr": "RC CACCIA BIOR 32 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "rc-caccia-bior-32-gr-av-fisegi-12-cal",
+    "slug_en": "rc-caccia-bior-32-gr-av-fisegi-12-cal-en",
+    "brand": "RC",
+    "model": "",
+    "description_tr": "Özellikler:\n32 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nBior Tapa\nPakette 25 Adet\nİtalya Üretimidir",
+    "description_en": "Özellikler:\n32 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nBior Tapa\nPakette 25 Adet\nİtalya Üretimidir",
+    "price": 575,
+    "discount_percent": 5,
+    "images": [
+      "/products/rc-caccia-bior-32-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "RC",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Bior Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "RC",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Bior Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:46:54.625036+00:00",
+    "updated_at": "2026-09-09T14:46:54.625036+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "b-p-mb-classic-32-gr-av-fisegi-12-cal",
+    "category": "muhimmat-32-gram",
+    "name_tr": "B&P MB CLASSIC 32 GR. AV FİŞEĞİ- 12 CAL.",
+    "name_en": null,
+    "slug_tr": "b-p-mb-classic-32-gr-av-fisegi-12-cal",
+    "slug_en": "b-p-mb-classic-32-gr-av-fisegi-12-cal-en",
+    "brand": "B&P",
+    "model": "",
+    "description_tr": "Özellikler:\n32 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet\nİtalya Üretimidir",
+    "description_en": "Özellikler:\n32 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet\nİtalya Üretimidir",
+    "price": 990,
+    "discount_percent": 5,
+    "images": [
+      "/products/b-p-mb-classic-32-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "B&P",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "B&P",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:46:35.394563+00:00",
+    "updated_at": "2026-09-09T14:46:35.394563+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "fiocchi-32-gr-av-fisegi-12-cal",
+    "category": "muhimmat-32-gram",
+    "name_tr": "FIOCCHI 32 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "fiocchi-32-gr-av-fisegi-12-cal",
+    "slug_en": "fiocchi-32-gr-av-fisegi-12-cal-en",
+    "brand": "FIOCCHI",
+    "model": "",
+    "description_tr": "Özellikler:\n32 Gram\n12 Kalibre\nKovan Uzunluğu 67 mm\nDiplik Uzunluğu 12 mm\nPakette 25 Adet\nİtalya Üretimidir",
+    "description_en": "Özellikler:\n32 Gram\n12 Kalibre\nKovan Uzunluğu 67 mm\nDiplik Uzunluğu 12 mm\nPakette 25 Adet\nİtalya Üretimidir",
+    "price": 850,
+    "discount_percent": 5,
+    "images": [
+      "/products/fiocchi-32-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "FIOCCHI",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Kovan Uzunluğu": "67 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "FIOCCHI",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Kovan Uzunluğu": "67 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:46:21.931163+00:00",
+    "updated_at": "2026-09-09T14:46:21.931163+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "mirage-xpert-game-32-gr-av-fisegi-12-cal",
+    "category": "muhimmat-32-gram",
+    "name_tr": "MIRAGE XPERT GAME 32 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "mirage-xpert-game-32-gr-av-fisegi-12-cal",
+    "slug_en": "mirage-xpert-game-32-gr-av-fisegi-12-cal-en",
+    "brand": "CLEVER-MIRAGE",
+    "model": "",
+    "description_tr": "Özellikler:\n32 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nDiplik Uzunluğu 12 mm\nPakette 25 Adet\nİtalya Üretimidir",
+    "description_en": "Özellikler:\n32 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nDiplik Uzunluğu 12 mm\nPakette 25 Adet\nİtalya Üretimidir",
+    "price": 900,
+    "discount_percent": 5,
+    "images": [
+      "/products/mirage-xpert-game-32-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "CLEVER-MIRAGE",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "CLEVER-MIRAGE",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:46:03.825831+00:00",
+    "updated_at": "2026-09-09T14:46:03.825831+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "sterling-32-gr-av-fisegi-12-cal",
+    "category": "muhimmat-32-gram",
+    "name_tr": "STERLING 32 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "sterling-32-gr-av-fisegi-12-cal",
+    "slug_en": "sterling-32-gr-av-fisegi-12-cal-en",
+    "brand": "STERLING",
+    "model": "",
+    "description_tr": "Özellikler:\n32 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "description_en": "Özellikler:\n32 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "price": 650,
+    "discount_percent": 5,
+    "images": [
+      "/products/sterling-32-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "STERLING",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "STERLING",
+      "Gramaj": "32 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:45:40.758544+00:00",
+    "updated_at": "2026-09-09T14:45:40.758544+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "zuber-34-gr-av-fisegi-12-cal",
+    "category": "muhimmat-34-gram",
+    "name_tr": "ZUBER 34 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "zuber-34-gr-av-fisegi-12-cal",
+    "slug_en": "zuber-34-gr-av-fisegi-12-cal-en",
+    "brand": "ZUBER",
+    "model": "",
+    "description_tr": "Özellikler:\n34 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "description_en": "Özellikler:\n34 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "price": 310,
+    "discount_percent": 5,
+    "images": [
+      "/products/zuber-34-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "ZUBER",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "ZUBER",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:41:41.557931+00:00",
+    "updated_at": "2026-09-09T14:41:41.557931+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "winchester-italy-special-chasse-34-gr-av-fisegi-12-cal",
+    "category": "muhimmat-34-gram",
+    "name_tr": "WINCHESTER (ITALY) SPECIAL CHASSE 34 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "winchester-italy-special-chasse-34-gr-av-fisegi-12-cal",
+    "slug_en": "winchester-italy-special-chasse-34-gr-av-fisegi-12-cal-en",
+    "brand": "WINCHESTER",
+    "model": "",
+    "description_tr": "Özellikler:\n34 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nPower Tapa\nPakette 25 Adet\nİtalya Üretimidir",
+    "description_en": "Özellikler:\n34 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nPower Tapa\nPakette 25 Adet\nİtalya Üretimidir",
+    "price": 1125,
+    "discount_percent": 5,
+    "images": [
+      "/products/winchester-italy-special-chasse-34-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "WINCHESTER",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "WINCHESTER",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:40:24.414857+00:00",
+    "updated_at": "2026-09-09T14:40:24.414857+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "yaf-34-gr-av-fisegi-12-cal",
+    "category": "muhimmat-34-gram",
+    "name_tr": "YAF 34 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "yaf-34-gr-av-fisegi-12-cal",
+    "slug_en": "yaf-34-gr-av-fisegi-12-cal-en",
+    "brand": "YAF",
+    "model": "",
+    "description_tr": "Özellikler:\n34 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "description_en": "Özellikler:\n34 Gram\n12 Kalibre\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "price": 630,
+    "discount_percent": 5,
+    "images": [
+      "/products/yaf-34-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "YAF",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "YAF",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:39:43.908689+00:00",
+    "updated_at": "2026-09-09T14:39:43.908689+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "sterling-34-gr-av-fisegi-12-cal",
+    "category": "muhimmat-34-gram",
+    "name_tr": "STERLING 34 GR. AV FİŞEĞİ - 12 CAL.",
+    "name_en": null,
+    "slug_tr": "sterling-34-gr-av-fisegi-12-cal",
+    "slug_en": "sterling-34-gr-av-fisegi-12-cal-en",
+    "brand": "STERLING",
+    "model": "",
+    "description_tr": "Özellikler:\n34 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "description_en": "Özellikler:\n34 Gram\n12 Kalibre\nPower Tapa\nKovan Uzunluğu 70 mm\nPakette 25 Adet",
+    "price": 670,
+    "discount_percent": 5,
+    "images": [
+      "/products/sterling-34-gr-av-fisegi-12-cal/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": false,
+    "in_stock": true,
+    "specs_tr": {
+      "Marka": "STERLING",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "specs_en": {
+      "Marka": "STERLING",
+      "Gramaj": "34 Gram",
+      "Kalibre": "12 Kalibre",
+      "Tapa Tipi": "Power Tapa",
+      "Kovan Uzunluğu": "70 mm",
+      "Paket İçeriği": "25 Adet"
+    },
+    "created_at": "2026-09-09T14:39:16.487324+00:00",
+    "updated_at": "2026-09-09T14:39:16.487324+00:00",
+    "variants": "$undefined"
+  },
+  {
     "id": "castello-c12",
     "category": "tufek-cifte",
     "name_tr": "CASTELLO C12",

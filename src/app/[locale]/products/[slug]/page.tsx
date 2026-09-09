@@ -45,9 +45,18 @@ export async function generateMetadata({
   const description = isTr ? product.description_tr : product.description_en;
   const title = `${name} | ${STORE_INFO.name}`;
 
+  const category = getCategoryById(product.category);
+  const categoryName = isTr ? category?.name_tr : category?.name_en;
+  const brandStr = product.brand || "";
+
+  const keywords = isTr
+    ? [brandStr, name, categoryName, "Malatya", "Malatya av bayii", "fiyatları", "özellikleri", "satın al", brandStr && `${brandStr} Malatya`, "tüfek", "fişek"].filter(Boolean)
+    : [brandStr, name, categoryName, "Malatya hunting", "dealer", "price", "specs", brandStr && `${brandStr} Malatya`].filter(Boolean);
+
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: `${STORE_INFO.siteUrl}/${locale}/products/${slug}`,
       languages: {
