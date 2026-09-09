@@ -23,7 +23,7 @@ export const STORE_INFO = {
     lng: Number(process.env.NEXT_PUBLIC_STORE_LNG) || 38.290050394441316,
   },
   rating: 5.0,
-  reviewCount: 48,
+  reviewCount: 12,
   hours: {
     weekdays: "08:30 - 20:00",
     saturday: "08:30 - 20:00",

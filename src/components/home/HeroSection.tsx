@@ -179,9 +179,12 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
             spotlightImage={spotlightImage}
             badgeText={t("spotlightBadge")}
             inStockText={t("spotlightInStock")}
-            featuredModelText={t("spotlightFeaturedModel")}
-            storePickupText={t("spotlightStorePickup")}
+            discountPrefixText={t("spotlightDiscountPrefix")}
+            discountHighlightText={t("spotlightDiscountHighlight")}
+            googleBadgeTitle={t("googleMapsBadgeTitle")}
+            googleBadgeSubtitle={t("googleMapsBadgeSubtitle")}
             reviewCount={STORE_INFO.reviewCount}
+            mapsUrl={STORE_INFO.mapsUrl}
             inspectText={t("spotlightInspect")}
           />
         </div>

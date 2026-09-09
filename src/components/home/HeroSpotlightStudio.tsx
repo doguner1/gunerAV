@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
-import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye, Monitor, Smartphone } from "lucide-react";
+import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye, Monitor, Smartphone, Star, Sparkles } from "lucide-react";
 import { Product } from "@/types/product";
 
 interface HeroSpotlightStudioProps {
@@ -13,9 +13,13 @@ interface HeroSpotlightStudioProps {
   spotlightImage: string;
   badgeText: string;
   inStockText: string;
-  featuredModelText: string;
-  storePickupText: string;
+  featuredModelText?: string;
+  discountPrefixText?: string;
+  discountHighlightText?: string;
+  googleBadgeTitle?: string;
+  googleBadgeSubtitle?: string;
   reviewCount: number;
+  mapsUrl?: string;
   inspectText: string;
 }
 
@@ -59,8 +63,12 @@ export default function HeroSpotlightStudio({
   badgeText,
   inStockText,
   featuredModelText,
-  storePickupText,
+  discountPrefixText,
+  discountHighlightText,
+  googleBadgeTitle,
+  googleBadgeSubtitle,
   reviewCount,
+  mapsUrl,
   inspectText,
 }: HeroSpotlightStudioProps) {
   const [fullscreenConfig, setFullscreenConfig] = useState<DesignConfig>(FULLSCREEN_CONFIG);
@@ -219,7 +227,7 @@ export default function HeroSpotlightStudio({
       >
         {/* Dynamic Desktop Sizing & Translation Wrapper */}
         <div
-          className="w-full transition-all duration-75"
+          className="w-full transition-all duration-75 relative"
           style={{
             maxWidth: isDesktop ? `${activeConfig.width}px` : "100%",
             transform: isDesktop
@@ -287,14 +295,17 @@ export default function HeroSpotlightStudio({
 
             {/* Spotlight Footer & Action */}
             <div className="flex items-center justify-between pt-3 border-t border-white/15 gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <MapPin className="h-4 w-4 text-[#d4af37] shrink-0" />
+              {/* Sınırlı Süre İçin %10 İndirimde (Hafif Belirgin & Şık) */}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 border border-[#d4af37]/35 text-[#d4af37] shadow-inner shrink-0">
+                  <Sparkles className="h-4 w-4 text-[#d4af37]" />
+                </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[10.5px] uppercase tracking-wider font-bold text-white/90 truncate">
-                    {storePickupText}
+                  <span className="text-[9px] sm:text-[10px] uppercase font-mono font-bold tracking-wider text-amber-400/90 whitespace-nowrap">
+                    {discountPrefixText || "Sınırlı Süre İçin"}
                   </span>
-                  <span className="text-[9.5px] text-white/60 truncate">
-                    Google 5.0 &#9733; ({reviewCount})
+                  <span className="text-xs font-heading font-black text-white tracking-wide whitespace-nowrap">
+                    <span className="text-[#d4af37] font-black">{discountHighlightText || "%10 İndirimde"}</span>
                   </span>
                 </div>
               </div>
@@ -308,6 +319,26 @@ export default function HeroSpotlightStudio({
               </Link>
             </div>
           </div>
+
+          {/* 3. FLOATING TRUST INDICATOR PILL (Google Haritalar 5.0 Star Badge) */}
+          <a
+            href={mapsUrl || "https://maps.google.com"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-2.5 absolute -bottom-10 -left-4 z-20 rounded-2xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-2 px-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-105 group cursor-pointer"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-[#d4af37] group-hover:scale-110 transition-transform shrink-0">
+              <Star className="h-4 w-4 fill-[#d4af37] text-[#d4af37]" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-extrabold text-white tracking-wide flex items-center gap-1">
+                {googleBadgeTitle || "5.0 ★ Google Haritalar"}
+              </span>
+              <span className="text-[10px] font-medium text-neutral-400 group-hover:text-neutral-300 transition-colors">
+                {googleBadgeSubtitle || "Malatya'nın En Yüksek Puanlı Bayii"} ({reviewCount} Yorum)
+              </span>
+            </div>
+          </a>
         </div>
       </div>
 

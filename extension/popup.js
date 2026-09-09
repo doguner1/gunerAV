@@ -14,6 +14,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       const targetId = tab.dataset.tab;
       const targetPane = document.getElementById(targetId);
       if (targetPane) targetPane.classList.add("active");
+
+      const sharedForm = document.getElementById("sharedProductForm");
+      if (sharedForm) {
+        if (targetId === "tabBatch" || targetId === "tabSettings") {
+          sharedForm.style.display = "none";
+        } else {
+          sharedForm.style.display = "block";
+        }
+      }
     });
   });
 
@@ -23,6 +32,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const settingsTab = document.querySelector('[data-tab="tabSettings"]');
     settingsTab?.classList.add("active");
     document.getElementById("tabSettings")?.classList.add("active");
+
+    const sharedForm = document.getElementById("sharedProductForm");
+    if (sharedForm) sharedForm.style.display = "none";
   });
 
   // 2. Supabase Ayarlarını Yükle
@@ -110,6 +122,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     saveFormDraft();
   });
 
+  // 4b. Tedarikçi Açıklamasını Kullan Seçimi (Varsayılan: Kapalı)
+  document.getElementById("chkUseScrapedDescription")?.addEventListener("change", (e) => {
+    const descEl = document.getElementById("fldDescription");
+    if (!descEl) return;
+    if (e.target.checked) {
+      if (lastScrapedDescription) {
+        descEl.value = lastScrapedDescription;
+      }
+    } else {
+      descEl.value = generateStandardDescription();
+    }
+    saveFormDraft();
+  });
+
   // 5. Form Alanlarındaki Değişiklikleri Dinle ve Otomatik Taslak Olarak Kaydet (Persistence)
   const formInputs = [
     "fldNameTr",
@@ -122,6 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "chkHeroSpotlight",
     "chkRequiresLicense",
     "chkInStock",
+    "chkUseScrapedDescription",
     "fldDescription",
     "fldSpecsJson",
   ];
@@ -300,7 +327,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         specs.variants = variants;
       }
 
-      const slug = slugify(nameTr);
+      let finalDescription = document.getElementById("fldDescription")?.value?.trim();
+      const chkUseScraped = document.getElementById("chkUseScrapedDescription");
+      if ((!chkUseScraped || !chkUseScraped.checked) && (!finalDescription || (lastScrapedDescription && finalDescription === lastScrapedDescription))) {
+        finalDescription = generateStandardDescription(null, specs);
+        if (document.getElementById("fldDescription")) {
+          document.getElementById("fldDescription").value = finalDescription;
+        }
+      }
+      if (!finalDescription) {
+        finalDescription = generateStandardDescription(null, specs);
+      }
+
+      const slug = slugify(nameTr) || `product-${Date.now()}`;
 
       const payload = {
         id: slug,
@@ -310,12 +349,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         brand,
         model,
         name_tr: nameTr,
-        description_tr:
-          document.getElementById("fldDescription")?.value?.trim() ||
-          `${nameTr}. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.`,
-        description_en:
-          document.getElementById("fldDescription")?.value?.trim() ||
-          `${nameTr}. Available at official dealer Guner AV in Malatya.`,
+        description_tr: finalDescription,
+        description_en: finalDescription,
         price,
         discount_percent: discountPercent,
         images: images.length > 0 ? images : ["/images/products/optics-1.webp"],
@@ -368,11 +403,51 @@ document.addEventListener("DOMContentLoaded", async () => {
       btn.textContent = "🚀 Tekrar Dene";
     }
   });
+
+  // 11. Toplu Çekim (Kategori) Butonları
+  document.getElementById("btnStartBatch")?.addEventListener("click", () => {
+    runBatchScrape();
+  });
+
+  document.getElementById("btnStopBatch")?.addEventListener("click", () => {
+    cancelBatchRequested = true;
+    appendBatchLog("⏹️ Durdurma isteği gönderildi. Sıradaki işlemde durduruluyor...", "warn");
+  });
 });
 
 // =========================================================================
 // Yardımcı Fonksiyonlar
 // =========================================================================
+
+let lastScrapedDescription = "";
+
+function generateStandardDescription(data, specsObj) {
+  const brand = document.getElementById("fldBrand")?.value.trim() || data?.brand || "";
+  const model = document.getElementById("fldModel")?.value.trim() || data?.model || "";
+
+  let specs = specsObj;
+  if (!specs) {
+    try {
+      specs = JSON.parse(document.getElementById("fldSpecsJson")?.value || "{}");
+    } catch {
+      specs = {};
+    }
+  }
+  const kalibre = specs["Kalibre"] || specs["kalibre"] || "";
+
+  // {Marka,Model,Kalibre} oluşturma
+  const parts = [];
+  if (brand) parts.push(brand);
+  if (model && !model.toLowerCase().includes(brand.toLowerCase())) {
+    parts.push(model);
+  }
+  if (kalibre && !model.toLowerCase().includes(kalibre.toLowerCase())) {
+    parts.push(kalibre);
+  }
+
+  const prefix = parts.length > 0 ? parts.join(" ") : document.getElementById("fldNameTr")?.value.trim() || data?.title || "Ürünümüz";
+  return `${prefix}, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`;
+}
 
 function populateForm(data) {
   if (data.title) document.getElementById("fldNameTr").value = data.title;
@@ -396,10 +471,6 @@ function populateForm(data) {
 
   if (data.price) document.getElementById("fldPrice").value = data.price;
 
-  if (data.description && document.getElementById("fldDescription")) {
-    document.getElementById("fldDescription").value = data.description;
-  }
-
   if (data.images && Array.isArray(data.images)) {
     document.getElementById("fldImages").value = data.images.join("\n");
   } else if (typeof data.images === "string") {
@@ -415,6 +486,18 @@ function populateForm(data) {
   delete specs["sku"];
   delete specs["Kategori"];
   document.getElementById("fldSpecsJson").value = JSON.stringify(specs, null, 2);
+
+  // Açıklama Yönetimi: Tedarikçi açıklaması vs. Güner AV standart resmi güvence açıklaması
+  lastScrapedDescription = data.description || "";
+  const chkUseScraped = document.getElementById("chkUseScrapedDescription");
+  const descEl = document.getElementById("fldDescription");
+  if (descEl) {
+    if (chkUseScraped && chkUseScraped.checked && lastScrapedDescription) {
+      descEl.value = lastScrapedDescription;
+    } else {
+      descEl.value = generateStandardDescription(data, specs);
+    }
+  }
 
   // Variants (Renk / Model Varyantları)
   const variants = data.variants || [];
@@ -660,6 +743,7 @@ async function saveFormDraft() {
     discountPercent: document.getElementById("fldDiscountPercent")?.value || "",
     requiresLicense: document.getElementById("chkRequiresLicense")?.checked ?? false,
     inStock: document.getElementById("chkInStock")?.checked ?? true,
+    useScrapedDescription: document.getElementById("chkUseScrapedDescription")?.checked ?? false,
     description: document.getElementById("fldDescription")?.value || "",
     specsJson: document.getElementById("fldSpecsJson")?.value || "",
   };
@@ -676,6 +760,10 @@ function restoreFormDraft(draft) {
   if (draft.brand) document.getElementById("fldBrand").value = draft.brand;
   if (draft.model) document.getElementById("fldModel").value = draft.model;
   if (draft.images) document.getElementById("fldImages").value = draft.images;
+
+  if (typeof draft.useScrapedDescription === "boolean" && document.getElementById("chkUseScrapedDescription")) {
+    document.getElementById("chkUseScrapedDescription").checked = draft.useScrapedDescription;
+  }
 
   if (draft.description && document.getElementById("fldDescription")) {
     document.getElementById("fldDescription").value = draft.description;
@@ -725,6 +813,11 @@ async function resetForm() {
 
   const descEl = document.getElementById("fldDescription");
   if (descEl) descEl.value = "";
+
+  if (document.getElementById("chkUseScrapedDescription")) {
+    document.getElementById("chkUseScrapedDescription").checked = false;
+  }
+  lastScrapedDescription = "";
 
   renderVariantsPreview([]);
 
@@ -832,5 +925,486 @@ function showStatus(msg, type) {
   b.className = `status-banner ${type}`;
   b.style.display = "block";
   b.textContent = msg;
+}
+
+// =========================================================================
+// TOPLU ÜRÜN ÇEKİMİ VE AKILLI RENK VARYANTI GRUPLAMA
+// =========================================================================
+
+let isBatchRunning = false;
+let cancelBatchRequested = false;
+
+const COLOR_KEYWORDS = [
+  "bottomland bronz kamuflaj",
+  "bottomland kamuflaj",
+  "bottomland bronz",
+  "bottomland",
+  "max7 kamuflaj",
+  "max-7 kamuflaj",
+  "max7",
+  "max5 kamuflaj",
+  "max-5 kamuflaj",
+  "max5",
+  "timber kamuflaj",
+  "timber",
+  "realtree",
+  "kryptek",
+  "optifade",
+  "sentetik siyah",
+  "siyah sentetik",
+  "ahşap bronz",
+  "ahşap gri",
+  "ahsap bronz",
+  "ahşap",
+  "ahsap",
+  "ceviz bronz",
+  "ceviz",
+  "bronz",
+  "bronze",
+  "kamuflaj",
+  "camo",
+  "cerakote",
+  "tungsten",
+  "nikel",
+  "krom",
+  "titanium",
+  "haki",
+  "yeşil",
+  "yesil",
+  "kum",
+  "çöl",
+  "col",
+  "desert",
+  "fde",
+  "coyote",
+  "gri",
+  "siyah",
+  "mat siyah",
+  "karbon",
+  "carbon",
+  "beyaz",
+  "kırmızı",
+  "mavi"
+];
+
+function extractColorAndBaseModel(title, brand) {
+  let clean = (title || "").trim();
+  if (brand) {
+    const bRegex = new RegExp(`^${brand}\\s*`, "i");
+    clean = clean.replace(bRegex, "").trim();
+  }
+
+  // Kalibre ve tüfek terimlerini temizle
+  clean = clean.replace(/\b(12|20|28|36|410)\s*(kalibre|cal|ga)\b/gi, "");
+  clean = clean.replace(/\b(av tüfeği|av tufegi|yarı otomatik|yari otomatik|pompalı|pompali|süperpoze|superpoze|çifte|cifte)\b/gi, "");
+  clean = clean.replace(/\s+/g, " ").trim();
+
+  // Renk kalıbını ara
+  let detectedColor = "";
+  for (const c of COLOR_KEYWORDS) {
+    const regex = new RegExp(`\\b${c}\\b`, "i");
+    if (regex.test(clean)) {
+      const match = clean.match(regex);
+      if (match) {
+        detectedColor = match[0];
+        clean = clean.replace(regex, "").replace(/\s+/g, " ").trim();
+        break;
+      }
+    }
+  }
+
+  const baseModel = clean.trim();
+  return {
+    baseModel: baseModel || title,
+    detectedColor: detectedColor ? capitalizeWords(detectedColor) : ""
+  };
+}
+
+function capitalizeWords(str) {
+  if (!str) return "";
+  return str
+    .split(/\s+/)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function groupProductsByVariant(rawProducts, options = {}) {
+  const useSupplierDesc = options.useSupplierDesc ?? false;
+  const groups = new Map();
+
+  rawProducts.forEach((p) => {
+    const brand = p.brand || (p.specs && (p.specs["Marka"] || p.specs["Brand"])) || "";
+    const { baseModel, detectedColor } = extractColorAndBaseModel(p.title, brand);
+
+    // Gruplama anahtarı: Marka + Baz Model (örn: "retay::air control extreme r")
+    const normBrand = brand.toLowerCase().trim();
+    const normModel = baseModel.toLowerCase().trim();
+    const groupKey = normBrand && normModel ? `${normBrand}::${normModel}` : (p.title || Math.random().toString());
+
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, {
+        brand,
+        baseModel,
+        category: p.category,
+        requires_license: p.requires_license,
+        items: [],
+      });
+    }
+
+    groups.get(groupKey).items.push({
+      ...p,
+      detectedColor: detectedColor || p.title,
+    });
+  });
+
+  const finalProducts = [];
+
+  groups.forEach((g) => {
+    if (g.items.length === 1) {
+      // Tekil ürün (farklı rengi yok)
+      const item = g.items[0];
+      if (!item.model && g.baseModel) {
+        item.model = g.baseModel;
+      }
+      const desc = useSupplierDesc && item.description
+        ? item.description
+        : generateStandardDescription(item, item.specs);
+
+      finalProducts.push({
+        ...item,
+        model: item.model || g.baseModel || "",
+        name_tr: item.title,
+        description_tr: desc,
+        description_en: desc,
+      });
+    } else {
+      // BİRDEN FAZLA RENK VARYANTI TESPİT EDİLDİ (Castello CSR-12 gibi birleştir)
+      const primaryItem = g.items[0];
+      const variants = [];
+
+      g.items.forEach((item, idx) => {
+        const variantName = item.detectedColor || `Renk Seçeneği ${idx + 1}`;
+        variants.push({
+          name: variantName,
+          color_code: variantName,
+          images: Array.isArray(item.images) && item.images.length > 0 ? item.images : [],
+        });
+      });
+
+      // Ana başlık: Marka + Baz Model + Kalibre + Tüfek
+      const kalibre = primaryItem.specs?.["Kalibre"] || primaryItem.specs?.["kalibre"] || "12 Kalibre";
+      const isShotgun = (primaryItem.category && primaryItem.category.startsWith("tufek")) || primaryItem.requires_license;
+      const typeSuffix = isShotgun ? "Yarı Otomatik Av Tüfeği" : "";
+      const unifiedTitle = [g.brand, g.baseModel, kalibre, typeSuffix].filter(Boolean).join(" ");
+
+      // Ana görseller: ilk varyantın görselleri
+      const mainImages = variants[0]?.images?.length > 0 ? variants[0].images : (primaryItem.images || []);
+
+      // Fiyat: En düşük olan (taban fiyat)
+      const prices = g.items.map((i) => i.price).filter((pr) => typeof pr === "number" && !isNaN(pr));
+      const minPrice = prices.length > 0 ? Math.min(...prices) : primaryItem.price;
+
+      // Açıklama
+      const desc = useSupplierDesc && primaryItem.description
+        ? primaryItem.description
+        : `${g.brand} ${g.baseModel} ${kalibre}, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`;
+
+      finalProducts.push({
+        ...primaryItem,
+        title: unifiedTitle,
+        name_tr: unifiedTitle,
+        brand: g.brand || primaryItem.brand,
+        model: g.baseModel || primaryItem.model,
+        price: minPrice,
+        images: mainImages,
+        variants: variants,
+        description: desc,
+        description_tr: desc,
+        description_en: desc,
+      });
+    }
+  });
+
+  return finalProducts;
+}
+
+function appendBatchLog(msg, type = "info") {
+  const consoleEl = document.getElementById("batchConsoleLog");
+  if (!consoleEl) return;
+  consoleEl.style.display = "block";
+  const line = document.createElement("div");
+  line.className = `log-line ${type}`;
+  const time = new Date().toLocaleTimeString("tr-TR", { hour12: false });
+  line.textContent = `[${time}] ${msg}`;
+  consoleEl.appendChild(line);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function updateBatchProgress(percent, statusText, countText, addedText) {
+  const bar = document.getElementById("batchProgressBar");
+  const pText = document.getElementById("batchPercentText");
+  const sText = document.getElementById("batchStatusText");
+  const cText = document.getElementById("batchCountText");
+  const aText = document.getElementById("batchAddedText");
+
+  if (bar) bar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+  if (pText) pText.textContent = `${Math.round(percent)}%`;
+  if (sText && statusText !== undefined) sText.textContent = statusText;
+  if (cText && countText !== undefined) cText.textContent = countText;
+  if (aText && addedText !== undefined) aText.textContent = addedText;
+}
+
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function finishBatchUI() {
+  isBatchRunning = false;
+  const btnStart = document.getElementById("btnStartBatch");
+  const btnStop = document.getElementById("btnStopBatch");
+  if (btnStart) {
+    btnStart.disabled = false;
+    btnStart.style.opacity = "1";
+    btnStart.textContent = "🚀 Sayfadaki Ürünleri Toplu Çek & Aktar";
+  }
+  if (btnStop) btnStop.style.display = "none";
+}
+
+async function runBatchScrape() {
+  const savedCfg = await chrome.storage.local.get(["supabaseUrl", "supabaseKey"]);
+  if (!savedCfg.supabaseUrl || !savedCfg.supabaseKey) {
+    alert("Lütfen önce Ayarlar sekmesinden Supabase URL ve Key (service_role) kaydedin!");
+    const settingsTab = document.querySelector('[data-tab="tabSettings"]');
+    settingsTab?.click();
+    return;
+  }
+
+  const btnStart = document.getElementById("btnStartBatch");
+  const btnStop = document.getElementById("btnStopBatch");
+  const wrapper = document.getElementById("batchProgressWrapper");
+  const consoleEl = document.getElementById("batchConsoleLog");
+
+  isBatchRunning = true;
+  cancelBatchRequested = false;
+
+  btnStart.disabled = true;
+  btnStart.style.opacity = "0.6";
+  btnStart.textContent = "⏳ Toplu Çekim Devam Ediyor...";
+  btnStop.style.display = "block";
+  wrapper.style.display = "block";
+  consoleEl.style.display = "block";
+  consoleEl.innerHTML = "";
+
+  appendBatchLog("🚀 Toplu tarama işlemi başlatıldı...", "info");
+  updateBatchProgress(5, "Sayfadaki ürün linkleri toplanıyor...", "0 / 0", "0");
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) {
+      throw new Error("Aktif tarayıcı sekmesi bulunamadı.");
+    }
+
+    // Özel URL girilmişse ve aktif sekme o URL'de değilse
+    const customUrl = document.getElementById("fldBatchUrl")?.value.trim();
+    if (customUrl && !tab.url?.includes(customUrl)) {
+      appendBatchLog(`🌐 Belirtilen URL'ye gidiliyor: ${customUrl}`, "info");
+      await chrome.tabs.update(tab.id, { url: customUrl });
+      // Sayfanın yüklenmesini bekle
+      await sleep(2500);
+    }
+
+    // 1. Content Script'e ürün linklerini toplat
+    const getLinksPromise = () =>
+      new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_LISTING_LINKS" }, (res) => {
+          if (chrome.runtime.lastError || !res?.success) {
+            // Content script henüz inject edilmemiş olabilir, manuel inject et ve tekrar dene
+            chrome.scripting.executeScript(
+              { target: { tabId: tab.id }, files: ["content.js"] },
+              () => {
+                chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_LISTING_LINKS" }, (retryRes) => {
+                  if (chrome.runtime.lastError || !retryRes?.success) {
+                    reject(new Error("Kategori sayfasındaki ürün linkleri okunamadı. Lütfen sayfayı bir kez yenileyip (F5) deneyin."));
+                  } else {
+                    resolve(retryRes.links || []);
+                  }
+                });
+              }
+            );
+          } else {
+            resolve(res.links || []);
+          }
+        });
+      });
+
+    const links = await getLinksPromise();
+
+    if (!links || links.length === 0) {
+      appendBatchLog("⚠️ Sayfada ürün bağlantısı bulunamadı. Lütfen bir kategori veya ürün listesi sayfasında olduğunuzdan emin olun.", "warn");
+      updateBatchProgress(0, "Ürün bağlantısı bulunamadı.", "0 / 0", "0");
+      finishBatchUI();
+      return;
+    }
+
+    appendBatchLog(`🔍 Sayfada ${links.length} adet ürün bağlantısı tespit edildi.`, "success");
+    updateBatchProgress(10, `0 / ${links.length} ürün okunuyor...`, `0 / ${links.length}`, "0");
+
+    // 2. Her ürünün detaylarını sırayla çek
+    const rawProducts = [];
+    for (let i = 0; i < links.length; i++) {
+      if (cancelBatchRequested) {
+        appendBatchLog("⏹️ Kullanıcı işlemi durdurdu.", "warn");
+        break;
+      }
+
+      const url = links[i];
+      const shortName = url.split("/").filter(Boolean).pop() || url;
+      appendBatchLog(`[${i + 1}/${links.length}] Detaylar çekiliyor: ${shortName}`, "info");
+
+      const productDataPromise = () =>
+        new Promise((resolve) => {
+          chrome.tabs.sendMessage(tab.id, { action: "FETCH_AND_EXTRACT_PRODUCT", url }, (res) => {
+            if (chrome.runtime.lastError || !res?.success) {
+              resolve(null);
+            } else {
+              resolve(res.data);
+            }
+          });
+        });
+
+      const pData = await productDataPromise();
+      if (pData && (pData.title || pData.name_tr)) {
+        rawProducts.push(pData);
+        appendBatchLog(`  ✓ Başarıyla okundu: ${(pData.title || pData.name_tr).slice(0, 40)}`, "success");
+      } else {
+        appendBatchLog(`  ✗ Ürün verisi alınamadı: ${shortName}`, "error");
+      }
+
+      const crawlPercent = 10 + Math.round(((i + 1) / links.length) * 45); // 10% -> 55%
+      updateBatchProgress(
+        crawlPercent,
+        `Sayfalar taranıyor (${i + 1}/${links.length})...`,
+        `${i + 1} / ${links.length}`,
+        "0"
+      );
+
+      // Sunucuyu yormamak ve güvenli gezinti için insani bekleme
+      await sleep(1000);
+    }
+
+    if (rawProducts.length === 0) {
+      appendBatchLog("❌ Hiçbir ürünün detay verisi çekilemedi.", "error");
+      finishBatchUI();
+      return;
+    }
+
+    // 3. Akıllı Renk Varyantı Gruplama
+    const groupVariants = document.getElementById("chkBatchGroupVariants")?.checked ?? true;
+    const useSupplierDesc = document.getElementById("chkBatchUseSupplierDesc")?.checked ?? false;
+
+    let finalProducts = [];
+    if (groupVariants) {
+      appendBatchLog("⚡ Renk ve model varyantları akıllı olarak analiz ediliyor...", "info");
+      finalProducts = groupProductsByVariant(rawProducts, { useSupplierDesc });
+      appendBatchLog(`✨ Analiz tamamlandı: ${rawProducts.length} linkten ${finalProducts.length} adet tekil/zengin ürün oluşturuldu.`, "success");
+    } else {
+      finalProducts = rawProducts.map((p) => ({
+        ...p,
+        name_tr: p.title,
+        description_tr: useSupplierDesc && p.description ? p.description : generateStandardDescription(p, p.specs),
+        description_en: useSupplierDesc && p.description ? p.description : generateStandardDescription(p, p.specs),
+      }));
+    }
+
+    // 4. Supabase'e Sırayla Yükle
+    appendBatchLog("💾 Supabase veritabanına aktarım başlıyor...", "info");
+    let successCount = 0;
+
+    for (let j = 0; j < finalProducts.length; j++) {
+      if (cancelBatchRequested) {
+        appendBatchLog("⏹️ Kullanıcı işlemi durdurdu.", "warn");
+        break;
+      }
+
+      const p = finalProducts[j];
+      const uploadPercent = 55 + Math.round(((j + 1) / finalProducts.length) * 45); // 55% -> 100%
+
+      updateBatchProgress(
+        uploadPercent,
+        `Supabase'e aktarılıyor: ${(p.name_tr || p.title || "").slice(0, 25)}...`,
+        `${rawProducts.length} / ${links.length}`,
+        `${successCount} / ${finalProducts.length}`
+      );
+
+      const nameTr = p.name_tr || p.title;
+      const slug = slugify(nameTr) || `product-${Date.now()}-${j}`;
+      const specs = p.specs_tr || p.specs || {};
+      const variants = p.variants || [];
+      if (variants.length > 0) {
+        specs.variants = variants;
+      }
+
+      const payload = {
+        id: slug,
+        slug_tr: slug,
+        slug_en: slug + "-en",
+        category: p.category || "tufek-yari-otomatik",
+        brand: p.brand || "",
+        model: p.model || "",
+        name_tr: nameTr,
+        description_tr: p.description_tr || generateStandardDescription(p, specs),
+        description_en: p.description_en || generateStandardDescription(p, specs),
+        price: p.price ?? null,
+        discount_percent: null,
+        images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ["/images/products/optics-1.webp"],
+        variants: variants,
+        featured: true,
+        is_hero_spotlight: false,
+        requires_license: p.requires_license ?? true,
+        in_stock: true,
+        specs_tr: specs,
+        specs_en: specs,
+      };
+
+      try {
+        const res = await fetch(`${savedCfg.supabaseUrl}/rest/v1/products`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: savedCfg.supabaseKey,
+            Authorization: `Bearer ${savedCfg.supabaseKey}`,
+            Prefer: "resolution=merge-duplicates",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errTxt = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errTxt}`);
+        }
+
+        successCount++;
+        const variantMsg = variants.length > 1 ? ` (${variants.length} Renk Seçeneği ile)` : "";
+        appendBatchLog(`✅ [${j + 1}/${finalProducts.length}] Yayına alındı: ${nameTr}${variantMsg}`, "success");
+      } catch (upErr) {
+        appendBatchLog(`❌ [${j + 1}/${finalProducts.length}] Yüklenemedi: ${nameTr} (${upErr.message})`, "error");
+      }
+
+      await sleep(300);
+    }
+
+    updateBatchProgress(
+      100,
+      `🎉 Tamamlandı! Toplam ${successCount} ürün yayında.`,
+      `${rawProducts.length} / ${links.length}`,
+      `${successCount} / ${finalProducts.length}`
+    );
+    appendBatchLog(`🎉 Tebrikler! Toplu aktarım başarıyla tamamlandı. Toplam ${successCount} adet ürün sitenizde yayına alındı.`, "success");
+  } catch (err) {
+    appendBatchLog(`❌ Beklenmeyen hata: ${err.message}`, "error");
+    updateBatchProgress(0, `Hata: ${err.message}`);
+  } finally {
+    finishBatchUI();
+  }
 }
 

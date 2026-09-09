@@ -10,12 +10,94 @@ if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage)
       } catch (error) {
         sendResponse({ success: false, error: error.message });
       }
+      return true;
     }
+
+    if (request.action === "EXTRACT_LISTING_LINKS") {
+      try {
+        const links = extractListingLinks();
+        sendResponse({ success: true, count: links.length, links });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return true;
+    }
+
+    if (request.action === "FETCH_AND_EXTRACT_PRODUCT") {
+      (async () => {
+        try {
+          const res = await fetch(request.url, { credentials: "include" });
+          if (!res.ok) {
+            sendResponse({ success: false, error: `HTTP ${res.status}: Sayfa yüklenemedi` });
+            return;
+          }
+          const html = await res.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const data = extractProductData(doc, request.url);
+          sendResponse({ success: true, data });
+        } catch (error) {
+          sendResponse({ success: false, error: error.message });
+        }
+      })();
+      return true;
+    }
+
     return true;
   });
 }
 
-function extractProductData() {
+function extractListingLinks(doc = (typeof document !== "undefined" ? document : null)) {
+  if (!doc) return [];
+  const foundUrls = new Set();
+  const origin = typeof window !== "undefined" && window.location ? window.location.origin : "";
+
+  // Özler Av (.uruncard, .kobi-urunlist, .urun-grid) ve genel e-ticaret seçicileri
+  const candidateAnchors = doc.querySelectorAll(
+    ".urun-grid a, .kobi-urunlist a, .uruncard a, .product-item a, .product-card a, .product-box a, a[href*='-p-']"
+  );
+
+  candidateAnchors.forEach((a) => {
+    const href = a.getAttribute("href");
+    if (!href) return;
+    const trimmed = href.trim();
+    if (trimmed.startsWith("#") || trimmed.startsWith("javascript:")) return;
+
+    // Filtrele: Kategori, sayfalama, sepet, marka linklerini ele
+    if (
+      trimmed.includes("PageNumber=") ||
+      trimmed.includes("sayfa=") ||
+      trimmed.includes("/k-") ||
+      trimmed.includes("/kategori") ||
+      trimmed.includes("/marka") ||
+      trimmed.includes("/sepet") ||
+      trimmed.includes("/hesabim") ||
+      trimmed.includes("/login") ||
+      trimmed.includes("/uye")
+    ) {
+      return;
+    }
+
+    // Ürün sayfaları genellikle -p- (Kobimaster/Özler Av) veya /urun/ içerir
+    const isLikelyProduct =
+      /-p-\d+/i.test(trimmed) ||
+      /\/urun\/|\/product\//i.test(trimmed) ||
+      (a.closest && a.closest(".uruncard, .kobi-urunlist, .product-item, .product-card") && !trimmed.includes("?"));
+
+    if (isLikelyProduct) {
+      try {
+        const fullUrl = new URL(trimmed, origin || "https://www.ozlerav.com.tr").href;
+        foundUrls.add(fullUrl);
+      } catch (e) {}
+    }
+  });
+
+  return Array.from(foundUrls);
+}
+
+function extractProductData(doc = (typeof document !== "undefined" ? document : null), pageUrl = "") {
+  if (!doc) return {};
+  const currentUrl = pageUrl || (typeof window !== "undefined" && window.location ? window.location.href : "");
   const result = {
     title: "",
     brand: "",
@@ -27,7 +109,7 @@ function extractProductData() {
     description: "",
   };
 
-  const html = document.documentElement.innerHTML;
+  const html = (doc.documentElement && doc.documentElement.innerHTML) || "";
 
   // =========================================================================
   // 1. Script & Meta Veri Taraması (IdeaSoft pageParams, dataLayer vb.)
@@ -71,14 +153,14 @@ function extractProductData() {
   // 2. Ürün Başlığı (Title)
   // =========================================================================
   if (!result.title) {
-    const h1 = document.querySelector("h1");
-    const ogTitle = document.querySelector('meta[property="og:title"]');
+    const h1 = doc.querySelector("h1");
+    const ogTitle = doc.querySelector('meta[property="og:title"]');
     if (h1 && h1.textContent.trim()) {
       result.title = h1.textContent.trim();
     } else if (ogTitle && ogTitle.content) {
       result.title = ogTitle.content.trim();
     } else {
-      result.title = document.title.split(/[-|]/)[0].trim();
+      result.title = (doc.title || "").split(/[-|]/)[0].trim();
     }
   }
 
@@ -98,7 +180,7 @@ function extractProductData() {
     ];
 
     for (const sel of brandSelectors) {
-      const el = document.querySelector(sel);
+      const el = doc.querySelector(sel);
       if (el) {
         const val = el.getAttribute("content") || el.textContent;
         if (val && val.trim() && val.trim().length < 40) {
@@ -141,7 +223,7 @@ function extractProductData() {
     ];
 
     for (const sel of catSelectors) {
-      const el = document.querySelector(sel);
+      const el = doc.querySelector(sel);
       if (el && el.textContent.trim()) {
         result.category = el.textContent.trim();
         result.specs["Kategori"] = result.category;
@@ -205,7 +287,7 @@ function extractProductData() {
 
     let foundPriceEl = null;
     for (const sel of priceSelectors) {
-      const el = document.querySelector(sel);
+      const el = doc.querySelector(sel);
       if (el && el.textContent.trim()) {
         foundPriceEl = el;
         break;
@@ -213,7 +295,7 @@ function extractProductData() {
     }
 
     if (!foundPriceEl) {
-      foundPriceEl = Array.from(document.querySelectorAll("span, div")).find((el) =>
+      foundPriceEl = Array.from(doc.querySelectorAll("span, div")).find((el) =>
         /(\d+[\.,]\d{2}|\d+)\s*(TL|₺)/i.test(el.textContent) &&
         el.children.length === 0 &&
         !el.textContent.toLowerCase().includes("havale") &&
@@ -245,22 +327,22 @@ function extractProductData() {
       "tab-renkler-seçenekleri",
     ];
     for (const id of directIds) {
-      const el = document.getElementById(id);
+      const el = doc.getElementById(id);
       if (el && (el.classList.contains("panel") || el.tagName === "DIV")) return el;
     }
 
-    const panel = document.querySelector(
+    const panel = doc.querySelector(
       ".panel[id*='renk'], [role='tabpanel'][id*='renk'], div[id*='tab_renk'], div[id*='tab-renk'], .color-variants, .variants"
     );
     if (panel) return panel;
 
-    const tabLink = Array.from(document.querySelectorAll("li.tab a, .tab a, .tabs a")).find((a) =>
+    const tabLink = Array.from(doc.querySelectorAll("li.tab a, .tab a, .tabs a")).find((a) =>
       /renk|color|variant/i.test(a.textContent || "")
     );
     if (tabLink) {
       const href = tabLink.getAttribute("href");
       if (href && href.startsWith("#")) {
-        const target = document.getElementById(href.slice(1));
+        const target = doc.getElementById(href.slice(1));
         if (target) return target;
       }
     }
@@ -273,7 +355,7 @@ function extractProductData() {
   const rawMainImgs = [];
 
   // 0. Primary Image element (#primary-image, Yaban Av / IdeaSoft zoom image)
-  const primaryImgEl = document.querySelector("#primary-image");
+  const primaryImgEl = doc.querySelector("#primary-image");
   if (primaryImgEl) {
     const pSrc = primaryImgEl.getAttribute("data-zoom-image") || primaryImgEl.getAttribute("src");
     if (pSrc) {
@@ -282,12 +364,12 @@ function extractProductData() {
     }
   }
 
-  const ogImage = document.querySelector('meta[property="og:image"]');
+  const ogImage = doc.querySelector('meta[property="og:image"]');
   if (ogImage && ogImage.content && !ogImage.content.includes("logo") && !ogImage.content.includes("Favicon")) {
     rawMainImgs.push(cleanImageUrl(ogImage.content));
   }
 
-  const galleryImgs = document.querySelectorAll(
+  const galleryImgs = doc.querySelectorAll(
     ".product-image img, .gallery img, .product-gallery img, .swiper-slide img, .carousel-item img, [data-zoom-image], a[data-standard], #product-thumb-image a, #product-thumb-image img, .thumb-item a, .slider-wrapper a, .slider a, a.image-lightbox, a.lightbox-gallery, .slider img, .flickity-slider a, .flickity-slider img"
   );
 
@@ -328,7 +410,7 @@ function extractProductData() {
 
   // Fallback images
   if (rawMainImgs.length === 0 && result.images.length === 0) {
-    document.querySelectorAll("img").forEach((img) => {
+    doc.querySelectorAll("img").forEach((img) => {
       if (colorTab && colorTab.contains(img)) return;
       if (img.closest && img.closest("[id*='renk'], .color-variants, .variants")) return;
       let s = img.src;
@@ -415,7 +497,7 @@ function extractProductData() {
   const specs = { ...result.specs };
 
   // A. IdeaSoft / AvAlemi .product-list-row satırları
-  const listRows = document.querySelectorAll(".product-list-row, .product-feature-row, .feature-row, .spec-row");
+  const listRows = doc.querySelectorAll(".product-list-row, .product-feature-row, .feature-row, .spec-row");
   listRows.forEach((row) => {
     const titleEl = row.querySelector(".product-list-title, .title, .feature-title, dt");
     const contentEl = row.querySelector(".product-list-content, .content, .value, .feature-desc, dd");
@@ -436,7 +518,7 @@ function extractProductData() {
   });
 
   // B. HTML Tabloları (table tr th/td) ve Kobimaster / Özler Av Açıklama Tablosu (.divAciklamaIcerik)
-  const tables = document.querySelectorAll(
+  const tables = doc.querySelectorAll(
     ".divAciklamaIcerik table, [class*='divAciklama'] table, #divAciklama table, table, .tech-specs, .specifications, dl"
   );
   tables.forEach((table) => {
@@ -477,7 +559,7 @@ function extractProductData() {
   });
 
   // C. Ürün Bilgisi / Detay Metninden Özellik Çıkarımı (.product-detail, .divAciklamaIcerik)
-  const detailEl = document.querySelector(
+  const detailEl = doc.querySelector(
     ".divAciklamaIcerik, [class*='divAciklama'], #divAciklama, #tabGenelBakis, [id*='genel-bakis'], .product-detail, .product-description, #tab-description, [itemprop='description'], #tab_Ürün-açıklaması, #tab-Ürün-açıklaması, [id*='Ürün-açıklaması'], [id*='urun-aciklamasi']"
   );
   if (detailEl) {
@@ -569,7 +651,7 @@ function extractProductData() {
 
   // Fallback description from description tab paragraphs
   if (!result.description || result.description.length < 15) {
-    const descTab = document.querySelector("#tab_Ürün-açıklaması, #tab-Ürün-açıklaması, .entry-content");
+    const descTab = doc.querySelector("#tab_Ürün-açıklaması, #tab-Ürün-açıklaması, .entry-content");
     if (descTab) {
       const ps = Array.from(descTab.querySelectorAll("p"))
         .map((p) => p.textContent.trim())
@@ -600,7 +682,7 @@ function extractProductData() {
     specs["Uzunluk"] = lengthMatch[1];
   }
 
-  if (window.location.href.includes("/bullpup/") || result.title.toLowerCase().includes("bullpup")) {
+  if (currentUrl.includes("/bullpup/") || result.title.toLowerCase().includes("bullpup")) {
     if (!result.category) result.category = "Tüfek - Bullpup";
     specs["Tipi"] = "Bullpup";
   }
@@ -635,7 +717,7 @@ function extractProductData() {
     (result.title || "") + " " +
     (result.category || "") + " " +
     JSON.stringify(specs) + " " +
-    window.location.href
+    currentUrl
   ).toLowerCase();
 
   const titleLower = (result.title || "").toLowerCase();

@@ -70,6 +70,17 @@
 
     .images-preview { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0; margin-bottom: 8px; }
     .image-thumb { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #323b4c; }
+
+    /* Batch Progress & Console */
+    .progress-box { width: 100%; background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; height: 10px; overflow: hidden; margin: 8px 0 4px; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #d4af37, #f6e05e); transition: width 0.3s; }
+    .console-log { width: 100%; height: 150px; overflow-y: auto; background: #07090d; border: 1px solid #1f293d; border-radius: 8px; padding: 8px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10.5px; color: #94a3b8; line-height: 1.5; margin-top: 8px; }
+    .console-log .log-line { margin-bottom: 3px; word-break: break-all; }
+    .console-log .log-line.success { color: #4ade80; }
+    .console-log .log-line.info { color: #38bdf8; }
+    .console-log .log-line.warn { color: #facc15; }
+    .console-log .log-line.error { color: #f87171; }
+    .batch-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.3); }
   </style>
 </head>
 <body>
@@ -85,7 +96,8 @@
 
   <!-- Mode Tabs -->
   <div class="tabs">
-    <div class="tab active" data-tab="tabScrape">⚡ Sayfadan Çek</div>
+    <div class="tab active" data-tab="tabScrape">⚡ Tekli Çek</div>
+    <div class="tab" data-tab="tabBatch">📦 Toplu Çekim</div>
     <div class="tab" data-tab="tabManual">📋 Manuel / JSON</div>
     <div class="tab" data-tab="tabSettings">⚙️ Supabase</div>
   </div>
@@ -107,7 +119,83 @@
       <div id="scrapeResultWrapper"></div>
     </div>
 
-    <!-- TAB 2: Manuel / JSON Modu -->
+    <!-- TAB 2: Toplu Çekim (Kategori) -->
+    <div class="tab-pane" id="tabBatch">
+      <div style="background: #141822; border: 1px solid #232a3b; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;">
+        <div style="font-size: 12px; font-weight: 800; color: #d4af37; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+          <span>📦 Kategori / Liste Sayfası Toplu Aktarımı</span>
+          <span class="batch-badge">Akıllı Varyant</span>
+        </div>
+        <div style="font-size: 11px; color: #94a3b8; line-height: 1.4;">
+          Açık olan kategori sayfasındaki tüm ürünleri otomatik tarar. Aynı modelin farklı renklerini (örn: <em>Bottomland, Kamuflaj, Sentetik Siyah</em>) tespit edip <strong>Castello CSR-12</strong> gibi tek bir ürün altında renk seçenekleri olarak birleştirir ve doğrudan Supabase'e yükler.
+        </div>
+      </div>
+
+      <!-- Ayarlar -->
+      <div class="toggles-card" style="margin-bottom: 10px;">
+        <div class="toggles-title">⚙️ Toplu Çekim Kuralları</div>
+
+        <!-- 1. Akıllı Renk Varyantı Birleştirme -->
+        <div class="toggle-item">
+          <div>
+            <div class="toggle-label">Aynı Modelin Renklerini Birleştir (Varyant)</div>
+            <div class="toggle-desc">Aynı tüfeğin renklerini tek bir ürün ve renk kutusu yapar.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkBatchGroupVariants" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 2. Tedarikçi Açıklamasını Kullan (Varsayılan: KAPALI) -->
+        <div class="toggle-item">
+          <div>
+            <div class="toggle-label">Tedarikçi Açıklamasını Kullan</div>
+            <div class="toggle-desc">Kapalıyken standart resmi Güner AV güvence açıklaması basılır.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="chkBatchUseSupplierDesc">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Manuel URL Seçeneği (Opsiyonel) -->
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label>Özel Liste URL'si (Boş bırakırsanız açık olan sekme taranır):</label>
+        <input type="text" id="fldBatchUrl" placeholder="https://www.ozlerav.com.tr/yari-otomatik-k-202?PageNumber=1">
+      </div>
+
+      <!-- Eylemler -->
+      <div class="row" style="gap: 6px;">
+        <button class="btn-primary" id="btnStartBatch" style="margin-top: 0; flex: 3;">
+          🚀 Sayfadaki Ürünleri Toplu Çek & Aktar
+        </button>
+        <button class="btn-secondary" id="btnStopBatch" style="margin-bottom: 0; flex: 1; display: none; background: #3f1d24; border-color: #ef4444; color: #fca5a5;">
+          ⏹️ Durdur
+        </button>
+      </div>
+
+      <!-- Canlı İlerleme Çubuğu -->
+      <div id="batchProgressWrapper" style="display: none; margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #cbd5e1; font-weight: 700;">
+          <span id="batchStatusText">⏳ Hazırlanıyor...</span>
+          <span id="batchPercentText">0%</span>
+        </div>
+        <div class="progress-box">
+          <div class="progress-bar" id="batchProgressBar"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; margin-top: 2px;">
+          <span id="batchCountText">Taranan Link: 0 / 0</span>
+          <span id="batchAddedText">Yüklenen Ürün: 0</span>
+        </div>
+      </div>
+
+      <!-- Canlı Log Ekranı -->
+      <div class="console-log" id="batchConsoleLog" style="display: none;"></div>
+    </div>
+
+    <!-- TAB 3: Manuel / JSON Modu -->
     <div class="tab-pane" id="tabManual">
       <div class="form-group">
         <label>Yapay Zeka (AI) JSON Yapıştır:</label>
@@ -303,8 +391,14 @@
 
       <!-- Ürün Açıklaması -->
       <div class="form-group">
-        <label>Ürün Açıklaması:</label>
-        <textarea id="fldDescription" rows="4" style="width: 100%; box-sizing: border-box; background: #131720; border: 1px solid #232a3b; border-radius: 8px; color: #f1f5f9; padding: 8px 10px; font-size: 12px; font-family: inherit; line-height: 1.4; resize: vertical;" placeholder="Özellikler:&#10;34 Gram&#10;12 Kalibre&#10;Power Tapa..."></textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="margin-bottom: 0;">Ürün Açıklaması:</label>
+          <label style="font-size: 11px; color: #94a3b8; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="chkUseScrapedDescription" style="width: auto; margin: 0; cursor: pointer;">
+            <span>Tedarikçi Açıklamasını Kullan</span>
+          </label>
+        </div>
+        <textarea id="fldDescription" rows="4" style="width: 100%; box-sizing: border-box; background: #131720; border: 1px solid #232a3b; border-radius: 8px; color: #f1f5f9; padding: 8px 10px; font-size: 12px; font-family: inherit; line-height: 1.4; resize: vertical;" placeholder="Örn: Retay Gordion 12 GA, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır."></textarea>
       </div>
 
       <!-- Dinamik Teknik Özellikler Kutusu -->
@@ -321,6 +415,6 @@
     </div>
   </div>
 
-  <script src="popup.js"></script>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>
