@@ -1,13 +1,9 @@
 import crypto from "crypto";
 
-const SECRET_SEED = process.env.IMAGE_PROXY_SECRET;
+const SECRET_SEED = process.env.IMAGE_PROXY_SECRET || "";
 
-if (!SECRET_SEED) {
-  throw new Error("IMAGE_PROXY_SECRET is not defined in environment variables. Critical security vulnerability.");
-}
-
-// Derive fixed 32-byte key for AES-256
-const KEY = crypto.createHash("sha256").update(SECRET_SEED).digest();
+// Derive fixed 32-byte key for AES-256 if secret is set
+const KEY = SECRET_SEED ? crypto.createHash("sha256").update(SECRET_SEED).digest() : null;
 
 /**
  * Encrypts an external image URL deterministically into a safe base64url token.
@@ -15,6 +11,7 @@ const KEY = crypto.createHash("sha256").update(SECRET_SEED).digest();
  */
 export function encryptImageUrl(url: string): string {
   if (!url || typeof url !== "string") return "";
+  if (!KEY) return url;
   // Do not proxy local assets
   if (url.startsWith("/") && !url.startsWith("//")) return url;
   // Already proxied
@@ -45,7 +42,7 @@ export function encryptImageUrl(url: string): string {
  * Returns null if invalid or tampered with.
  */
 export function decryptImageUrl(token: string): string | null {
-  if (!token || typeof token !== "string") return null;
+  if (!token || typeof token !== "string" || !KEY) return null;
 
   try {
     const buf = Buffer.from(token, "base64url");

@@ -56,9 +56,9 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16 w-full">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 xl:gap-32 items-center justify-between">
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-6 sm:space-y-8">
+          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-6 sm:space-y-8 lg:pt-2">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
@@ -160,21 +160,21 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Authentic Apple iOS Frosted Liquid Glass Spotlight Card */}
-          <div className="w-full lg:w-2/5 xl:w-[45%] max-w-lg lg:max-w-none lg:ml-auto relative mt-8 lg:mt-0">
-            {/* iOS Liquid Glass Container */}
-            <div className="relative rounded-[32px] bg-neutral-900/40 dark:bg-black/40 backdrop-blur-3xl border border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.4)] p-5 sm:p-6 pb-12 sm:pb-14 overflow-hidden text-white">
+          {/* RIGHT COLUMN: Compact Apple-grade Tactical Spotlight Card in Top-Right */}
+          <div className="w-full sm:max-w-md lg:w-[320px] xl:w-[340px] lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:-mt-8 xl:-mt-12">
+            {/* iOS Liquid Glass Container - Ultra-compact, sleek, tactical */}
+            <div className="relative rounded-2xl lg:rounded-[20px] bg-neutral-900/60 dark:bg-black/60 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] p-3.5 sm:p-4 overflow-hidden text-white">
               {/* Spotlight Header Bar */}
-              <div className="flex items-center justify-between gap-2 pb-4 border-b border-white/15">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 backdrop-blur-md border border-white/20">
-                    <Crosshair className="h-3.5 w-3.5 text-[#d4af37]" />
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/15">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-md bg-white/10 backdrop-blur-md border border-white/20">
+                    <Crosshair className="h-3 w-3 text-[#d4af37]" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-white/90">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/90">
                     {t("spotlightBadge")}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md shadow-sm">
+                <div className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md shadow-sm">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span>{t("spotlightInStock")}</span>
                 </div>
@@ -183,23 +183,23 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               {/* Hero Product Visual Display */}
               <Link
                 href={featuredProductSlug}
-                className="group block relative my-4 rounded-2xl bg-black/35 border border-white/20 overflow-hidden aspect-[4/3] backdrop-blur-xl shadow-inner p-3"
+                className="group block relative my-2 rounded-xl bg-black/45 border border-white/15 overflow-hidden h-28 sm:h-32 lg:h-28 xl:h-32 backdrop-blur-xl shadow-inner p-1.5"
               >
                 <Image
                   src={spotlightImage}
                   alt={spotlightTitle}
                   fill
                   unoptimized={spotlightImage.startsWith("http") || spotlightImage.startsWith("/api/img")}
-                  sizes="(max-width: 768px) 100vw, 500px"
-                  className="object-contain p-2 object-center transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 340px"
+                  className="object-contain p-1 object-center transition-transform duration-500 group-hover:scale-105"
                 />
                 {spotlightProduct ? (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end p-4 pointer-events-none">
-                    <div className="text-white">
-                      <div className="text-xs font-mono font-bold tracking-widest text-[#d4af37] uppercase">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent flex items-end p-2 pointer-events-none">
+                    <div className="text-white min-w-0">
+                      <div className="text-[8.5px] font-mono font-bold tracking-widest text-[#d4af37] uppercase truncate">
                         [ + ] {t("spotlightFeaturedModel")}
                       </div>
-                      <div className="text-base font-heading font-black">
+                      <div className="text-xs font-heading font-black truncate">
                         {spotlightTitle}
                       </div>
                     </div>
@@ -210,44 +210,44 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               </Link>
 
               {/* Tactical Specs Bar (Apple Control Center Glass Tiles) */}
-              <div className="grid grid-cols-3 gap-2.5 py-3 border-y border-white/15 text-center">
+              <div className="grid grid-cols-3 gap-1.5 py-1.5 border-y border-white/15 text-center">
                 {dynamicSpecs.length >= 2 ? (
                   dynamicSpecs.map(([specKey, specVal]) => (
                     <div
                       key={specKey}
-                      className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all"
+                      className="rounded-lg bg-white/[0.07] backdrop-blur-xl border border-white/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/[0.12] transition-all"
                     >
-                      <div className="text-[10px] uppercase font-bold text-white/70 truncate">
+                      <div className="text-[8.5px] uppercase font-bold text-white/60 truncate">
                         {specKey}
                       </div>
-                      <div className="font-heading font-black text-sm text-white mt-0.5 truncate">
+                      <div className="font-heading font-black text-[11px] text-white mt-0.5 truncate">
                         {specVal}
                       </div>
                     </div>
                   ))
                 ) : (
                   <>
-                    <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
-                      <div className="text-[10px] uppercase font-bold text-white/70">
+                    <div className="rounded-lg bg-white/[0.07] backdrop-blur-xl border border-white/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/[0.12] transition-all">
+                      <div className="text-[8.5px] uppercase font-bold text-white/60 truncate">
                         {t("spotlightMagnification")}
                       </div>
-                      <div className="font-heading font-black text-sm text-white mt-0.5">
+                      <div className="font-heading font-black text-[11px] text-white mt-0.5 truncate">
                         3x - 24x
                       </div>
                     </div>
-                    <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
-                      <div className="text-[10px] uppercase font-bold text-white/70">
+                    <div className="rounded-lg bg-white/[0.07] backdrop-blur-xl border border-white/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/[0.12] transition-all">
+                      <div className="text-[8.5px] uppercase font-bold text-white/60 truncate">
                         {t("spotlightLight")}
                       </div>
-                      <div className="font-heading font-black text-sm text-emerald-300 mt-0.5">
+                      <div className="font-heading font-black text-[11px] text-emerald-300 mt-0.5 truncate">
                         %92+
                       </div>
                     </div>
-                    <div className="rounded-2xl bg-white/[0.08] backdrop-blur-xl border border-white/15 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] hover:bg-white/[0.14] transition-all">
-                      <div className="text-[10px] uppercase font-bold text-white/70">
+                    <div className="rounded-lg bg-white/[0.07] backdrop-blur-xl border border-white/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/[0.12] transition-all">
+                      <div className="text-[8.5px] uppercase font-bold text-white/60 truncate">
                         {t("spotlightDurability")}
                       </div>
-                      <div className="font-heading font-black text-sm text-white mt-0.5">
+                      <div className="font-heading font-black text-[11px] text-white mt-0.5 truncate">
                         Magnum
                       </div>
                     </div>
@@ -256,39 +256,26 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
               </div>
 
               {/* Spotlight Footer & Action */}
-              <div className="flex items-center justify-between pt-4 gap-3">
-                <div className="flex flex-col space-y-0.5">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-white/90 flex items-center gap-1.5">
-                    <MapPin className="h-3 w-3 text-[#d4af37]" />
-                    <span>{t("spotlightStorePickup")}</span>
-                  </span>
-                  <span className="text-xs font-medium text-white/70">
-                    {t("spotlightReviews")}
-                  </span>
+              <div className="flex items-center justify-between pt-2 gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MapPin className="h-3 w-3 text-[#d4af37] shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9.5px] uppercase tracking-wider font-bold text-white/90 truncate">
+                      {t("spotlightStorePickup")}
+                    </span>
+                    <span className="text-[8.5px] text-white/60 truncate">
+                      Google 5.0 &#9733; ({STORE_INFO.reviewCount})
+                    </span>
+                  </div>
                 </div>
 
                 <Link
                   href={featuredProductSlug}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-neutral-200 text-black px-5 py-3 text-xs font-black uppercase tracking-wider shadow-xl transition-all hover:scale-[1.03] active:scale-95 shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black px-3 py-1.5 text-[10.5px] font-black uppercase tracking-wider shadow-lg transition-all hover:scale-105 active:scale-95 shrink-0"
                 >
                   <span>{t("spotlightInspect")}</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-3 w-3" />
                 </Link>
-              </div>
-            </div>
-
-            {/* Floating Trust Indicator Pill on Desktop (iOS Liquid Glass) */}
-            <div className="hidden sm:flex items-center gap-3 absolute -bottom-5 -left-6 rounded-2xl border border-white/25 bg-black/60 px-4 py-2.5 shadow-2xl backdrop-blur-2xl text-white shadow-[0_16px_36px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)]">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 border border-white/20 text-[#d4af37] font-bold shrink-0">
-                <Star className="h-4 w-4 fill-[#d4af37]" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-black text-white tracking-wide">
-                  {t("ratingPillTitle")}
-                </span>
-                <span className="text-[11px] font-medium text-white/70">
-                  {t("ratingPillSubtitle")}
-                </span>
               </div>
             </div>
           </div>
