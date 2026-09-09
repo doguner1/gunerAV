@@ -76,7 +76,7 @@ export default function HeroSpotlightStudio({
   const [windowedConfig, setWindowedConfig] = useState<DesignConfig>(DEFAULT_WINDOWED_CONFIG);
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [isStudioEnabled, setIsStudioEnabled] = useState(false); // Varsayılan kapalı (ziyaretçiler ve temiz görünüm için)
+  const [isStudioEnabled, setIsStudioEnabled] = useState(true); // Minik rozet hazır durur, panel kapalıdır
   const [isDesktop, setIsDesktop] = useState(false);
   const [screenSize, setScreenSize] = useState({ width: 1920, height: 1080 });
   const [editMode, setEditMode] = useState<"windowed" | "fullscreen">("windowed");
@@ -114,9 +114,9 @@ export default function HeroSpotlightStudio({
       setIsDesktop(w >= 1024);
       setScreenSize({ width: w, height: h });
 
-      // 1600px ve üzeri: Tam Ekran Masaüstü (1871px, 1920px, 2K vb.)
-      // 1024px - 1599px: Yarım Ekran / Pencere Modu (pencere küçüldüğünde)
-      if (w < 1600) {
+      // 1880px ve 960px üzeri: Tam Ekran Masaüstü (F11 / Native Fullscreen 1920x1080)
+      // Altındaki çözünürlükler (1871x935 sekmeli, laptoplar, yarım ekran): Pencere Modu
+      if (w < 1880 || h < 960) {
         setEditMode("windowed");
       } else {
         setEditMode("fullscreen");
@@ -129,9 +129,9 @@ export default function HeroSpotlightStudio({
   }, []);
 
   // Şu anki ekran pencere / yarım ekran modunda mı?
-  // w < 1600px (1024px - 1599px): Pencere / Yarım Ekran modu (offsetY: -180px, width: 430px, bgOpacity: 20%)
-  // w >= 1600px: Tam Ekran modu (offsetY: -200px, width: 445px, bgOpacity: 30%)
-  const isCurrentlyWindowed = isDesktop && screenSize.width < 1600;
+  // w < 1880px veya h < 960px: Pencere / Yarım Ekran modu (offsetY: -180px, width: 430px, bgOpacity: 20%)
+  // w >= 1880px ve h >= 960px: Tam Ekran modu (offsetY: -200px, width: 445px, bgOpacity: 30%)
+  const isCurrentlyWindowed = isDesktop && (screenSize.width < 1880 || screenSize.height < 960);
 
   // Önceden ayarlanmış değerler varsa yükle (v4 temiz başlangıç)
   useEffect(() => {
@@ -257,6 +257,8 @@ export default function HeroSpotlightStudio({
         <div
           className="w-full transition-all duration-75 relative"
           style={{
+            width: isDesktop ? `${activeConfig.width}px` : "100%",
+            minWidth: isDesktop ? `${activeConfig.width}px` : "auto",
             maxWidth: isDesktop ? `${activeConfig.width}px` : "100%",
             transform: isDesktop
               ? `translate3d(${activeConfig.offsetX}px, ${activeConfig.offsetY}px, 0)`
