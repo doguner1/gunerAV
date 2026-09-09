@@ -74,13 +74,36 @@ export default function HeroSpotlightStudio({
   const [fullscreenConfig, setFullscreenConfig] = useState<DesignConfig>(FULLSCREEN_CONFIG);
   const [windowedConfig, setWindowedConfig] = useState<DesignConfig>(DEFAULT_WINDOWED_CONFIG);
 
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [isStudioEnabled, setIsStudioEnabled] = useState(true); // Kullanıcı için buton ve panel açık
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isStudioEnabled, setIsStudioEnabled] = useState(false); // Varsayılan kapalı (ziyaretçiler ve temiz görünüm için)
   const [isDesktop, setIsDesktop] = useState(false);
   const [screenSize, setScreenSize] = useState({ width: 1920, height: 1080 });
   const [editMode, setEditMode] = useState<"windowed" | "fullscreen">("windowed");
   const [copied, setCopied] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
+
+  // URL parametresi (?design=1, ?studio=1, ?tasarim=1) veya Alt+D kısayolu ile istendiğinde stüdyoyu aç
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("studio") === "1" || params.get("design") === "1" || params.get("tasarim") === "1") {
+        setIsStudioEnabled(true);
+        setIsPanelOpen(true);
+      }
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Alt + D veya Ctrl + Shift + D ile stüdyo açılıp kapanabilir
+        if ((e.altKey && (e.key === "d" || e.key === "D")) || (e.ctrlKey && e.shiftKey && (e.key === "D" || e.key === "d"))) {
+          e.preventDefault();
+          setIsStudioEnabled((prev) => !prev);
+          setIsPanelOpen((prev) => !prev);
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, []);
 
   // Ekran boyutunu anlık takip et
   useEffect(() => {
@@ -158,6 +181,7 @@ export default function HeroSpotlightStudio({
         const next = { ...prev, ...preset };
         try {
           localStorage.setItem("gunerav_hero_fullscreen_config_v3", JSON.stringify(next));
+          return next;
         } catch {}
         return next;
       });
@@ -180,10 +204,10 @@ export default function HeroSpotlightStudio({
   };
 
   // Ekranda uygulanan aktif config:
-  // Panel açıksa kullanıcının seçtiği modu önizler; kapalıysa ekran boyutuna göre otomatik seçer
+  // Panel açıksa kullanıcının canlı kaydırdığı modu gösterir; kapalıyken onaylanmış resmi değerleri tam ekran / pencereye göre otomatik uygular
   const activeConfig = (isStudioEnabled && isPanelOpen)
     ? (editMode === "windowed" ? windowedConfig : fullscreenConfig)
-    : (isCurrentlyWindowed ? windowedConfig : fullscreenConfig);
+    : (isCurrentlyWindowed ? DEFAULT_WINDOWED_CONFIG : FULLSCREEN_CONFIG);
   const currentConfig = editMode === "windowed" ? windowedConfig : fullscreenConfig;
 
   // Log JSON formatı
