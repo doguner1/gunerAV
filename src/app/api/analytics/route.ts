@@ -44,21 +44,16 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get("key");
+  const validSecret = process.env.ANALYTICS_SECRET || "guner_admin_2026";
 
-  // Public summary without IPs, or full list with simple key
-  const isAuthorized = secret === "guner2026";
-
-  const data = recentEvents.map((e) => {
-    if (isAuthorized) return e;
-    return {
-      received_at: e.received_at,
-      event: e.event,
-      params: e.params,
-    };
-  });
+  // Block unauthorized public access with 404 Not Found
+  if (!secret || secret !== validSecret) {
+    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+  }
 
   return NextResponse.json({
-    total_cached: data.length,
-    events: data,
+    authenticated: true,
+    total_cached: recentEvents.length,
+    events: recentEvents,
   });
 }
