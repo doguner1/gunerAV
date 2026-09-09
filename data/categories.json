@@ -96,11 +96,85 @@
   {
     "id": "muhimmat",
     "slug": "muhimmat",
-    "name_tr": "Mühimmat & Fişek (Ruhsatlı)",
-    "name_en": "Ammunition & Cartridges (Licensed)",
-    "description_tr": "12, 16, 20 ve 36 kalibre orijinal av ve trap fişekleri. Sadece mağazamızda ruhsat ibrazıyla satılır.",
-    "description_en": "Original 12, 16, 20, and 36 gauge hunting and target cartridges. In-store purchase with license only.",
-    "icon": "AlertTriangle",
-    "image": "/images/categories/ammunition.webp"
+    "name_tr": "Mühimmat & Av Fişekleri",
+    "name_en": "Ammunition & Hunting Cartridges",
+    "description_tr": "12, 16, 20 ve 36 kalibre yüksek performanslı av, trap/skeet, kurşun ve şavrotin fişekleri.",
+    "description_en": "High-performance 12, 16, 20, and 36 gauge hunting cartridges, trap/skeet, slugs, and buckshot.",
+    "icon": "Target",
+    "image": "/images/categories/ammunition.webp",
+    "subcategories": [
+      {
+        "id": "muhimmat-24-gram",
+        "slug": "muhimmat-24-gram",
+        "name_tr": "24 Gram",
+        "name_en": "24 Gram"
+      },
+      {
+        "id": "muhimmat-28-gram",
+        "slug": "muhimmat-28-gram",
+        "name_tr": "28 Gram",
+        "name_en": "28 Gram"
+      },
+      {
+        "id": "muhimmat-30-gram",
+        "slug": "muhimmat-30-gram",
+        "name_tr": "30 Gram",
+        "name_en": "30 Gram"
+      },
+      {
+        "id": "muhimmat-32-gram",
+        "slug": "muhimmat-32-gram",
+        "name_tr": "32 Gram",
+        "name_en": "32 Gram"
+      },
+      {
+        "id": "muhimmat-34-gram",
+        "slug": "muhimmat-34-gram",
+        "name_tr": "34 Gram",
+        "name_en": "34 Gram"
+      },
+      {
+        "id": "muhimmat-36-gram",
+        "slug": "muhimmat-36-gram",
+        "name_tr": "36 Gram",
+        "name_en": "36 Gram"
+      },
+      {
+        "id": "muhimmat-magnum",
+        "slug": "muhimmat-magnum",
+        "name_tr": "Yarı Magnum / Magnum",
+        "name_en": "Magnum / Semi-Magnum"
+      },
+      {
+        "id": "muhimmat-tek-kursun",
+        "slug": "muhimmat-tek-kursun",
+        "name_tr": "Tek Kurşun",
+        "name_en": "Slugs"
+      },
+      {
+        "id": "muhimmat-savrotin",
+        "slug": "muhimmat-savrotin",
+        "name_tr": "Şavrotin",
+        "name_en": "Buckshot"
+      },
+      {
+        "id": "muhimmat-trap-skeet",
+        "slug": "muhimmat-trap-skeet",
+        "name_tr": "Trap & Skeet",
+        "name_en": "Trap & Skeet"
+      },
+      {
+        "id": "muhimmat-kursunsuz-celik",
+        "slug": "muhimmat-kursunsuz-celik",
+        "name_tr": "Kurşunsuz Çelik Saçma",
+        "name_en": "Lead-Free Steel Shot"
+      },
+      {
+        "id": "muhimmat-ozel-dolum",
+        "slug": "muhimmat-ozel-dolum",
+        "name_tr": "Özel Dolum / Karışık Saçma",
+        "name_en": "Special Loads / Mixed Shot"
+      }
+    ]
   }
 ]

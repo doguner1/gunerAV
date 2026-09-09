@@ -129,6 +129,8 @@ export default function FilterBar({
           const isSelected =
             cat.id === "tufek"
               ? selectedCategory === "tufek" || selectedCategory.startsWith("tufek-")
+              : cat.id === "muhimmat"
+              ? selectedCategory === "muhimmat" || selectedCategory.startsWith("muhimmat-")
               : selectedCategory === cat.id;
           const label = isTr ? cat.name_tr : cat.name_en;
           return (
@@ -182,6 +184,51 @@ export default function FilterBar({
                     className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
                       isSubSelected
                         ? "bg-[#d4af37] text-black shadow-sm font-black"
+                        : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                    }`}
+                  >
+                    {subLabel}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Ammunition Sub-Categories Row (Visible ONLY when Mühimmat & Fişek is active) */}
+      {(selectedCategory === "muhimmat" || selectedCategory.startsWith("muhimmat-")) && (
+        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 shrink-0 mr-1 flex items-center gap-1">
+              <span>📦</span>
+              <span>{isTr ? "Fişek / Gramaj:" : "Cartridge / Weight:"}</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => onSelectCategory("muhimmat")}
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                selectedCategory === "muhimmat"
+                  ? "bg-emerald-600 text-white shadow-sm font-black"
+                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {isTr ? "Tüm Fişekler" : "All Cartridges"}
+            </button>
+
+            {categories
+              .find((c) => c.id === "muhimmat")
+              ?.subcategories?.map((sub) => {
+                const isSubSelected = selectedCategory === sub.id;
+                const subLabel = isTr ? sub.name_tr : sub.name_en;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => onSelectCategory(sub.id)}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                      isSubSelected
+                        ? "bg-emerald-600 text-white shadow-sm font-black"
                         : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                     }`}
                   >

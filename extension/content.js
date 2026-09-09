@@ -39,18 +39,10 @@ function extractProductData() {
       result.brand = brandScriptMatch[1].trim();
     }
 
-    // SKU from scripts
-    const skuScriptMatch = html.match(/sku\s*:\s*["']([^"']+)["']/i);
-    if (skuScriptMatch && skuScriptMatch[1].trim()) {
-      result.model = skuScriptMatch[1].trim();
-      result.specs["Stok Kodu"] = skuScriptMatch[1].trim();
-    }
-
     // Category from scripts
     const catScriptMatch = html.match(/categoryName\s*:\s*["']([^"']+)["']/i);
     if (catScriptMatch && catScriptMatch[1].trim()) {
       result.category = catScriptMatch[1].trim();
-      result.specs["Kategori"] = catScriptMatch[1].trim();
     }
 
     // Price from scripts
@@ -63,6 +55,13 @@ function extractProductData() {
     const nameScriptMatch = html.match(/fullName\s*:\s*["']([^"']+)["']/i);
     if (nameScriptMatch && nameScriptMatch[1].trim()) {
       result.title = nameScriptMatch[1].trim();
+    }
+
+    // Primary Image from scripts
+    const imgScriptMatch = html.match(/primaryImageUrl\s*:\s*["']([^"']+)["']/i);
+    if (imgScriptMatch && imgScriptMatch[1].trim()) {
+      const cleanImg = cleanImageUrl(imgScriptMatch[1]);
+      if (cleanImg) result.images.push(cleanImg);
     }
   } catch (e) {
     console.warn("Script parsing fallback:", e);
@@ -267,6 +266,16 @@ function extractProductData() {
 
   const rawMainImgs = [];
 
+  // 0. Primary Image element (#primary-image, Yaban Av / IdeaSoft zoom image)
+  const primaryImgEl = document.querySelector("#primary-image");
+  if (primaryImgEl) {
+    const pSrc = primaryImgEl.getAttribute("data-zoom-image") || primaryImgEl.getAttribute("src");
+    if (pSrc) {
+      const cleaned = cleanImageUrl(pSrc);
+      if (cleaned) rawMainImgs.push(cleaned);
+    }
+  }
+
   const ogImage = document.querySelector('meta[property="og:image"]');
   if (ogImage && ogImage.content && !ogImage.content.includes("logo") && !ogImage.content.includes("Favicon")) {
     rawMainImgs.push(cleanImageUrl(ogImage.content));
@@ -312,7 +321,7 @@ function extractProductData() {
   });
 
   // Fallback images
-  if (rawMainImgs.length === 0) {
+  if (rawMainImgs.length === 0 && result.images.length === 0) {
     document.querySelectorAll("img").forEach((img) => {
       if (colorTab && colorTab.contains(img)) return;
       if (img.closest && img.closest("[id*='renk'], .color-variants, .variants")) return;
@@ -326,7 +335,7 @@ function extractProductData() {
     });
   }
 
-  result.images = dedupeImages(rawMainImgs).slice(0, 10);
+  result.images = dedupeImages([...result.images, ...rawMainImgs]).slice(0, 10);
 
   // =========================================================================
   // 7b. Renk & Model Varyantları Tespiti (Color Variants)
@@ -452,39 +461,83 @@ function extractProductData() {
     ".product-detail, .product-description, #tab-description, [itemprop='description'], #tab_Ürün-açıklaması, #tab-Ürün-açıklaması, [id*='Ürün-açıklaması'], [id*='urun-aciklamasi']"
   );
   if (detailEl) {
-    const rawText = detailEl.textContent.replace(/&nbsp;/g, " ");
-    const lines = rawText
-      .split(/\n|\r|\./)
-      .map((l) => l.replace(/\s+/g, " ").trim())
-      .filter((l) => l.length > 5 && l.length < 150);
+    let rawLines = [];
+    try {
+      const cloned = detailEl.cloneNode(true);
+      cloned.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+      cloned.querySelectorAll("div, p, li, tr").forEach((el) => {
+        el.prepend("\n");
+        el.append("\n");
+      });
+      rawLines = cloned.textContent
+        .split(/\n+/)
+        .map((l) => l.replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim())
+        .filter((l) => l.length > 0 && l.length < 150);
+    } catch {
+      rawLines = detailEl.textContent
+        .replace(/&nbsp;/g, " ")
+        .split(/\n|\r/)
+        .map((l) => l.replace(/\s+/g, " ").trim())
+        .filter((l) => l.length > 0 && l.length < 150);
+    }
 
-    lines.forEach((line) => {
+    const descList = [];
+    rawLines.forEach((line) => {
       const lower = line.toLowerCase();
+      if (lower === "özellikler" || lower === "özellikleri" || lower === "ozellikler") {
+        descList.push("Özellikler:");
+        return;
+      }
+      if (lower.includes("taksit") || lower.includes("havale") || lower.includes("kargo")) return;
+
+      descList.push(line);
+
       if (line.includes(":")) {
         const parts = line.split(":");
         const k = parts[0].trim();
         const v = parts.slice(1).join(":").trim();
-        if (k.length > 2 && k.length < 35 && v.length > 1 && v.length < 100) {
-          specs[k] = v;
+        if (k.length > 1 && k.length < 35 && v.length > 0 && v.length < 100) {
+          if (!k.toLowerCase().includes("stok") && !k.toLowerCase().includes("sku") && !k.toLowerCase().includes("ürün kodu")) {
+            specs[k] = v;
+          }
         }
-      } else if (lower.includes("misina") && !specs["Misina"]) {
-        specs["Misina"] = line;
-      } else if ((lower.includes("kamış") || lower.includes("karbon") || lower.includes("fiberglas")) && !specs["Kamış Yapısı"]) {
-        specs["Kamış Yapısı"] = line;
-      } else if (lower.includes("kurulu") && !specs["Kurulum"]) {
-        specs["Kurulum"] = line;
-      } else if ((lower.includes("kaldır") || lower.includes("kiloluk") || lower.includes("kapasite")) && !specs["Taşıma Kapasitesi"]) {
-        specs["Taşıma Kapasitesi"] = line.replace(/[\(\)]/g, "").trim();
+      } else {
+        // İki nokta (colon) içermeyen satırlar (Yaban Av / IdeaSoft av fişeği özellikleri)
+        if (/^(\d+)\s*(gram|gr)$/i.test(line)) {
+          specs["Gramaj"] = line;
+        } else if (/^(\d+)\s*(kalibre|cal)$/i.test(line)) {
+          specs["Kalibre"] = line;
+        } else if (/tapa/i.test(line) && line.length < 35) {
+          specs["Tapa Tipi"] = line;
+        } else if (/kovan\s*uzunlu[ğg]u/i.test(line)) {
+          specs["Kovan Uzunluğu"] = line.replace(/kovan\s*uzunlu[ğg]u\s*[:\s]*/i, "");
+        } else if (/paket(?:te)?/i.test(line) || /^\d+\s*adet$/i.test(line)) {
+          specs["Paket İçeriği"] = line.replace(/paket(?:te)?\s*[:\s]*/i, "");
+        } else if (/saçma\s*(?:no|numaras[ıi])/i.test(line)) {
+          specs["Saçma No"] = line.replace(/saçma\s*(?:no|numaras[ıi])\s*[:\s]*/i, "");
+        } else if (/h[ıi]z/i.test(line) && /\d+\s*m\/s/i.test(line)) {
+          specs["Namlu Çıkış Hızı"] = line;
+        } else if (/bas[ıi]nç/i.test(line) && /\d+\s*bar/i.test(line)) {
+          specs["Basınç"] = line;
+        } else if (lower.includes("misina") && !specs["Misina"]) {
+          specs["Misina"] = line;
+        } else if ((lower.includes("kamış") || lower.includes("karbon") || lower.includes("fiberglas")) && !specs["Kamış Yapısı"]) {
+          specs["Kamış Yapısı"] = line;
+        } else if (lower.includes("kurulu") && !specs["Kurulum"]) {
+          specs["Kurulum"] = line;
+        } else if ((lower.includes("kaldır") || lower.includes("kiloluk") || lower.includes("kapasite")) && !specs["Taşıma Kapasitesi"]) {
+          specs["Taşıma Kapasitesi"] = line.replace(/[\(\)]/g, "").trim();
+        }
       }
     });
 
-    if (lines.length > 0) {
-      result.description = lines.slice(0, 5).join(". ") + ".";
+    if (descList.length > 0) {
+      result.description = descList.join("\n");
     }
   }
 
   // Fallback description from description tab paragraphs
-  if (!result.description || result.description.length < 20) {
+  if (!result.description || result.description.length < 15) {
     const descTab = document.querySelector("#tab_Ürün-açıklaması, #tab-Ürün-açıklaması, .entry-content");
     if (descTab) {
       const ps = Array.from(descTab.querySelectorAll("p"))
@@ -507,6 +560,19 @@ function extractProductData() {
     specs["Tipi"] = "Bullpup";
   }
 
+  // KULLANICI TALEBİ: "stok kodunu almasın" -> Stok Kodu ve SKU kesinlikle çıkarılır
+  delete specs["Stok Kodu"];
+  delete specs["stok kodu"];
+  delete specs["Ürün Kodu"];
+  delete specs["SKU"];
+  delete specs["sku"];
+  delete specs["Kategori"];
+
+  // Eğer model bir dahili depo stok koduysa (yb_..., stk_...), modeli temizle
+  if (result.model && /^yb_|^stk_|^prd_|^art_/i.test(result.model)) {
+    result.model = "";
+  }
+
   result.specs = specs;
 
   // Marka / Model tekrar kontrolü
@@ -515,6 +581,49 @@ function extractProductData() {
   }
   if (!result.model && specs["Model"]) {
     result.model = specs["Model"];
+  }
+
+  // =========================================================================
+  // 9. Kategori ve Ruhsat Durumu Otomatik Tespiti (Mühimmat Ruhsatsızdır)
+  // =========================================================================
+  const fullText = (
+    (result.title || "") + " " +
+    (result.category || "") + " " +
+    JSON.stringify(specs) + " " +
+    window.location.href
+  ).toLowerCase();
+
+  const isAmmo =
+    fullText.includes("fişek") ||
+    fullText.includes("fisek") ||
+    fullText.includes("mühimmat") ||
+    fullText.includes("muhimmat") ||
+    fullText.includes("sterling") ||
+    fullText.includes("kartuş") ||
+    /\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i.test(fullText);
+
+  if (isAmmo) {
+    // Mühimmat / Av Fişeği: Ruhsat kesinlikle İSTENMEZ!
+    result.requires_license = false;
+
+    const gramMatch = fullText.match(/\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i);
+    if (gramMatch) {
+      result.category = `muhimmat-${gramMatch[1]}-gram`;
+    } else if (fullText.includes("tek kurşun") || fullText.includes("tek kursun") || fullText.includes("slug")) {
+      result.category = "muhimmat-tek-kursun";
+    } else if (fullText.includes("şavrotin") || fullText.includes("savrotin") || fullText.includes("buckshot")) {
+      result.category = "muhimmat-savrotin";
+    } else if (fullText.includes("trap") || fullText.includes("skeet")) {
+      result.category = "muhimmat-trap-skeet";
+    } else if (fullText.includes("magnum")) {
+      result.category = "muhimmat-magnum";
+    } else if (fullText.includes("çelik") || fullText.includes("celik") || fullText.includes("kurşunsuz")) {
+      result.category = "muhimmat-kursunsuz-celik";
+    } else if (fullText.includes("özel dolum") || fullText.includes("karışık")) {
+      result.category = "muhimmat-ozel-dolum";
+    } else {
+      result.category = "muhimmat";
+    }
   }
 
   return result;

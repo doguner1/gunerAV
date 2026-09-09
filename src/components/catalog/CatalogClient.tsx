@@ -83,6 +83,53 @@ export default function CatalogClient({
           } else {
             return false;
           }
+        } else if (selectedCategory === "muhimmat") {
+          const isAmmo =
+            product.category === "muhimmat" ||
+            product.category.startsWith("muhimmat-");
+          if (!isAmmo) return false;
+        } else if (selectedCategory.startsWith("muhimmat-")) {
+          if (product.category === selectedCategory) {
+            // Direct match
+          } else if (product.category === "muhimmat") {
+            const subType = selectedCategory.replace("muhimmat-", "");
+            const fullText = (
+              (product.name_tr || "") + " " +
+              (product.description_tr || "") + " " +
+              JSON.stringify(product.specs_tr || {})
+            ).toLowerCase();
+
+            if (subType === "tek-kursun") {
+              if (!fullText.includes("tek kurşun") && !fullText.includes("tek kursun") && !fullText.includes("slug")) return false;
+            } else if (subType === "savrotin") {
+              if (!fullText.includes("şavrotin") && !fullText.includes("savrotin") && !fullText.includes("buckshot")) return false;
+            } else if (subType === "trap-skeet") {
+              if (!fullText.includes("trap") && !fullText.includes("skeet")) return false;
+            } else if (subType === "magnum") {
+              if (!fullText.includes("magnum")) return false;
+            } else if (subType === "kursunsuz-celik") {
+              if (!fullText.includes("çelik") && !fullText.includes("celik") && !fullText.includes("kurşunsuz")) return false;
+            } else if (subType === "ozel-dolum") {
+              if (!fullText.includes("özel dolum") && !fullText.includes("karışık") && !fullText.includes("ozel")) return false;
+            } else {
+              // Gram match (e.g. 34-gram -> 34)
+              const gramMatch = subType.match(/^(\d+)-gram$/);
+              if (gramMatch) {
+                const g = gramMatch[1];
+                const matches = [
+                  `${g} gram`,
+                  `${g} gr`,
+                  `${g}gr`,
+                  `${g}g `,
+                ].some((kw) => fullText.includes(kw));
+                if (!matches) return false;
+              } else {
+                return false;
+              }
+            }
+          } else {
+            return false;
+          }
         } else if (product.category !== selectedCategory) {
           return false;
         }

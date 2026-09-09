@@ -122,6 +122,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "chkHeroSpotlight",
     "chkRequiresLicense",
     "chkInStock",
+    "fldDescription",
     "fldSpecsJson",
   ];
 
@@ -132,13 +133,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     el.addEventListener("change", saveFormDraft);
   });
 
-  // Kategori değiştiğinde tüfek veya mühimmat ise ruhsat zorunluluğunu otomatik aç
+  // Kategori değiştiğinde tüfek ise ruhsat zorunluluğunu otomatik aç, mühimmat veya diğerlerinde kapat
   document.getElementById("fldCategory")?.addEventListener("change", (e) => {
     const val = e.target.value;
-    const isLicensed = val.startsWith("tufek-") || val === "muhimmat" || val === "silah-muhimmat";
+    const isFirearm = val.startsWith("tufek-") || val === "tufek" || val === "silah-muhimmat";
+    const isAmmo = val === "muhimmat" || val.startsWith("muhimmat-");
     const licenseChk = document.getElementById("chkRequiresLicense");
-    if (licenseChk && isLicensed) {
-      licenseChk.checked = true;
+    if (licenseChk) {
+      if (isFirearm) {
+        licenseChk.checked = true;
+      } else if (isAmmo) {
+        licenseChk.checked = false; // Av fişeklerinde ruhsat istenmez
+      }
       saveFormDraft();
     }
   });
@@ -172,20 +178,41 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    const applyExtractedData = (data) => {
+      populateForm(data);
+      saveFormDraft();
+      showStatus(`✅ Ürün yakalandı: ${(data.title || "").slice(0, 35)}...`, "success");
+    };
+
     try {
-      chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_PRODUCT" }, (response) => {
+      chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_PRODUCT" }, async (response) => {
         if (chrome.runtime.lastError || !response?.success) {
-          showStatus(
-            "Sayfa içeriği okunamadı. Sayfayı yenileyip tekrar deneyin veya Manuel JSON sekmesini kullanın.",
-            "error"
-          );
+          // Sayfa eklenti yüklenmeden önce açılmışsa content script dinamik enjekte edilir
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ["content.js"],
+            });
+            chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_PRODUCT" }, (retryRes) => {
+              if (chrome.runtime.lastError || !retryRes?.success) {
+                showStatus(
+                  "Sayfa içeriği okunamadı. Lütfen sayfayı bir kez yenileyip (F5) tekrar butona basınız.",
+                  "error"
+                );
+                return;
+              }
+              applyExtractedData(retryRes.data);
+            });
+          } catch (injErr) {
+            showStatus(
+              "Sayfa içeriği okunamadı. Lütfen sayfayı bir kez yenileyip (F5) tekrar deneyin.",
+              "error"
+            );
+          }
           return;
         }
 
-        const data = response.data;
-        populateForm(data);
-        saveFormDraft();
-        showStatus(`✅ Ürün yakalandı: ${(data.title || "").slice(0, 35)}...`, "success");
+        applyExtractedData(response.data);
       });
     } catch (e) {
       showStatus("Hata: " + e.message, "error");
@@ -283,9 +310,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         brand,
         model,
         name_tr: nameTr,
-        name_en: nameTr,
-        description_tr: `${nameTr}. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.`,
-        description_en: `${nameTr}. Available at official dealer Guner AV in Malatya.`,
+        description_tr:
+          document.getElementById("fldDescription")?.value?.trim() ||
+          `${nameTr}. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.`,
+        description_en:
+          document.getElementById("fldDescription")?.value?.trim() ||
+          `${nameTr}. Available at official dealer Guner AV in Malatya.`,
         price,
         discount_percent: discountPercent,
         images: images.length > 0 ? images : ["/images/products/optics-1.webp"],
@@ -354,8 +384,21 @@ function populateForm(data) {
     (data.specs_tr ? data.specs_tr["Marka"] || data.specs_tr["Brand"] : "");
   if (brandVal) document.getElementById("fldBrand").value = brandVal;
 
-  if (data.model) document.getElementById("fldModel").value = data.model;
+  if (data.model) {
+    if (/^yb_|^stk_|^prd_|^art_/i.test(data.model)) {
+      document.getElementById("fldModel").value = "";
+    } else {
+      document.getElementById("fldModel").value = data.model;
+    }
+  } else {
+    document.getElementById("fldModel").value = "";
+  }
+
   if (data.price) document.getElementById("fldPrice").value = data.price;
+
+  if (data.description && document.getElementById("fldDescription")) {
+    document.getElementById("fldDescription").value = data.description;
+  }
 
   if (data.images && Array.isArray(data.images)) {
     document.getElementById("fldImages").value = data.images.join("\n");
@@ -365,6 +408,12 @@ function populateForm(data) {
 
   // Specs
   const specs = data.specs_tr || data.specs || {};
+  delete specs["Stok Kodu"];
+  delete specs["stok kodu"];
+  delete specs["Ürün Kodu"];
+  delete specs["SKU"];
+  delete specs["sku"];
+  delete specs["Kategori"];
   document.getElementById("fldSpecsJson").value = JSON.stringify(specs, null, 2);
 
   // Variants (Renk / Model Varyantları)
@@ -383,8 +432,55 @@ function populateForm(data) {
   const catSelect = document.getElementById("fldCategory");
   const licenseChk = document.getElementById("chkRequiresLicense");
 
-  // 1. Tüfek Alt Sınıfları (Öncelikli Tespit)
-  if (fullText.includes("bullpup")) {
+  const ensureCategoryOption = (selectEl, val, label) => {
+    if (!selectEl.querySelector(`option[value="${val}"]`)) {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = label || val;
+      selectEl.appendChild(opt);
+    }
+  };
+
+  const isAmmo =
+    (data.category && (data.category === "muhimmat" || data.category.startsWith("muhimmat-"))) ||
+    fullText.includes("fişek") ||
+    fullText.includes("fisek") ||
+    fullText.includes("mühimmat") ||
+    fullText.includes("muhimmat") ||
+    fullText.includes("kartuş") ||
+    fullText.includes("sterling") ||
+    /\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i.test(fullText);
+
+  // 1. Mühimmat & Av Fişekleri Tespiti (Ruhsat KESİNLİKLE İstenmez)
+  if (isAmmo) {
+    licenseChk.checked = false; // Av fişekleri ruhsatsız satılır
+
+    if (data.category && (data.category === "muhimmat" || data.category.startsWith("muhimmat-"))) {
+      ensureCategoryOption(catSelect, data.category, data.category);
+      catSelect.value = data.category;
+    } else {
+      const gramMatch = fullText.match(/\b(24|28|30|32|34|36|38|40)\s*(?:gram|gr)\b/i);
+      if (gramMatch) {
+        const catVal = `muhimmat-${gramMatch[1]}-gram`;
+        ensureCategoryOption(catSelect, catVal, `Fişek - ${gramMatch[1]} Gram`);
+        catSelect.value = catVal;
+      } else if (fullText.includes("tek kurşun") || fullText.includes("tek kursun") || fullText.includes("slug")) {
+        catSelect.value = "muhimmat-tek-kursun";
+      } else if (fullText.includes("şavrotin") || fullText.includes("savrotin") || fullText.includes("buckshot")) {
+        catSelect.value = "muhimmat-savrotin";
+      } else if (fullText.includes("trap") || fullText.includes("skeet")) {
+        catSelect.value = "muhimmat-trap-skeet";
+      } else if (fullText.includes("magnum")) {
+        catSelect.value = "muhimmat-magnum";
+      } else if (fullText.includes("çelik") || fullText.includes("celik") || fullText.includes("kurşunsuz")) {
+        catSelect.value = "muhimmat-kursunsuz-celik";
+      } else if (fullText.includes("özel dolum") || fullText.includes("karışık")) {
+        catSelect.value = "muhimmat-ozel-dolum";
+      } else {
+        catSelect.value = "muhimmat";
+      }
+    }
+  } else if (fullText.includes("bullpup")) {
     catSelect.value = "tufek-bullpup";
     licenseChk.checked = true;
   } else if (
@@ -444,15 +540,6 @@ function populateForm(data) {
     fullText.includes("av tüfeği")
   ) {
     catSelect.value = "tufek-yari-otomatik";
-    licenseChk.checked = true;
-  } else if (
-    fullText.includes("fişek") ||
-    fullText.includes("fisek") ||
-    fullText.includes("mühimmat") ||
-    fullText.includes("muhimmat") ||
-    fullText.includes("kartuş")
-  ) {
-    catSelect.value = "muhimmat";
     licenseChk.checked = true;
   } else if (
     fullText.includes("dürbün") ||
@@ -529,6 +616,7 @@ async function saveFormDraft() {
     discountPercent: document.getElementById("fldDiscountPercent")?.value || "",
     requiresLicense: document.getElementById("chkRequiresLicense")?.checked ?? false,
     inStock: document.getElementById("chkInStock")?.checked ?? true,
+    description: document.getElementById("fldDescription")?.value || "",
     specsJson: document.getElementById("fldSpecsJson")?.value || "",
   };
 
@@ -544,6 +632,10 @@ function restoreFormDraft(draft) {
   if (draft.brand) document.getElementById("fldBrand").value = draft.brand;
   if (draft.model) document.getElementById("fldModel").value = draft.model;
   if (draft.images) document.getElementById("fldImages").value = draft.images;
+
+  if (draft.description && document.getElementById("fldDescription")) {
+    document.getElementById("fldDescription").value = draft.description;
+  }
 
   if (draft.variantsJson) {
     try {
@@ -586,6 +678,9 @@ async function resetForm() {
   document.getElementById("fldImages").value = "";
   document.getElementById("fldSpecsJson").value = "";
   document.getElementById("fldCategory").value = "kamp";
+
+  const descEl = document.getElementById("fldDescription");
+  if (descEl) descEl.value = "";
 
   renderVariantsPreview([]);
 

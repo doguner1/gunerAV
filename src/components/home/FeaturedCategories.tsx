@@ -45,16 +45,19 @@ export default function FeaturedCategories({ products = [] }: { products?: Produ
           {categories.map((category) => {
             const count = products.filter((p: Product) => {
               if (category.id === "tufek") return p.category.startsWith("tufek") || p.category === "silah-muhimmat";
+              if (category.id === "muhimmat") return p.category === "muhimmat" || p.category.startsWith("muhimmat-");
               if (category.id === "bicak") return p.category === "bicak" || p.category === "aksesuar";
               return p.category === category.id;
             }).length;
             const name = isTr ? category.name_tr : category.name_en;
             const desc = isTr ? category.description_tr : category.description_en;
-            const isLicenseReq = category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-") || category.id === "muhimmat";
+            const isLicenseReq = category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-");
 
             // Category specific tag
             const badgeTag = isLicenseReq
               ? (isTr ? "RUHSATLI" : "LICENSED")
+              : category.id === "muhimmat" || category.id.startsWith("muhimmat-")
+              ? (isTr ? "AV FİŞEKLERİ" : "SHOTGUN AMMO")
               : category.id === "kamp"
               ? (isTr ? "DOĞA & KAMP" : "OUTDOOR")
               : category.id === "optik"
