@@ -44,10 +44,10 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get("key");
-  const validSecret = process.env.ANALYTICS_SECRET || "guner_admin_2026";
+  const validSecret = process.env.ANALYTICS_SECRET;
 
-  // Block unauthorized public access with 404 Not Found
-  if (!secret || secret !== validSecret) {
+  // Block unauthorized public access with 404 Not Found if no secret configured or wrong key
+  if (!validSecret || !secret || secret !== validSecret) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 
