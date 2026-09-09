@@ -10,6 +10,7 @@ import {
   PhoneCall,
   Sparkles,
   Crosshair,
+  ChevronDown,
 } from "lucide-react";
 
 import StoreStatusBadge from "@/components/common/StoreStatusBadge";
@@ -175,6 +176,41 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
             inspectText={t("spotlightInspect")}
           />
         </div>
+      </div>
+
+      {/* Progressive Dark Fade & Soft Atmospheric Blur (Fades from deep black at bottom up into crystal clear image) */}
+      <div className="absolute bottom-0 inset-x-0 h-40 sm:h-52 bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-10" />
+      <div
+        className="absolute bottom-0 inset-x-0 h-28 sm:h-36 pointer-events-none z-10"
+        style={{
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          maskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0) 100%)",
+          WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0) 100%)",
+        }}
+      />
+
+      {/* Centered Tactical Discovery Scroll Indicator */}
+      <div className="hidden sm:flex absolute bottom-3 sm:bottom-5 inset-x-0 justify-center items-center z-20 pointer-events-none">
+        <a
+          href="#categories"
+          className="group pointer-events-auto flex flex-col items-center gap-1.5 px-4 py-1.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer select-none"
+          aria-label={t("startHunting")}
+        >
+          {/* Subtle tactical line & text badge */}
+          <div className="flex items-center gap-2">
+            <span className="h-[1px] w-6 sm:w-10 bg-gradient-to-r from-transparent via-[#d4af37]/60 to-[#d4af37]" />
+            <span className="text-[10px] sm:text-[11px] font-heading font-black uppercase tracking-[0.25em] text-neutral-300 group-hover:text-[#d4af37] transition-colors drop-shadow-md">
+              {t("startHunting")}
+            </span>
+            <span className="h-[1px] w-6 sm:w-10 bg-gradient-to-l from-transparent via-[#d4af37]/60 to-[#d4af37]" />
+          </div>
+
+          {/* Glowing Animated Arrow Pill */}
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-950/70 border border-white/15 backdrop-blur-md text-[#d4af37] shadow-[0_4px_20px_rgba(0,0,0,0.6)] group-hover:border-[#d4af37]/70 group-hover:bg-[#d4af37]/20 group-hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all">
+            <ChevronDown className="h-4 w-4 animate-bounce" />
+          </div>
+        </a>
       </div>
     </section>
   );
