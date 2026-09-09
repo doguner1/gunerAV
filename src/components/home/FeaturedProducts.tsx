@@ -50,13 +50,14 @@ export default function FeaturedProducts({ products = [] }: { products?: Product
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {featured.map((product) => {
+            {featured.map((product, idx) => {
               const cat = categories.find((c) => c.id === product.category);
               return (
                 <ProductCard
                   key={product.id}
                   product={product}
                   categoryName={isTr ? cat?.name_tr : cat?.name_en}
+                  priority={idx < 4}
                 />
               );
             })}

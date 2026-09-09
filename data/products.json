@@ -1,166 +1,2335 @@
 [
   {
-    "id": "castello-mod-505-otomatik-av-tufegi",
-    "category": "tufek-yari-otomatik",
-    "slug_tr": "castello-mod-505-otomatik-av-tufegi",
-    "slug_en": "castello-mod-505-semi-auto-shotgun",
+    "id": "castello-c12",
+    "category": "tufek-cifte",
+    "name_tr": "CASTELLO C12",
+    "name_en": "CASTELLO C12",
+    "slug_tr": "castello-c12",
+    "slug_en": "castello-c12-en",
     "brand": "Castello",
-    "model": "MOD-505",
-    "name_tr": "Castello MOD-505 Otomatik Av Tüfeği",
-    "name_en": "Castello MOD-505 Semi-Automatic Hunting Shotgun",
-    "description_tr": "Gazlı yarı otomatik çalışma sistemi, dayanıklı alüminyum gövdesi, 76 mm Magnum fişek yatağı ve ergonomik kundak yapısıyla sahada üstün güvenilirlik ve atış dengesi sunar. Malatya Castello Yetkili Bayii Güner AV güvencesiyle mağazamızda.",
-    "description_en": "Gas-operated semi-automatic system with durable aluminum receiver, 76mm Magnum chamber, and ergonomic stock. Official Malatya dealer Guner AV guarantee.",
-    "price": 24198,
-    "discount_percent": 10,
-    "images": [
-      "https://www.avalemi.com/idea/dg/65/myassets/products/296/img-9163.jpeg",
-      "https://www.avalemi.com/idea/dg/65/myassets/products/296/img-9166.jpeg",
-      "https://www.avalemi.com/idea/dg/65/myassets/products/296/img-9164.jpeg",
-      "https://www.avalemi.com/idea/dg/65/myassets/products/296/img-9165.jpeg",
-      "https://www.avalemi.com/idea/dg/65/myassets/products/296/img-9167.jpeg",
-      "https://www.avalemi.com/idea/dg/65/myassets/products/296/img-9168.jpeg"
-    ],
-    "featured": true,
-    "is_hero_spotlight": true,
-    "requires_license": true,
-    "in_stock": true,
-    "specs_tr": {
-      "Kalibre": "12 Cal",
-      "Sistem": "Gazlı Yarı Otomatik",
-      "Namlu": "71 cm",
-      "Fişek Yuvası": "76 mm / 3 İnç Magnum",
-      "Kapasite": "4+1 / 7+1",
-      "Gövde": "Alüminyum",
-      "Kundak": "Sentetik & Ceviz"
-    },
-    "specs_en": {
-      "Gauge": "12 Gauge",
-      "System": "Gas Operated Semi-Auto",
-      "Barrel": "71 cm",
-      "Chamber": "76 mm / 3 Inch Magnum",
-      "Capacity": "4+1 / 7+1",
-      "Receiver": "Aluminum",
-      "Stock": "Synthetic & Walnut"
-    }
-  },
-  {
-    "id": "castello-blp",
-    "category": "tufek-bullpup",
-    "slug_tr": "castello-blp",
-    "slug_en": "castello-blp-bullpup-shotgun",
-    "brand": "Castello",
-    "model": "Castello BLP",
-    "name_tr": "Castello BLP Bullpup Şarjörlü Av Tüfeği",
-    "name_en": "Castello BLP Bullpup Magazine-Fed Shotgun",
-    "description_tr": "Bu 12 kalibre şarjör beslemeli av tüfeği, sentetik alt gövde ve sentetik el kundağına sahiptir. 4140 delme çelikten yapılmış namlusu, gazla çalışan sistemiyle mükemmel kontrol ve düşük geri tepme sağlar. Kompakt bullpup ergonomisi sahada ve taktik atışta üstün denge sunar. Malatya Castello Yetkili Bayii Güner AV güvencesiyle mağazamızda.",
-    "description_en": "This 12 gauge magazine-fed bullpup shotgun features a durable synthetic lower receiver and handguard. Equipped with a 4140 drilled steel barrel and gas-operated system for optimal recoil control. Official Malatya dealer Guner AV guarantee.",
-    "price": 29500,
+    "model": "Castello C12",
+    "description_tr": "CASTELLO C12. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "CASTELLO C12. Available at official dealer Guner AV in Malatya.",
+    "price": null,
     "discount_percent": null,
     "images": [
-      "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-1-scaled.webp",
-      "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-2.png"
-    ],
-    "variants": [
-      {
-        "name": "Standart / Siyah (CR01)",
-        "color_code": "CR01",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-2.png"
-        ]
-      },
-      {
-        "name": "Altın Sarısı (CR02)",
-        "color_code": "CR02",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR02-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR02-Arslan-Silah-2-scaled.webp"
-        ]
-      },
-      {
-        "name": "Kamuflaj (CR03)",
-        "color_code": "CR03",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR03-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR03-Arslan-Silah-2-scaled.webp"
-        ]
-      },
-      {
-        "name": "Taktik Yeşil (CR04)",
-        "color_code": "CR04",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR04-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR04-Arslan-Silah-2-scaled.webp"
-        ]
-      },
-      {
-        "name": "Ay Yıldız / Bayrak (CR05)",
-        "color_code": "CR05",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR05-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR05-Arslan-Silah-2-scaled.webp"
-        ]
-      },
-      {
-        "name": "Bronz / Kum (CR06)",
-        "color_code": "CR06",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR06-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR06-Arslan-Silah-2-scaled.webp"
-        ]
-      },
-      {
-        "name": "Kuru Kafa Desen (CR07)",
-        "color_code": "CR07",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR07-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR07-Arslan-Silah-2-scaled.webp"
-        ]
-      },
-      {
-        "name": "Askeri Kamuflaj (CR08)",
-        "color_code": "CR08",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR08-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR08-Arslan-Silah-2-scaled.webp"
-        ]
-      },
-      {
-        "name": "Özel Tasarım (CR09)",
-        "color_code": "CR09",
-        "images": [
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR09-Arslan-Silah-1-scaled.webp",
-          "https://arslansilah.com/wp-content/uploads/2024/10/Castello-BLP-CR09-Arslan-Silah-2-scaled.webp"
-        ]
-      }
+      "/products/castello-c12/base-0.webp",
+      "/products/castello-c12/base-1.webp"
     ],
     "featured": true,
     "is_hero_spotlight": false,
     "requires_license": true,
     "in_stock": true,
     "specs_tr": {
-      "Model": "Castello BLP",
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello C12",
+      "Gövde": "Alüminyum",
+      "Sistem": "Çifte Ejektörsüz",
       "Kalibre": "12 GA",
-      "Sistem": "Gazlı Yarı Otomatik",
-      "Şarjör Kapasitesi": "2 / 5 / 10",
-      "Kaplama": "Anodize / Cerakote / Hidro Dipping",
-      "Dipçik & El Kundağı": "Sentetik",
-      "Namlu Uzunluğu": "18,5 İnç – 47 cm",
-      "Fişek Yuvası": "3 İnç / 76 mm Magnum",
-      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
-      "Şok": "Slug"
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "2",
+      "Dipçik & El Kundağı": "Türk Cevizi"
     },
     "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello C12",
+      "Gövde": "Alüminyum",
+      "Sistem": "Çifte Ejektörsüz",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "2",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:58:43.15952+00:00",
+    "updated_at": "2026-09-08T23:58:43.15952+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-p12-light",
+    "category": "tufek-superpoze",
+    "name_tr": "CASTELLO P12-Light",
+    "name_en": "CASTELLO P12-Light",
+    "slug_tr": "castello-p12-light",
+    "slug_en": "castello-p12-light-en",
+    "brand": "Castello",
+    "model": "Castello P12 – Light",
+    "description_tr": "CASTELLO P12-Light. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "CASTELLO P12-Light. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-p12-light/base-0.webp",
+      "/products/castello-p12-light/base-1.webp",
+      "/products/castello-p12-light/base-2.webp",
+      "/products/castello-p12-light/base-3.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL / Slug",
+      "Marka": "Castello",
+      "Model": "Castello P12 – Light",
+      "Gövde": "Alüminyum / Çelik",
+      "Sistem": "Süperpoze Ejektörlü / Ejektörsüz",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "2",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL / Slug",
+      "Marka": "Castello",
+      "Model": "Castello P12 – Light",
+      "Gövde": "Alüminyum / Çelik",
+      "Sistem": "Süperpoze Ejektörlü / Ejektörsüz",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "2",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:58:32.759881+00:00",
+    "updated_at": "2026-09-08T23:58:32.759881+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-p12-premium",
+    "category": "tufek-superpoze",
+    "name_tr": "CASTELLO P12-Premium",
+    "name_en": "CASTELLO P12-Premium",
+    "slug_tr": "castello-p12-premium",
+    "slug_en": "castello-p12-premium-en",
+    "brand": "Castello",
+    "model": "Castello P12 – Premium",
+    "description_tr": "CASTELLO P12-Premium. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "CASTELLO P12-Premium. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-p12-premium/base-0.webp",
+      "/products/castello-p12-premium/base-1.webp",
+      "/products/castello-p12-premium/base-2.webp",
+      "/products/castello-p12-premium/base-3.webp",
+      "/products/castello-p12-premium/base-4.webp",
+      "/products/castello-p12-premium/base-5.webp",
+      "/products/castello-p12-premium/base-6.webp",
+      "/products/castello-p12-premium/base-7.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL / Slug",
+      "Marka": "Castello",
+      "Model": "Castello P12 – Premium",
+      "Gövde": "Alüminyum / Çelik",
+      "Sistem": "Süperpoze Ejektörlü / Ejektörsüz",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "2",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL / Slug",
+      "Marka": "Castello",
+      "Model": "Castello P12 – Premium",
+      "Gövde": "Alüminyum / Çelik",
+      "Sistem": "Süperpoze Ejektörlü / Ejektörsüz",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "2",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:58:21.382153+00:00",
+    "updated_at": "2026-09-08T23:58:21.382153+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-csbw-1201",
+    "category": "tufek-tek-kirma",
+    "name_tr": "Castello CSBW-1201",
+    "name_en": "Castello CSBW-1201",
+    "slug_tr": "castello-csbw-1201",
+    "slug_en": "castello-csbw-1201-en",
+    "brand": "Castello",
+    "model": "CSBW-1201",
+    "description_tr": "Castello CSBW-1201. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello CSBW-1201. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-csbw-1201/base-0.webp",
+      "/products/castello-csbw-1201/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello CSBW-1201",
+      "Gövde": "Alüminyum",
+      "Sistem": "Tek Kırma",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "1",
+      "Dipçik & El Kundağı": "Türk cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello CSBW-1201",
+      "Gövde": "Alüminyum",
+      "Sistem": "Tek Kırma",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "1",
+      "Dipçik & El Kundağı": "Türk cevizi"
+    },
+    "created_at": "2026-09-08T23:58:08.136088+00:00",
+    "updated_at": "2026-09-08T23:58:08.136088+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-csbs-1201",
+    "category": "tufek-tek-kirma",
+    "name_tr": "Castello CSBS-1201",
+    "name_en": "Castello CSBS-1201",
+    "slug_tr": "castello-csbs-1201",
+    "slug_en": "castello-csbs-1201-en",
+    "brand": "Castello",
+    "model": "CSBS-1201",
+    "description_tr": "Castello CSBS-1201. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello CSBS-1201. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-csbs-1201/base-0.webp",
+      "/products/castello-csbs-1201/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello CSBS-1201",
+      "Gövde": "Alüminyum",
+      "Sistem": "Tek Kırma",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello CSBS-1201",
+      "Gövde": "Alüminyum",
+      "Sistem": "Tek Kırma",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:57:58.686258+00:00",
+    "updated_at": "2026-09-08T23:57:58.686258+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-101-pka",
+    "category": "tufek-pompali",
+    "name_tr": "Castello 101-PKA",
+    "name_en": "Castello 101-PKA",
+    "slug_tr": "castello-101-pka",
+    "slug_en": "castello-101-pka-en",
+    "brand": "Castello",
+    "model": "Castello 101-PKA",
+    "description_tr": "Castello 101-PKA. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello 101-PKA. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-101-pka/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PKA",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "33 cm",
+      "Şarjör Kapasitesi": "4+1",
+      "Dipçik & El Kundağı": "Türk cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PKA",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "33 cm",
+      "Şarjör Kapasitesi": "4+1",
+      "Dipçik & El Kundağı": "Türk cevizi"
+    },
+    "created_at": "2026-09-08T23:57:43.855714+00:00",
+    "updated_at": "2026-09-08T23:57:43.855714+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-101-pks",
+    "category": "tufek-pompali",
+    "name_tr": "Castello 101-PKS",
+    "name_en": "Castello 101-PKS",
+    "slug_tr": "castello-101-pks",
+    "slug_en": "castello-101-pks-en",
+    "brand": "Castello",
+    "model": "Castello 101-PKS",
+    "description_tr": "Castello 101-PKS. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello 101-PKS. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-101-pks/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PKS",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "33 cm",
+      "Şarjör Kapasitesi": "4+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PKS",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "33 cm",
+      "Şarjör Kapasitesi": "4+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:57:35.223973+00:00",
+    "updated_at": "2026-09-08T23:57:35.223973+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-101-pks/variant-cr14-0.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  {
+    "id": "castello-101-ptf",
+    "category": "tufek-pompali",
+    "name_tr": "Castello 101-PTF",
+    "name_en": "Castello 101-PTF",
+    "slug_tr": "castello-101-ptf",
+    "slug_en": "castello-101-ptf-en",
+    "brand": "Castello",
+    "model": "Castello 101-PTF",
+    "description_tr": "Castello 101-PTF. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello 101-PTF. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-101-ptf/base-0.webp",
+      "/products/castello-101-ptf/base-1.webp",
+      "/products/castello-101-ptf/base-2.webp",
+      "/products/castello-101-ptf/base-3.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PTF",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik & Katlanır Dipçik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PTF",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik & Katlanır Dipçik"
+    },
+    "created_at": "2026-09-08T23:57:18.518784+00:00",
+    "updated_at": "2026-09-08T23:57:18.518784+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-101-pt",
+    "category": "tufek-pompali",
+    "name_tr": "Castello 101-PT",
+    "name_en": "Castello 101-PT",
+    "slug_tr": "castello-101-pt",
+    "slug_en": "castello-101-pt-en",
+    "brand": "Castello",
+    "model": "Castello 101-PT",
+    "description_tr": "Castello 101-PT. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello 101-PT. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-101-pt/base-0.webp",
+      "/products/castello-101-pt/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PT",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Teleskopik / Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PT",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Teleskopik / Sentetik"
+    },
+    "created_at": "2026-09-08T23:57:05.166013+00:00",
+    "updated_at": "2026-09-08T23:57:05.166013+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-101-ps",
+    "category": "tufek-pompali",
+    "name_tr": "Castello 101-PS",
+    "name_en": "Castello 101-PS",
+    "slug_tr": "castello-101-ps",
+    "slug_en": "castello-101-ps-en",
+    "brand": "Castello",
+    "model": "Castello 101-PS",
+    "description_tr": "Castello 101-PS. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello 101-PS. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-101-ps/base-0.webp",
+      "/products/castello-101-ps/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PS",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PS",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:56:51.238362+00:00",
+    "updated_at": "2026-09-08T23:56:51.238362+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-101-ps/variant-cr10-0.webp",
+          "/products/castello-101-ps/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-101-ps/variant-cr14-0.webp",
+          "/products/castello-101-ps/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  {
+    "id": "castello-101-paw",
+    "category": "tufek-pompali",
+    "name_tr": "Castello 101-PAW",
+    "name_en": "Castello 101-PAW",
+    "slug_tr": "castello-101-paw",
+    "slug_en": "castello-101-paw-en",
+    "brand": "Castello",
+    "model": "Castello 101-PAW",
+    "description_tr": "Castello 101-PAW. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello 101-PAW. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-101-paw/base-0.webp",
+      "/products/castello-101-paw/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PAW",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Ceviz"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PAW",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Ceviz"
+    },
+    "created_at": "2026-09-08T23:56:25.127217+00:00",
+    "updated_at": "2026-09-08T23:56:25.127217+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-101-paw/variant-cr02-0.webp",
+          "/products/castello-101-paw/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      }
+    ]
+  },
+  {
+    "id": "castello-101-pa",
+    "category": "tufek-pompali",
+    "name_tr": "Castello 101-PA",
+    "name_en": "Castello 101-PA",
+    "slug_tr": "castello-101-pa",
+    "slug_en": "castello-101-pa-en",
+    "brand": "Castello",
+    "model": "Castello 101-PA",
+    "description_tr": "Castello 101-PA. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello 101-PA. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-101-pa/base-0.webp",
+      "/products/castello-101-pa/base-1.webp",
+      "/products/castello-101-pa/base-2.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PA",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello 101-PA",
+      "Gövde": "Alüminyum",
+      "Sistem": "Pompalı",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk cevizi"
+    },
+    "created_at": "2026-09-08T23:56:10.704063+00:00",
+    "updated_at": "2026-09-08T23:56:10.704063+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod-505",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD-505",
+    "name_en": "Castello MOD-505",
+    "slug_tr": "castello-mod-505",
+    "slug_en": "castello-mod-505-en",
+    "brand": "Castello",
+    "model": "MOD-505",
+    "description_tr": "Castello MOD-505. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD-505. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod-505/base-0.webp",
+      "/products/castello-mod-505/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "MOD-505",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "MOD-505",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:55:28.93338+00:00",
+    "updated_at": "2026-09-08T23:55:28.93338+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod-101t",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD-101T",
+    "name_en": "Castello MOD-101T",
+    "slug_tr": "castello-mod-101t",
+    "slug_en": "castello-mod-101t-en",
+    "brand": "Castello",
+    "model": "MOD-101",
+    "description_tr": "Castello MOD-101T. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD-101T. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod-101t/base-0.webp",
+      "/products/castello-mod-101t/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101T",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101T",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:55:18.816189+00:00",
+    "updated_at": "2026-09-08T23:55:18.816189+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod-101-sp",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD-101-SP",
+    "name_en": "Castello MOD-101-SP",
+    "slug_tr": "castello-mod-101-sp",
+    "slug_en": "castello-mod-101-sp-en",
+    "brand": "Castello",
+    "model": "MOD-101",
+    "description_tr": "Castello MOD-101-SP. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD-101-SP. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod-101-sp/base-0.webp",
+      "/products/castello-mod-101-sp/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-SP",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-SP",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:55:09.496653+00:00",
+    "updated_at": "2026-09-08T23:55:09.496653+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod101-x",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD101-X",
+    "name_en": "Castello MOD101-X",
+    "slug_tr": "castello-mod101-x",
+    "slug_en": "castello-mod101-x-en",
+    "brand": "Castello",
+    "model": "MOD101",
+    "description_tr": "Castello MOD101-X. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD101-X. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod101-x/base-0.webp",
+      "/products/castello-mod101-x/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-F",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-F",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:55:00.758302+00:00",
+    "updated_at": "2026-09-08T23:55:00.758302+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-sact",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello SACT",
+    "name_en": "Castello SACT",
+    "slug_tr": "castello-sact",
+    "slug_en": "castello-sact-en",
+    "brand": "Castello",
+    "model": "Castello SACT",
+    "description_tr": "Castello SACT. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello SACT. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-sact/base-0.webp",
+      "/products/castello-sact/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello SACT",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello SACT",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:54:50.239593+00:00",
+    "updated_at": "2026-09-08T23:54:50.239593+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-sacw",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello SACW",
+    "name_en": "Castello SACW",
+    "slug_tr": "castello-sacw",
+    "slug_en": "castello-sacw-en",
+    "brand": "Castello",
+    "model": "Castello SACW",
+    "description_tr": "Castello SACW. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello SACW. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-sacw/base-0.webp",
+      "/products/castello-sacw/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello SACW",
+      "Gövde": "Alüminyum",
+      "Sistem": "Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello SACW",
+      "Gövde": "Alüminyum",
+      "Sistem": "Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:54:38.296903+00:00",
+    "updated_at": "2026-09-08T23:54:38.296903+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod-101-su",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD-101-SU",
+    "name_en": "Castello MOD-101-SU",
+    "slug_tr": "castello-mod-101-su",
+    "slug_en": "castello-mod-101-su-en",
+    "brand": "Castello",
+    "model": "MOD-101",
+    "description_tr": "Castello MOD-101-SU. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD-101-SU. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod-101-su/base-0.webp",
+      "/products/castello-mod-101-su/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-SU",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "24/28 inç – 61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-SU",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "24/28 inç – 61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:54:18.042573+00:00",
+    "updated_at": "2026-09-08T23:54:18.042573+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod-101-au",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD-101-AU",
+    "name_en": "Castello MOD-101-AU",
+    "slug_tr": "castello-mod-101-au",
+    "slug_en": "castello-mod-101-au-en",
+    "brand": "Castello",
+    "model": "MOD-101",
+    "description_tr": "Castello MOD-101-AU. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD-101-AU. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod-101-au/base-0.webp",
+      "/products/castello-mod-101-au/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-AU",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "24/28 inç – 61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD-101-AU",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "24/28 inç – 61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:54:07.843121+00:00",
+    "updated_at": "2026-09-08T23:54:07.843121+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod-505-gen2",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD-505 GEN2",
+    "name_en": "Castello MOD-505 GEN2",
+    "slug_tr": "castello-mod-505-gen2",
+    "slug_en": "castello-mod-505-gen2-en",
+    "brand": "Castello",
+    "model": "MOD-505",
+    "description_tr": "Castello MOD-505 GEN2. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD-505 GEN2. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod-505-gen2/base-0.webp",
+      "/products/castello-mod-505-gen2/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "MOD-505-GEN2",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "MOD-505-GEN2",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:53:56.667202+00:00",
+    "updated_at": "2026-09-08T23:53:56.667202+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mod-505-gen2/variant-cr02-0.webp",
+          "/products/castello-mod-505-gen2/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-mod-505-gen2/variant-cr14-0.webp",
+          "/products/castello-mod-505-gen2/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  {
+    "id": "castello-mod-505-premium",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD-505 Premium",
+    "name_en": "Castello MOD-505 Premium",
+    "slug_tr": "castello-mod-505-premium",
+    "slug_en": "castello-mod-505-premium-en",
+    "brand": "Castello",
+    "model": "MOD-505",
+    "description_tr": "Castello MOD-505 Premium. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD-505 Premium. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod-505-premium/base-0.webp",
+      "/products/castello-mod-505-premium/base-1.webp",
+      "/products/castello-mod-505-premium/base-2.webp",
+      "/products/castello-mod-505-premium/base-3.webp",
+      "/products/castello-mod-505-premium/base-4.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "MOD-505 Premium",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "MOD-505 Premium",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Türk Cevizi"
+    },
+    "created_at": "2026-09-08T23:53:42.32879+00:00",
+    "updated_at": "2026-09-08T23:53:42.32879+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod101-plus",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD101-PLUS",
+    "name_en": "Castello MOD101-PLUS",
+    "slug_tr": "castello-mod101-plus",
+    "slug_en": "castello-mod101-plus-en",
+    "brand": "Castello",
+    "model": "MOD101",
+    "description_tr": "Castello MOD101-PLUS. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD101-PLUS. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod101-plus/base-0.webp",
+      "/products/castello-mod101-plus/base-1.webp",
+      "/products/castello-mod101-plus/base-2.webp",
+      "/products/castello-mod101-plus/base-3.webp",
+      "/products/castello-mod101-plus/base-4.webp",
+      "/products/castello-mod101-plus/base-5.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Tipi": "Taktik / Av",
+      "Şok": "Mobil Şok",
+      "Marka": "Castello",
+      "Model": "MOD101-TX",
+      "Gövde": "Alüminyum",
+      "Sistem": "Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize / Cerakote / Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76 mm",
+      "Namlu Uzunluğu": "20 / 24 / 28 İnç",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik (Sabit Dipçik, Ayarlanabilir Yanaklık)"
+    },
+    "specs_en": {
+      "Tipi": "Taktik / Av",
+      "Şok": "Mobil Şok",
+      "Marka": "Castello",
+      "Model": "MOD101-TX",
+      "Gövde": "Alüminyum",
+      "Sistem": "Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize / Cerakote / Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76 mm",
+      "Namlu Uzunluğu": "20 / 24 / 28 İnç",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik (Sabit Dipçik, Ayarlanabilir Yanaklık)"
+    },
+    "created_at": "2026-09-08T23:53:31.690291+00:00",
+    "updated_at": "2026-09-08T23:53:31.690291+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mod101-tx",
+    "category": "tufek-yari-otomatik",
+    "name_tr": "Castello MOD101-TX",
+    "name_en": "Castello MOD101-TX",
+    "slug_tr": "castello-mod101-tx",
+    "slug_en": "castello-mod101-tx-en",
+    "brand": "Castello",
+    "model": "MOD101",
+    "description_tr": "Castello MOD101-TX. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MOD101-TX. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mod101-tx/base-0.webp",
+      "/products/castello-mod101-tx/base-1.webp",
+      "/products/castello-mod101-tx/base-2.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD101-TX",
+      "Gövde": "Alüminyum",
+      "Sistem": "Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MOD101-TX",
+      "Gövde": "Alüminyum",
+      "Sistem": "Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:46:10.866398+00:00",
+    "updated_at": "2026-09-08T23:46:10.866398+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mp-2",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello MP-2",
+    "name_en": "Castello MP-2",
+    "slug_tr": "castello-mp-2",
+    "slug_en": "castello-mp-2-en",
+    "brand": "Castello",
+    "model": "MP-2",
+    "description_tr": "Castello MP-2. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MP-2. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mp-2/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-2",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-2",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Sentetik"
+    },
+    "created_at": "2026-09-08T23:45:18.084644+00:00",
+    "updated_at": "2026-09-08T23:45:18.084644+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mp-4",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello MP-4",
+    "name_en": "Castello MP-4",
+    "slug_tr": "castello-mp-4",
+    "slug_en": "castello-mp-4-en",
+    "brand": "Castello",
+    "model": "MP-4",
+    "description_tr": "Castello MP-4. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MP-4. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mp-4/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-4",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-4",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "created_at": "2026-09-08T23:45:10.088724+00:00",
+    "updated_at": "2026-09-08T23:45:10.088724+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mp-8xs",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello MP-8XS",
+    "name_en": "Castello MP-8XS",
+    "slug_tr": "castello-mp-8xs",
+    "slug_en": "castello-mp-8xs-en",
+    "brand": "Castello",
+    "model": "MP-8",
+    "description_tr": "Castello MP-8XS. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MP-8XS. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mp-8xs/base-0.webp",
+      "/products/castello-mp-8xs/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-8XS",
+      "Gövde": "Alt Gövde Alüminyum – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik / Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "33 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-8XS",
+      "Gövde": "Alt Gövde Alüminyum – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik / Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "33 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "created_at": "2026-09-08T23:45:02.729983+00:00",
+    "updated_at": "2026-09-08T23:45:02.729983+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mp-8-ultra",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello MP-8 Ultra",
+    "name_en": "Castello MP-8 Ultra",
+    "slug_tr": "castello-mp-8-ultra",
+    "slug_en": "castello-mp-8-ultra-en",
+    "brand": "Castello",
+    "model": "MP-8",
+    "description_tr": "Castello MP-8 Ultra. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MP-8 Ultra. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mp-8-ultra/base-0.webp",
+      "/products/castello-mp-8-ultra/base-1.webp",
+      "/products/castello-mp-8-ultra/base-2.webp",
+      "/products/castello-mp-8-ultra/base-3.webp",
+      "/products/castello-mp-8-ultra/base-4.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MP-8 ULTRA",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik & Alüminyum"
+    },
+    "specs_en": {
+      "Şok": "Mobil Şok F,M,CL",
+      "Marka": "Castello",
+      "Model": "Castello MP-8 ULTRA",
+      "Gövde": "Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "20/24/28 inç – 51/61/71 cm",
+      "Şarjör Kapasitesi": "4+1 / 7+1",
+      "Dipçik & El Kundağı": "Sentetik & Alüminyum"
+    },
+    "created_at": "2026-09-08T23:44:51.957046+00:00",
+    "updated_at": "2026-09-08T23:44:51.957046+00:00",
+    "variants": "$undefined"
+  },
+  {
+    "id": "castello-mp-8",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello MP-8",
+    "name_en": "Castello MP-8",
+    "slug_tr": "castello-mp-8",
+    "slug_en": "castello-mp-8-en",
+    "brand": "Castello",
+    "model": "MP-8",
+    "description_tr": "Castello MP-8. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MP-8. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mp-8/base-0.webp",
+      "/products/castello-mp-8/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-8",
+      "Gövde": "Alt Gövde Alüminyum – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-8",
+      "Gövde": "Alt Gövde Alüminyum – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "created_at": "2026-09-08T23:44:33.238628+00:00",
+    "updated_at": "2026-09-08T23:44:33.238628+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-mp-8/variant-cr14-0.webp",
+          "/products/castello-mp-8/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mp-8/variant-cr02-0.webp",
+          "/products/castello-mp-8/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-mp-8/variant-cr03-0.webp",
+          "/products/castello-mp-8/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-mp-8/variant-cr05-0.webp",
+          "/products/castello-mp-8/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-mp-8/variant-cr07-0.webp",
+          "/products/castello-mp-8/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-mp-8/variant-cr10-0.webp",
+          "/products/castello-mp-8/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR19",
+        "images": [
+          "/products/castello-mp-8/variant-cr19-0.webp",
+          "/products/castello-mp-8/variant-cr19-1.webp"
+        ],
+        "color_code": "CR19"
+      },
+      {
+        "name": "Renk Kodu: CR20",
+        "images": [
+          "/products/castello-mp-8/variant-cr20-0.webp",
+          "/products/castello-mp-8/variant-cr20-1.webp"
+        ],
+        "color_code": "CR20"
+      },
+      {
+        "name": "Renk Kodu: CR21",
+        "images": [
+          "/products/castello-mp-8/variant-cr21-0.webp",
+          "/products/castello-mp-8/variant-cr21-1.webp"
+        ],
+        "color_code": "CR21"
+      },
+      {
+        "name": "Renk Kodu: CR24",
+        "images": [
+          "/products/castello-mp-8/variant-cr24-0.webp",
+          "/products/castello-mp-8/variant-cr24-1.webp"
+        ],
+        "color_code": "CR24"
+      },
+      {
+        "name": "Renk Kodu: CR26",
+        "images": [
+          "/products/castello-mp-8/variant-cr26-0.webp",
+          "/products/castello-mp-8/variant-cr26-1.webp"
+        ],
+        "color_code": "CR26"
+      },
+      {
+        "name": "Renk Kodu: CR30",
+        "images": [
+          "/products/castello-mp-8/variant-cr30-0.webp",
+          "/products/castello-mp-8/variant-cr30-1.webp"
+        ],
+        "color_code": "CR30"
+      },
+      {
+        "name": "Renk Kodu: CR31",
+        "images": [
+          "/products/castello-mp-8/variant-cr31-0.webp",
+          "/products/castello-mp-8/variant-cr31-1.webp"
+        ],
+        "color_code": "CR31"
+      },
+      {
+        "name": "Renk Kodu: CR32",
+        "images": [
+          "/products/castello-mp-8/variant-cr32-0.webp",
+          "/products/castello-mp-8/variant-cr32-1.webp"
+        ],
+        "color_code": "CR32"
+      },
+      {
+        "name": "Renk Kodu: CR33",
+        "images": [
+          "/products/castello-mp-8/variant-cr33-0.webp",
+          "/products/castello-mp-8/variant-cr33-1.webp"
+        ],
+        "color_code": "CR33"
+      },
+      {
+        "name": "Renk Kodu: CR34",
+        "images": [
+          "/products/castello-mp-8/variant-cr34-0.webp",
+          "/products/castello-mp-8/variant-cr34-1.webp"
+        ],
+        "color_code": "CR34"
+      },
+      {
+        "name": "Renk Kodu: CR35",
+        "images": [
+          "/products/castello-mp-8/variant-cr35-0.webp",
+          "/products/castello-mp-8/variant-cr35-1.webp"
+        ],
+        "color_code": "CR35"
+      }
+    ]
+  },
+  {
+    "id": "castello-mp-6-ultra",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello MP-6 Ultra",
+    "name_en": "Castello MP-6 Ultra",
+    "slug_tr": "castello-mp-6-ultra",
+    "slug_en": "castello-mp-6-ultra-en",
+    "brand": "Castello",
+    "model": "MP-6",
+    "description_tr": "Castello MP-6 Ultra. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MP-6 Ultra. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mp-6-ultra/base-0.webp",
+      "/products/castello-mp-6-ultra/base-1.webp",
+      "/products/castello-mp-6-ultra/base-2.webp",
+      "/products/castello-mp-6-ultra/base-3.webp",
+      "/products/castello-mp-6-ultra/base-4.webp",
+      "/products/castello-mp-6-ultra/base-5.webp",
+      "/products/castello-mp-6-ultra/base-6.webp",
+      "/products/castello-mp-6-ultra/base-7.webp",
+      "/products/castello-mp-6-ultra/base-8.webp",
+      "/products/castello-mp-6-ultra/base-9.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-6 ULTRA",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-6 ULTRA",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "created_at": "2026-09-08T23:39:20.41138+00:00",
+    "updated_at": "2026-09-08T23:39:20.41138+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR36",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr36-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr36-1.webp"
+        ],
+        "color_code": "CR36"
+      },
+      {
+        "name": "Renk Kodu: CR37",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr37-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr37-1.webp"
+        ],
+        "color_code": "CR37"
+      },
+      {
+        "name": "Renk Kodu: CR22",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr22-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr22-1.webp"
+        ],
+        "color_code": "CR22"
+      }
+    ]
+  },
+  {
+    "id": "castello-mp-6",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello MP-6",
+    "name_en": "Castello MP-6",
+    "slug_tr": "castello-mp-6",
+    "slug_en": "castello-mp-6-en",
+    "brand": "Castello",
+    "model": "MP-6",
+    "description_tr": "Castello MP-6. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello MP-6. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-mp-6/base-0.webp",
+      "/products/castello-mp-6/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-6",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello MP-6",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "created_at": "2026-09-08T23:39:00.278193+00:00",
+    "updated_at": "2026-09-08T23:39:00.278193+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mp-6/variant-cr02-0.webp",
+          "/products/castello-mp-6/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-mp-6/variant-cr03-0.webp",
+          "/products/castello-mp-6/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-mp-6/variant-cr05-0.webp",
+          "/products/castello-mp-6/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR06",
+        "images": [
+          "/products/castello-mp-6/variant-cr06-0.webp",
+          "/products/castello-mp-6/variant-cr06-1.webp"
+        ],
+        "color_code": "CR06"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-mp-6/variant-cr07-0.webp",
+          "/products/castello-mp-6/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR08",
+        "images": [
+          "/products/castello-mp-6/variant-cr08-0.webp",
+          "/products/castello-mp-6/variant-cr08-1.webp"
+        ],
+        "color_code": "CR08"
+      },
+      {
+        "name": "Renk Kodu: CR09",
+        "images": [
+          "/products/castello-mp-6/variant-cr09-0.webp",
+          "/products/castello-mp-6/variant-cr09-1.webp"
+        ],
+        "color_code": "CR09"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-mp-6/variant-cr10-0.webp",
+          "/products/castello-mp-6/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR15",
+        "images": [
+          "/products/castello-mp-6/variant-cr15-0.webp",
+          "/products/castello-mp-6/variant-cr15-1.webp"
+        ],
+        "color_code": "CR15"
+      },
+      {
+        "name": "Renk Kodu: CR16",
+        "images": [
+          "/products/castello-mp-6/variant-cr16-0.webp",
+          "/products/castello-mp-6/variant-cr16-1.webp"
+        ],
+        "color_code": "CR16"
+      },
+      {
+        "name": "Renk Kodu: CR17",
+        "images": [
+          "/products/castello-mp-6/variant-cr17-0.webp",
+          "/products/castello-mp-6/variant-cr17-1.webp"
+        ],
+        "color_code": "CR17"
+      },
+      {
+        "name": "Renk Kodu: CR18",
+        "images": [
+          "/products/castello-mp-6/variant-cr18-0.webp",
+          "/products/castello-mp-6/variant-cr18-1.webp"
+        ],
+        "color_code": "CR18"
+      },
+      {
+        "name": "Renk Kodu: CR19",
+        "images": [
+          "/products/castello-mp-6/variant-cr19-0.webp",
+          "/products/castello-mp-6/variant-cr19-1.webp"
+        ],
+        "color_code": "CR19"
+      },
+      {
+        "name": "Renk Kodu: CR20",
+        "images": [
+          "/products/castello-mp-6/variant-cr20-0.webp",
+          "/products/castello-mp-6/variant-cr20-1.webp"
+        ],
+        "color_code": "CR20"
+      },
+      {
+        "name": "Renk Kodu: CR21",
+        "images": [
+          "/products/castello-mp-6/variant-cr21-0.webp",
+          "/products/castello-mp-6/variant-cr21-1.webp"
+        ],
+        "color_code": "CR21"
+      },
+      {
+        "name": "Renk Kodu: CR22",
+        "images": [
+          "/products/castello-mp-6/variant-cr22-0.webp",
+          "/products/castello-mp-6/variant-cr22-1.webp"
+        ],
+        "color_code": "CR22"
+      },
+      {
+        "name": "Renk Kodu: CR23",
+        "images": [
+          "/products/castello-mp-6/variant-cr23-0.webp",
+          "/products/castello-mp-6/variant-cr23-1.webp"
+        ],
+        "color_code": "CR23"
+      },
+      {
+        "name": "Renk Kodu: CR24",
+        "images": [
+          "/products/castello-mp-6/variant-cr24-0.webp",
+          "/products/castello-mp-6/variant-cr24-1.webp"
+        ],
+        "color_code": "CR24"
+      },
+      {
+        "name": "Renk Kodu: CR25",
+        "images": [
+          "/products/castello-mp-6/variant-cr25-0.webp",
+          "/products/castello-mp-6/variant-cr25-1.webp"
+        ],
+        "color_code": "CR25"
+      },
+      {
+        "name": "Renk Kodu: CR26",
+        "images": [
+          "/products/castello-mp-6/variant-cr26-0.webp",
+          "/products/castello-mp-6/variant-cr26-1.webp"
+        ],
+        "color_code": "CR26"
+      },
+      {
+        "name": "Renk Kodu: CR27",
+        "images": [
+          "/products/castello-mp-6/variant-cr27-0.webp",
+          "/products/castello-mp-6/variant-cr27-1.webp"
+        ],
+        "color_code": "CR27"
+      },
+      {
+        "name": "Renk Kodu: CR28",
+        "images": [
+          "/products/castello-mp-6/variant-cr28-0.webp",
+          "/products/castello-mp-6/variant-cr28-1.webp"
+        ],
+        "color_code": "CR28"
+      },
+      {
+        "name": "Renk Kodu: CR29",
+        "images": [
+          "/products/castello-mp-6/variant-cr29-0.webp",
+          "/products/castello-mp-6/variant-cr29-1.webp"
+        ],
+        "color_code": "CR29"
+      }
+    ]
+  },
+  {
+    "id": "castello-ak-42",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello AK-42",
+    "name_en": "Castello AK-42",
+    "slug_tr": "castello-ak-42",
+    "slug_en": "castello-ak-42-en",
+    "brand": "Castello",
+    "model": "AK-42",
+    "description_tr": "Castello AK-42. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello AK-42. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-ak-42/base-0.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello AK-42",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello AK-42",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:38:46.748113+00:00",
+    "updated_at": "2026-09-08T23:38:46.748113+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-ak-42/variant-cr02-0.webp"
+        ],
+        "color_code": "CR02"
+      }
+    ]
+  },
+  {
+    "id": "castello-csr-12",
+    "category": "tufek-sarjorlu",
+    "name_tr": "Castello CSR-12",
+    "name_en": "Castello CSR-12",
+    "slug_tr": "castello-csr-12",
+    "slug_en": "castello-csr-12-en",
+    "brand": "Castello",
+    "model": "CSR-12",
+    "description_tr": "Castello CSR-12. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello CSR-12. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-csr-12/base-0.webp",
+      "/products/castello-csr-12/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello CSR-12",
+      "Gövde": "Alt Gövde Polimer – Üst Gövde Alüminyum (Polimer Giydirmeli)",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "specs_en": {
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello CSR-12",
+      "Gövde": "Alt Gövde Polimer – Üst Gövde Alüminyum (Polimer Giydirmeli)",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Teleskopik / Alüminyum"
+    },
+    "created_at": "2026-09-08T23:38:37.061675+00:00",
+    "updated_at": "2026-09-08T23:38:37.061675+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CSR02",
+        "images": [
+          "/products/castello-csr-12/variant-csr02-0.webp",
+          "/products/castello-csr-12/variant-csr02-1.webp"
+        ],
+        "color_code": "CSR02"
+      },
+      {
+        "name": "Renk Kodu: CSR03",
+        "images": [
+          "/products/castello-csr-12/variant-csr03-0.webp",
+          "/products/castello-csr-12/variant-csr03-1.webp"
+        ],
+        "color_code": "CSR03"
+      },
+      {
+        "name": "Renk Kodu: CSR04",
+        "images": [
+          "/products/castello-csr-12/variant-csr04-0.webp",
+          "/products/castello-csr-12/variant-csr04-1.webp"
+        ],
+        "color_code": "CSR04"
+      },
+      {
+        "name": "Renk Kodu: CSR05",
+        "images": [
+          "/products/castello-csr-12/variant-csr05-0.webp",
+          "/products/castello-csr-12/variant-csr05-1.webp"
+        ],
+        "color_code": "CSR05"
+      },
+      {
+        "name": "Renk Kodu: CSR06",
+        "images": [
+          "/products/castello-csr-12/variant-csr06-0.webp",
+          "/products/castello-csr-12/variant-csr06-1.webp"
+        ],
+        "color_code": "CSR06"
+      },
+      {
+        "name": "Renk Kodu: CSR07",
+        "images": [
+          "/products/castello-csr-12/variant-csr07-0.webp",
+          "/products/castello-csr-12/variant-csr07-1.webp"
+        ],
+        "color_code": "CSR07"
+      }
+    ]
+  },
+  {
+    "id": "castello-blp",
+    "category": "tufek-bullpup",
+    "name_tr": "Castello BLP",
+    "name_en": "Castello BLP",
+    "slug_tr": "castello-blp",
+    "slug_en": "castello-blp-en",
+    "brand": "Castello",
+    "model": "BLP",
+    "description_tr": "Castello BLP. Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda.",
+    "description_en": "Castello BLP. Available at official dealer Guner AV in Malatya.",
+    "price": null,
+    "discount_percent": null,
+    "images": [
+      "/products/castello-blp/base-0.webp",
+      "/products/castello-blp/base-1.webp"
+    ],
+    "featured": true,
+    "is_hero_spotlight": false,
+    "requires_license": true,
+    "in_stock": true,
+    "specs_tr": {
+      "Tipi": "Bullpup",
+      "Şok": "Slug",
+      "Marka": "Castello",
       "Model": "Castello BLP",
-      "Gauge": "12 GA",
-      "System": "Gas Operated Semi-Auto",
-      "Magazine Capacity": "2 / 5 / 10",
-      "Coating": "Anodized / Cerakote / Hydro Dipping",
-      "Stock & Handguard": "Synthetic",
-      "Barrel Length": "18.5 Inch – 47 cm",
-      "Chamber": "3 Inch / 76 mm Magnum",
-      "Receiver": "Lower Synthetic – Upper Aluminum",
-      "Choke": "Slug"
-    }
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "specs_en": {
+      "Tipi": "Bullpup",
+      "Şok": "Slug",
+      "Marka": "Castello",
+      "Model": "Castello BLP",
+      "Gövde": "Alt Gövde Sentetik – Üst Gövde Alüminyum",
+      "Sistem": "Gazlı Yarı Otomatik",
+      "Kalibre": "12 GA",
+      "Kaplama": "Anodize/Cerakote/Hidro Dipping",
+      "Fişek Yuvası": "3 İnç / 76mm",
+      "Namlu Uzunluğu": "18,5 İnç – 47 Cm",
+      "Şarjör Kapasitesi": "2/5/10",
+      "Dipçik & El Kundağı": "Sentetik"
+    },
+    "created_at": "2026-09-08T23:38:19.879822+00:00",
+    "updated_at": "2026-09-08T23:38:19.879822+00:00",
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-blp/variant-cr02-0.webp",
+          "/products/castello-blp/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-blp/variant-cr03-0.webp",
+          "/products/castello-blp/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR04",
+        "images": [
+          "/products/castello-blp/variant-cr04-0.webp",
+          "/products/castello-blp/variant-cr04-1.webp"
+        ],
+        "color_code": "CR04"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-blp/variant-cr05-0.webp",
+          "/products/castello-blp/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR06",
+        "images": [
+          "/products/castello-blp/variant-cr06-0.webp",
+          "/products/castello-blp/variant-cr06-1.webp"
+        ],
+        "color_code": "CR06"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-blp/variant-cr07-0.webp",
+          "/products/castello-blp/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR08",
+        "images": [
+          "/products/castello-blp/variant-cr08-0.webp",
+          "/products/castello-blp/variant-cr08-1.webp"
+        ],
+        "color_code": "CR08"
+      },
+      {
+        "name": "Renk Kodu: CR09",
+        "images": [
+          "/products/castello-blp/variant-cr09-0.webp",
+          "/products/castello-blp/variant-cr09-1.webp"
+        ],
+        "color_code": "CR09"
+      }
+    ]
   }
 ]

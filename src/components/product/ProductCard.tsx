@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
@@ -9,9 +12,11 @@ import { MessageCircle, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-rea
 interface ProductCardProps {
   product: Product;
   categoryName?: string;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product, categoryName }: ProductCardProps) {
+export default function ProductCard({ product, categoryName, priority = false }: ProductCardProps) {
+  const [isLoaded, setIsLoaded] = useState(false);
   const locale = useLocale();
   const t = useTranslations("Products");
   const tCommon = useTranslations("Common");
@@ -35,13 +40,20 @@ export default function ProductCard({ product, categoryName }: ProductCardProps)
       <div>
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-white border-b border-neutral-200 dark:border-neutral-800/80">
           <Link href={`/products/${slug}`} className="relative block h-full w-full flex items-center justify-center">
+            {!isLoaded && (
+              <div className="absolute inset-0 bg-neutral-100 dark:bg-neutral-900/60 animate-pulse" />
+            )}
             <Image
               src={mainImage}
               alt={name}
               fill
+              priority={priority}
               unoptimized={mainImage.startsWith("http") || mainImage.startsWith("/api/img")}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-contain transition-transform duration-500 group-hover:scale-105 pointer-events-none"
+              onLoad={() => setIsLoaded(true)}
+              className={`object-contain transition-all duration-500 group-hover:scale-105 pointer-events-none ${
+                isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
+              }`}
             />
           </Link>
 

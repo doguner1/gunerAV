@@ -1,0 +1,1620 @@
+{
+  "castello-c12": {
+    "images": [
+      "/products/castello-c12/base-0.webp",
+      "/products/castello-c12/base-1.webp"
+    ]
+  },
+  "castello-c12-en": {
+    "images": [
+      "/products/castello-c12/base-0.webp",
+      "/products/castello-c12/base-1.webp"
+    ]
+  },
+  "castello-p12-light": {
+    "images": [
+      "/products/castello-p12-light/base-0.webp",
+      "/products/castello-p12-light/base-1.webp",
+      "/products/castello-p12-light/base-2.webp",
+      "/products/castello-p12-light/base-3.webp"
+    ]
+  },
+  "castello-p12-light-en": {
+    "images": [
+      "/products/castello-p12-light/base-0.webp",
+      "/products/castello-p12-light/base-1.webp",
+      "/products/castello-p12-light/base-2.webp",
+      "/products/castello-p12-light/base-3.webp"
+    ]
+  },
+  "castello-p12-premium": {
+    "images": [
+      "/products/castello-p12-premium/base-0.webp",
+      "/products/castello-p12-premium/base-1.webp",
+      "/products/castello-p12-premium/base-2.webp",
+      "/products/castello-p12-premium/base-3.webp",
+      "/products/castello-p12-premium/base-4.webp",
+      "/products/castello-p12-premium/base-5.webp",
+      "/products/castello-p12-premium/base-6.webp",
+      "/products/castello-p12-premium/base-7.webp"
+    ]
+  },
+  "castello-p12-premium-en": {
+    "images": [
+      "/products/castello-p12-premium/base-0.webp",
+      "/products/castello-p12-premium/base-1.webp",
+      "/products/castello-p12-premium/base-2.webp",
+      "/products/castello-p12-premium/base-3.webp",
+      "/products/castello-p12-premium/base-4.webp",
+      "/products/castello-p12-premium/base-5.webp",
+      "/products/castello-p12-premium/base-6.webp",
+      "/products/castello-p12-premium/base-7.webp"
+    ]
+  },
+  "castello-csbw-1201": {
+    "images": [
+      "/products/castello-csbw-1201/base-0.webp",
+      "/products/castello-csbw-1201/base-1.webp"
+    ]
+  },
+  "castello-csbw-1201-en": {
+    "images": [
+      "/products/castello-csbw-1201/base-0.webp",
+      "/products/castello-csbw-1201/base-1.webp"
+    ]
+  },
+  "castello-csbs-1201": {
+    "images": [
+      "/products/castello-csbs-1201/base-0.webp",
+      "/products/castello-csbs-1201/base-1.webp"
+    ]
+  },
+  "castello-csbs-1201-en": {
+    "images": [
+      "/products/castello-csbs-1201/base-0.webp",
+      "/products/castello-csbs-1201/base-1.webp"
+    ]
+  },
+  "castello-101-pka": {
+    "images": [
+      "/products/castello-101-pka/base-0.webp"
+    ]
+  },
+  "castello-101-pka-en": {
+    "images": [
+      "/products/castello-101-pka/base-0.webp"
+    ]
+  },
+  "castello-101-pks": {
+    "images": [
+      "/products/castello-101-pks/base-0.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-101-pks/variant-cr14-0.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  "castello-101-pks-en": {
+    "images": [
+      "/products/castello-101-pks/base-0.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-101-pks/variant-cr14-0.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  "castello-101-ptf": {
+    "images": [
+      "/products/castello-101-ptf/base-0.webp",
+      "/products/castello-101-ptf/base-1.webp",
+      "/products/castello-101-ptf/base-2.webp",
+      "/products/castello-101-ptf/base-3.webp"
+    ]
+  },
+  "castello-101-ptf-en": {
+    "images": [
+      "/products/castello-101-ptf/base-0.webp",
+      "/products/castello-101-ptf/base-1.webp",
+      "/products/castello-101-ptf/base-2.webp",
+      "/products/castello-101-ptf/base-3.webp"
+    ]
+  },
+  "castello-101-pt": {
+    "images": [
+      "/products/castello-101-pt/base-0.webp",
+      "/products/castello-101-pt/base-1.webp"
+    ]
+  },
+  "castello-101-pt-en": {
+    "images": [
+      "/products/castello-101-pt/base-0.webp",
+      "/products/castello-101-pt/base-1.webp"
+    ]
+  },
+  "castello-101-ps": {
+    "images": [
+      "/products/castello-101-ps/base-0.webp",
+      "/products/castello-101-ps/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-101-ps/variant-cr10-0.webp",
+          "/products/castello-101-ps/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-101-ps/variant-cr14-0.webp",
+          "/products/castello-101-ps/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  "castello-101-ps-en": {
+    "images": [
+      "/products/castello-101-ps/base-0.webp",
+      "/products/castello-101-ps/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-101-ps/variant-cr10-0.webp",
+          "/products/castello-101-ps/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-101-ps/variant-cr14-0.webp",
+          "/products/castello-101-ps/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  "castello-101-paw": {
+    "images": [
+      "/products/castello-101-paw/base-0.webp",
+      "/products/castello-101-paw/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-101-paw/variant-cr02-0.webp",
+          "/products/castello-101-paw/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      }
+    ]
+  },
+  "castello-101-paw-en": {
+    "images": [
+      "/products/castello-101-paw/base-0.webp",
+      "/products/castello-101-paw/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-101-paw/variant-cr02-0.webp",
+          "/products/castello-101-paw/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      }
+    ]
+  },
+  "castello-101-pa": {
+    "images": [
+      "/products/castello-101-pa/base-0.webp",
+      "/products/castello-101-pa/base-1.webp",
+      "/products/castello-101-pa/base-2.webp"
+    ]
+  },
+  "castello-101-pa-en": {
+    "images": [
+      "/products/castello-101-pa/base-0.webp",
+      "/products/castello-101-pa/base-1.webp",
+      "/products/castello-101-pa/base-2.webp"
+    ]
+  },
+  "castello-mod-505": {
+    "images": [
+      "/products/castello-mod-505/base-0.webp",
+      "/products/castello-mod-505/base-1.webp"
+    ]
+  },
+  "castello-mod-505-en": {
+    "images": [
+      "/products/castello-mod-505/base-0.webp",
+      "/products/castello-mod-505/base-1.webp"
+    ]
+  },
+  "castello-mod-101t": {
+    "images": [
+      "/products/castello-mod-101t/base-0.webp",
+      "/products/castello-mod-101t/base-1.webp"
+    ]
+  },
+  "castello-mod-101t-en": {
+    "images": [
+      "/products/castello-mod-101t/base-0.webp",
+      "/products/castello-mod-101t/base-1.webp"
+    ]
+  },
+  "castello-mod-101-sp": {
+    "images": [
+      "/products/castello-mod-101-sp/base-0.webp",
+      "/products/castello-mod-101-sp/base-1.webp"
+    ]
+  },
+  "castello-mod-101-sp-en": {
+    "images": [
+      "/products/castello-mod-101-sp/base-0.webp",
+      "/products/castello-mod-101-sp/base-1.webp"
+    ]
+  },
+  "castello-mod101-x": {
+    "images": [
+      "/products/castello-mod101-x/base-0.webp",
+      "/products/castello-mod101-x/base-1.webp"
+    ]
+  },
+  "castello-mod101-x-en": {
+    "images": [
+      "/products/castello-mod101-x/base-0.webp",
+      "/products/castello-mod101-x/base-1.webp"
+    ]
+  },
+  "castello-sact": {
+    "images": [
+      "/products/castello-sact/base-0.webp",
+      "/products/castello-sact/base-1.webp"
+    ]
+  },
+  "castello-sact-en": {
+    "images": [
+      "/products/castello-sact/base-0.webp",
+      "/products/castello-sact/base-1.webp"
+    ]
+  },
+  "castello-sacw": {
+    "images": [
+      "/products/castello-sacw/base-0.webp",
+      "/products/castello-sacw/base-1.webp"
+    ]
+  },
+  "castello-sacw-en": {
+    "images": [
+      "/products/castello-sacw/base-0.webp",
+      "/products/castello-sacw/base-1.webp"
+    ]
+  },
+  "castello-mod-101-su": {
+    "images": [
+      "/products/castello-mod-101-su/base-0.webp",
+      "/products/castello-mod-101-su/base-1.webp"
+    ]
+  },
+  "castello-mod-101-su-en": {
+    "images": [
+      "/products/castello-mod-101-su/base-0.webp",
+      "/products/castello-mod-101-su/base-1.webp"
+    ]
+  },
+  "castello-mod-101-au": {
+    "images": [
+      "/products/castello-mod-101-au/base-0.webp",
+      "/products/castello-mod-101-au/base-1.webp"
+    ]
+  },
+  "castello-mod-101-au-en": {
+    "images": [
+      "/products/castello-mod-101-au/base-0.webp",
+      "/products/castello-mod-101-au/base-1.webp"
+    ]
+  },
+  "castello-mod-505-gen2": {
+    "images": [
+      "/products/castello-mod-505-gen2/base-0.webp",
+      "/products/castello-mod-505-gen2/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mod-505-gen2/variant-cr02-0.webp",
+          "/products/castello-mod-505-gen2/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-mod-505-gen2/variant-cr14-0.webp",
+          "/products/castello-mod-505-gen2/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  "castello-mod-505-gen2-en": {
+    "images": [
+      "/products/castello-mod-505-gen2/base-0.webp",
+      "/products/castello-mod-505-gen2/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mod-505-gen2/variant-cr02-0.webp",
+          "/products/castello-mod-505-gen2/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-mod-505-gen2/variant-cr14-0.webp",
+          "/products/castello-mod-505-gen2/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      }
+    ]
+  },
+  "castello-mod-505-premium": {
+    "images": [
+      "/products/castello-mod-505-premium/base-0.webp",
+      "/products/castello-mod-505-premium/base-1.webp",
+      "/products/castello-mod-505-premium/base-2.webp",
+      "/products/castello-mod-505-premium/base-3.webp",
+      "/products/castello-mod-505-premium/base-4.webp"
+    ]
+  },
+  "castello-mod-505-premium-en": {
+    "images": [
+      "/products/castello-mod-505-premium/base-0.webp",
+      "/products/castello-mod-505-premium/base-1.webp",
+      "/products/castello-mod-505-premium/base-2.webp",
+      "/products/castello-mod-505-premium/base-3.webp",
+      "/products/castello-mod-505-premium/base-4.webp"
+    ]
+  },
+  "castello-mod101-plus": {
+    "images": [
+      "/products/castello-mod101-plus/base-0.webp",
+      "/products/castello-mod101-plus/base-1.webp",
+      "/products/castello-mod101-plus/base-2.webp",
+      "/products/castello-mod101-plus/base-3.webp",
+      "/products/castello-mod101-plus/base-4.webp",
+      "/products/castello-mod101-plus/base-5.webp"
+    ]
+  },
+  "castello-mod101-plus-en": {
+    "images": [
+      "/products/castello-mod101-plus/base-0.webp",
+      "/products/castello-mod101-plus/base-1.webp",
+      "/products/castello-mod101-plus/base-2.webp",
+      "/products/castello-mod101-plus/base-3.webp",
+      "/products/castello-mod101-plus/base-4.webp",
+      "/products/castello-mod101-plus/base-5.webp"
+    ]
+  },
+  "castello-mod101-tx": {
+    "images": [
+      "/products/castello-mod101-tx/base-0.webp",
+      "/products/castello-mod101-tx/base-1.webp",
+      "/products/castello-mod101-tx/base-2.webp"
+    ]
+  },
+  "castello-mod101-tx-en": {
+    "images": [
+      "/products/castello-mod101-tx/base-0.webp",
+      "/products/castello-mod101-tx/base-1.webp",
+      "/products/castello-mod101-tx/base-2.webp"
+    ]
+  },
+  "castello-mp-2": {
+    "images": [
+      "/products/castello-mp-2/base-0.webp"
+    ]
+  },
+  "castello-mp-2-en": {
+    "images": [
+      "/products/castello-mp-2/base-0.webp"
+    ]
+  },
+  "castello-mp-4": {
+    "images": [
+      "/products/castello-mp-4/base-0.webp"
+    ]
+  },
+  "castello-mp-4-en": {
+    "images": [
+      "/products/castello-mp-4/base-0.webp"
+    ]
+  },
+  "castello-mp-8xs": {
+    "images": [
+      "/products/castello-mp-8xs/base-0.webp",
+      "/products/castello-mp-8xs/base-1.webp"
+    ]
+  },
+  "castello-mp-8xs-en": {
+    "images": [
+      "/products/castello-mp-8xs/base-0.webp",
+      "/products/castello-mp-8xs/base-1.webp"
+    ]
+  },
+  "castello-mp-8-ultra": {
+    "images": [
+      "/products/castello-mp-8-ultra/base-0.webp",
+      "/products/castello-mp-8-ultra/base-1.webp",
+      "/products/castello-mp-8-ultra/base-2.webp",
+      "/products/castello-mp-8-ultra/base-3.webp",
+      "/products/castello-mp-8-ultra/base-4.webp"
+    ]
+  },
+  "castello-mp-8-ultra-en": {
+    "images": [
+      "/products/castello-mp-8-ultra/base-0.webp",
+      "/products/castello-mp-8-ultra/base-1.webp",
+      "/products/castello-mp-8-ultra/base-2.webp",
+      "/products/castello-mp-8-ultra/base-3.webp",
+      "/products/castello-mp-8-ultra/base-4.webp"
+    ]
+  },
+  "castello-mp-8": {
+    "images": [
+      "/products/castello-mp-8/base-0.webp",
+      "/products/castello-mp-8/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-mp-8/variant-cr14-0.webp",
+          "/products/castello-mp-8/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mp-8/variant-cr02-0.webp",
+          "/products/castello-mp-8/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-mp-8/variant-cr03-0.webp",
+          "/products/castello-mp-8/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-mp-8/variant-cr05-0.webp",
+          "/products/castello-mp-8/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-mp-8/variant-cr07-0.webp",
+          "/products/castello-mp-8/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-mp-8/variant-cr10-0.webp",
+          "/products/castello-mp-8/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR19",
+        "images": [
+          "/products/castello-mp-8/variant-cr19-0.webp",
+          "/products/castello-mp-8/variant-cr19-1.webp"
+        ],
+        "color_code": "CR19"
+      },
+      {
+        "name": "Renk Kodu: CR20",
+        "images": [
+          "/products/castello-mp-8/variant-cr20-0.webp",
+          "/products/castello-mp-8/variant-cr20-1.webp"
+        ],
+        "color_code": "CR20"
+      },
+      {
+        "name": "Renk Kodu: CR21",
+        "images": [
+          "/products/castello-mp-8/variant-cr21-0.webp",
+          "/products/castello-mp-8/variant-cr21-1.webp"
+        ],
+        "color_code": "CR21"
+      },
+      {
+        "name": "Renk Kodu: CR24",
+        "images": [
+          "/products/castello-mp-8/variant-cr24-0.webp",
+          "/products/castello-mp-8/variant-cr24-1.webp"
+        ],
+        "color_code": "CR24"
+      },
+      {
+        "name": "Renk Kodu: CR26",
+        "images": [
+          "/products/castello-mp-8/variant-cr26-0.webp",
+          "/products/castello-mp-8/variant-cr26-1.webp"
+        ],
+        "color_code": "CR26"
+      },
+      {
+        "name": "Renk Kodu: CR30",
+        "images": [
+          "/products/castello-mp-8/variant-cr30-0.webp",
+          "/products/castello-mp-8/variant-cr30-1.webp"
+        ],
+        "color_code": "CR30"
+      },
+      {
+        "name": "Renk Kodu: CR31",
+        "images": [
+          "/products/castello-mp-8/variant-cr31-0.webp",
+          "/products/castello-mp-8/variant-cr31-1.webp"
+        ],
+        "color_code": "CR31"
+      },
+      {
+        "name": "Renk Kodu: CR32",
+        "images": [
+          "/products/castello-mp-8/variant-cr32-0.webp",
+          "/products/castello-mp-8/variant-cr32-1.webp"
+        ],
+        "color_code": "CR32"
+      },
+      {
+        "name": "Renk Kodu: CR33",
+        "images": [
+          "/products/castello-mp-8/variant-cr33-0.webp",
+          "/products/castello-mp-8/variant-cr33-1.webp"
+        ],
+        "color_code": "CR33"
+      },
+      {
+        "name": "Renk Kodu: CR34",
+        "images": [
+          "/products/castello-mp-8/variant-cr34-0.webp",
+          "/products/castello-mp-8/variant-cr34-1.webp"
+        ],
+        "color_code": "CR34"
+      },
+      {
+        "name": "Renk Kodu: CR35",
+        "images": [
+          "/products/castello-mp-8/variant-cr35-0.webp",
+          "/products/castello-mp-8/variant-cr35-1.webp"
+        ],
+        "color_code": "CR35"
+      }
+    ]
+  },
+  "castello-mp-8-en": {
+    "images": [
+      "/products/castello-mp-8/base-0.webp",
+      "/products/castello-mp-8/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR14",
+        "images": [
+          "/products/castello-mp-8/variant-cr14-0.webp",
+          "/products/castello-mp-8/variant-cr14-1.webp"
+        ],
+        "color_code": "CR14"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mp-8/variant-cr02-0.webp",
+          "/products/castello-mp-8/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-mp-8/variant-cr03-0.webp",
+          "/products/castello-mp-8/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-mp-8/variant-cr05-0.webp",
+          "/products/castello-mp-8/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-mp-8/variant-cr07-0.webp",
+          "/products/castello-mp-8/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-mp-8/variant-cr10-0.webp",
+          "/products/castello-mp-8/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR19",
+        "images": [
+          "/products/castello-mp-8/variant-cr19-0.webp",
+          "/products/castello-mp-8/variant-cr19-1.webp"
+        ],
+        "color_code": "CR19"
+      },
+      {
+        "name": "Renk Kodu: CR20",
+        "images": [
+          "/products/castello-mp-8/variant-cr20-0.webp",
+          "/products/castello-mp-8/variant-cr20-1.webp"
+        ],
+        "color_code": "CR20"
+      },
+      {
+        "name": "Renk Kodu: CR21",
+        "images": [
+          "/products/castello-mp-8/variant-cr21-0.webp",
+          "/products/castello-mp-8/variant-cr21-1.webp"
+        ],
+        "color_code": "CR21"
+      },
+      {
+        "name": "Renk Kodu: CR24",
+        "images": [
+          "/products/castello-mp-8/variant-cr24-0.webp",
+          "/products/castello-mp-8/variant-cr24-1.webp"
+        ],
+        "color_code": "CR24"
+      },
+      {
+        "name": "Renk Kodu: CR26",
+        "images": [
+          "/products/castello-mp-8/variant-cr26-0.webp",
+          "/products/castello-mp-8/variant-cr26-1.webp"
+        ],
+        "color_code": "CR26"
+      },
+      {
+        "name": "Renk Kodu: CR30",
+        "images": [
+          "/products/castello-mp-8/variant-cr30-0.webp",
+          "/products/castello-mp-8/variant-cr30-1.webp"
+        ],
+        "color_code": "CR30"
+      },
+      {
+        "name": "Renk Kodu: CR31",
+        "images": [
+          "/products/castello-mp-8/variant-cr31-0.webp",
+          "/products/castello-mp-8/variant-cr31-1.webp"
+        ],
+        "color_code": "CR31"
+      },
+      {
+        "name": "Renk Kodu: CR32",
+        "images": [
+          "/products/castello-mp-8/variant-cr32-0.webp",
+          "/products/castello-mp-8/variant-cr32-1.webp"
+        ],
+        "color_code": "CR32"
+      },
+      {
+        "name": "Renk Kodu: CR33",
+        "images": [
+          "/products/castello-mp-8/variant-cr33-0.webp",
+          "/products/castello-mp-8/variant-cr33-1.webp"
+        ],
+        "color_code": "CR33"
+      },
+      {
+        "name": "Renk Kodu: CR34",
+        "images": [
+          "/products/castello-mp-8/variant-cr34-0.webp",
+          "/products/castello-mp-8/variant-cr34-1.webp"
+        ],
+        "color_code": "CR34"
+      },
+      {
+        "name": "Renk Kodu: CR35",
+        "images": [
+          "/products/castello-mp-8/variant-cr35-0.webp",
+          "/products/castello-mp-8/variant-cr35-1.webp"
+        ],
+        "color_code": "CR35"
+      }
+    ]
+  },
+  "castello-mp-6-ultra": {
+    "images": [
+      "/products/castello-mp-6-ultra/base-0.webp",
+      "/products/castello-mp-6-ultra/base-1.webp",
+      "/products/castello-mp-6-ultra/base-2.webp",
+      "/products/castello-mp-6-ultra/base-3.webp",
+      "/products/castello-mp-6-ultra/base-4.webp",
+      "/products/castello-mp-6-ultra/base-5.webp",
+      "/products/castello-mp-6-ultra/base-6.webp",
+      "/products/castello-mp-6-ultra/base-7.webp",
+      "/products/castello-mp-6-ultra/base-8.webp",
+      "/products/castello-mp-6-ultra/base-9.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR36",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr36-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr36-1.webp"
+        ],
+        "color_code": "CR36"
+      },
+      {
+        "name": "Renk Kodu: CR37",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr37-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr37-1.webp"
+        ],
+        "color_code": "CR37"
+      },
+      {
+        "name": "Renk Kodu: CR22",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr22-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr22-1.webp"
+        ],
+        "color_code": "CR22"
+      }
+    ]
+  },
+  "castello-mp-6-ultra-en": {
+    "images": [
+      "/products/castello-mp-6-ultra/base-0.webp",
+      "/products/castello-mp-6-ultra/base-1.webp",
+      "/products/castello-mp-6-ultra/base-2.webp",
+      "/products/castello-mp-6-ultra/base-3.webp",
+      "/products/castello-mp-6-ultra/base-4.webp",
+      "/products/castello-mp-6-ultra/base-5.webp",
+      "/products/castello-mp-6-ultra/base-6.webp",
+      "/products/castello-mp-6-ultra/base-7.webp",
+      "/products/castello-mp-6-ultra/base-8.webp",
+      "/products/castello-mp-6-ultra/base-9.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR36",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr36-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr36-1.webp"
+        ],
+        "color_code": "CR36"
+      },
+      {
+        "name": "Renk Kodu: CR37",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr37-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr37-1.webp"
+        ],
+        "color_code": "CR37"
+      },
+      {
+        "name": "Renk Kodu: CR22",
+        "images": [
+          "/products/castello-mp-6-ultra/variant-cr22-0.webp",
+          "/products/castello-mp-6-ultra/variant-cr22-1.webp"
+        ],
+        "color_code": "CR22"
+      }
+    ]
+  },
+  "castello-mp-6": {
+    "images": [
+      "/products/castello-mp-6/base-0.webp",
+      "/products/castello-mp-6/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mp-6/variant-cr02-0.webp",
+          "/products/castello-mp-6/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-mp-6/variant-cr03-0.webp",
+          "/products/castello-mp-6/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-mp-6/variant-cr05-0.webp",
+          "/products/castello-mp-6/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR06",
+        "images": [
+          "/products/castello-mp-6/variant-cr06-0.webp",
+          "/products/castello-mp-6/variant-cr06-1.webp"
+        ],
+        "color_code": "CR06"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-mp-6/variant-cr07-0.webp",
+          "/products/castello-mp-6/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR08",
+        "images": [
+          "/products/castello-mp-6/variant-cr08-0.webp",
+          "/products/castello-mp-6/variant-cr08-1.webp"
+        ],
+        "color_code": "CR08"
+      },
+      {
+        "name": "Renk Kodu: CR09",
+        "images": [
+          "/products/castello-mp-6/variant-cr09-0.webp",
+          "/products/castello-mp-6/variant-cr09-1.webp"
+        ],
+        "color_code": "CR09"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-mp-6/variant-cr10-0.webp",
+          "/products/castello-mp-6/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR15",
+        "images": [
+          "/products/castello-mp-6/variant-cr15-0.webp",
+          "/products/castello-mp-6/variant-cr15-1.webp"
+        ],
+        "color_code": "CR15"
+      },
+      {
+        "name": "Renk Kodu: CR16",
+        "images": [
+          "/products/castello-mp-6/variant-cr16-0.webp",
+          "/products/castello-mp-6/variant-cr16-1.webp"
+        ],
+        "color_code": "CR16"
+      },
+      {
+        "name": "Renk Kodu: CR17",
+        "images": [
+          "/products/castello-mp-6/variant-cr17-0.webp",
+          "/products/castello-mp-6/variant-cr17-1.webp"
+        ],
+        "color_code": "CR17"
+      },
+      {
+        "name": "Renk Kodu: CR18",
+        "images": [
+          "/products/castello-mp-6/variant-cr18-0.webp",
+          "/products/castello-mp-6/variant-cr18-1.webp"
+        ],
+        "color_code": "CR18"
+      },
+      {
+        "name": "Renk Kodu: CR19",
+        "images": [
+          "/products/castello-mp-6/variant-cr19-0.webp",
+          "/products/castello-mp-6/variant-cr19-1.webp"
+        ],
+        "color_code": "CR19"
+      },
+      {
+        "name": "Renk Kodu: CR20",
+        "images": [
+          "/products/castello-mp-6/variant-cr20-0.webp",
+          "/products/castello-mp-6/variant-cr20-1.webp"
+        ],
+        "color_code": "CR20"
+      },
+      {
+        "name": "Renk Kodu: CR21",
+        "images": [
+          "/products/castello-mp-6/variant-cr21-0.webp",
+          "/products/castello-mp-6/variant-cr21-1.webp"
+        ],
+        "color_code": "CR21"
+      },
+      {
+        "name": "Renk Kodu: CR22",
+        "images": [
+          "/products/castello-mp-6/variant-cr22-0.webp",
+          "/products/castello-mp-6/variant-cr22-1.webp"
+        ],
+        "color_code": "CR22"
+      },
+      {
+        "name": "Renk Kodu: CR23",
+        "images": [
+          "/products/castello-mp-6/variant-cr23-0.webp",
+          "/products/castello-mp-6/variant-cr23-1.webp"
+        ],
+        "color_code": "CR23"
+      },
+      {
+        "name": "Renk Kodu: CR24",
+        "images": [
+          "/products/castello-mp-6/variant-cr24-0.webp",
+          "/products/castello-mp-6/variant-cr24-1.webp"
+        ],
+        "color_code": "CR24"
+      },
+      {
+        "name": "Renk Kodu: CR25",
+        "images": [
+          "/products/castello-mp-6/variant-cr25-0.webp",
+          "/products/castello-mp-6/variant-cr25-1.webp"
+        ],
+        "color_code": "CR25"
+      },
+      {
+        "name": "Renk Kodu: CR26",
+        "images": [
+          "/products/castello-mp-6/variant-cr26-0.webp",
+          "/products/castello-mp-6/variant-cr26-1.webp"
+        ],
+        "color_code": "CR26"
+      },
+      {
+        "name": "Renk Kodu: CR27",
+        "images": [
+          "/products/castello-mp-6/variant-cr27-0.webp",
+          "/products/castello-mp-6/variant-cr27-1.webp"
+        ],
+        "color_code": "CR27"
+      },
+      {
+        "name": "Renk Kodu: CR28",
+        "images": [
+          "/products/castello-mp-6/variant-cr28-0.webp",
+          "/products/castello-mp-6/variant-cr28-1.webp"
+        ],
+        "color_code": "CR28"
+      },
+      {
+        "name": "Renk Kodu: CR29",
+        "images": [
+          "/products/castello-mp-6/variant-cr29-0.webp",
+          "/products/castello-mp-6/variant-cr29-1.webp"
+        ],
+        "color_code": "CR29"
+      }
+    ]
+  },
+  "castello-mp-6-en": {
+    "images": [
+      "/products/castello-mp-6/base-0.webp",
+      "/products/castello-mp-6/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-mp-6/variant-cr02-0.webp",
+          "/products/castello-mp-6/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-mp-6/variant-cr03-0.webp",
+          "/products/castello-mp-6/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-mp-6/variant-cr05-0.webp",
+          "/products/castello-mp-6/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR06",
+        "images": [
+          "/products/castello-mp-6/variant-cr06-0.webp",
+          "/products/castello-mp-6/variant-cr06-1.webp"
+        ],
+        "color_code": "CR06"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-mp-6/variant-cr07-0.webp",
+          "/products/castello-mp-6/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR08",
+        "images": [
+          "/products/castello-mp-6/variant-cr08-0.webp",
+          "/products/castello-mp-6/variant-cr08-1.webp"
+        ],
+        "color_code": "CR08"
+      },
+      {
+        "name": "Renk Kodu: CR09",
+        "images": [
+          "/products/castello-mp-6/variant-cr09-0.webp",
+          "/products/castello-mp-6/variant-cr09-1.webp"
+        ],
+        "color_code": "CR09"
+      },
+      {
+        "name": "Renk Kodu: CR10",
+        "images": [
+          "/products/castello-mp-6/variant-cr10-0.webp",
+          "/products/castello-mp-6/variant-cr10-1.webp"
+        ],
+        "color_code": "CR10"
+      },
+      {
+        "name": "Renk Kodu: CR15",
+        "images": [
+          "/products/castello-mp-6/variant-cr15-0.webp",
+          "/products/castello-mp-6/variant-cr15-1.webp"
+        ],
+        "color_code": "CR15"
+      },
+      {
+        "name": "Renk Kodu: CR16",
+        "images": [
+          "/products/castello-mp-6/variant-cr16-0.webp",
+          "/products/castello-mp-6/variant-cr16-1.webp"
+        ],
+        "color_code": "CR16"
+      },
+      {
+        "name": "Renk Kodu: CR17",
+        "images": [
+          "/products/castello-mp-6/variant-cr17-0.webp",
+          "/products/castello-mp-6/variant-cr17-1.webp"
+        ],
+        "color_code": "CR17"
+      },
+      {
+        "name": "Renk Kodu: CR18",
+        "images": [
+          "/products/castello-mp-6/variant-cr18-0.webp",
+          "/products/castello-mp-6/variant-cr18-1.webp"
+        ],
+        "color_code": "CR18"
+      },
+      {
+        "name": "Renk Kodu: CR19",
+        "images": [
+          "/products/castello-mp-6/variant-cr19-0.webp",
+          "/products/castello-mp-6/variant-cr19-1.webp"
+        ],
+        "color_code": "CR19"
+      },
+      {
+        "name": "Renk Kodu: CR20",
+        "images": [
+          "/products/castello-mp-6/variant-cr20-0.webp",
+          "/products/castello-mp-6/variant-cr20-1.webp"
+        ],
+        "color_code": "CR20"
+      },
+      {
+        "name": "Renk Kodu: CR21",
+        "images": [
+          "/products/castello-mp-6/variant-cr21-0.webp",
+          "/products/castello-mp-6/variant-cr21-1.webp"
+        ],
+        "color_code": "CR21"
+      },
+      {
+        "name": "Renk Kodu: CR22",
+        "images": [
+          "/products/castello-mp-6/variant-cr22-0.webp",
+          "/products/castello-mp-6/variant-cr22-1.webp"
+        ],
+        "color_code": "CR22"
+      },
+      {
+        "name": "Renk Kodu: CR23",
+        "images": [
+          "/products/castello-mp-6/variant-cr23-0.webp",
+          "/products/castello-mp-6/variant-cr23-1.webp"
+        ],
+        "color_code": "CR23"
+      },
+      {
+        "name": "Renk Kodu: CR24",
+        "images": [
+          "/products/castello-mp-6/variant-cr24-0.webp",
+          "/products/castello-mp-6/variant-cr24-1.webp"
+        ],
+        "color_code": "CR24"
+      },
+      {
+        "name": "Renk Kodu: CR25",
+        "images": [
+          "/products/castello-mp-6/variant-cr25-0.webp",
+          "/products/castello-mp-6/variant-cr25-1.webp"
+        ],
+        "color_code": "CR25"
+      },
+      {
+        "name": "Renk Kodu: CR26",
+        "images": [
+          "/products/castello-mp-6/variant-cr26-0.webp",
+          "/products/castello-mp-6/variant-cr26-1.webp"
+        ],
+        "color_code": "CR26"
+      },
+      {
+        "name": "Renk Kodu: CR27",
+        "images": [
+          "/products/castello-mp-6/variant-cr27-0.webp",
+          "/products/castello-mp-6/variant-cr27-1.webp"
+        ],
+        "color_code": "CR27"
+      },
+      {
+        "name": "Renk Kodu: CR28",
+        "images": [
+          "/products/castello-mp-6/variant-cr28-0.webp",
+          "/products/castello-mp-6/variant-cr28-1.webp"
+        ],
+        "color_code": "CR28"
+      },
+      {
+        "name": "Renk Kodu: CR29",
+        "images": [
+          "/products/castello-mp-6/variant-cr29-0.webp",
+          "/products/castello-mp-6/variant-cr29-1.webp"
+        ],
+        "color_code": "CR29"
+      }
+    ]
+  },
+  "castello-ak-42": {
+    "images": [
+      "/products/castello-ak-42/base-0.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-ak-42/variant-cr02-0.webp"
+        ],
+        "color_code": "CR02"
+      }
+    ]
+  },
+  "castello-ak-42-en": {
+    "images": [
+      "/products/castello-ak-42/base-0.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-ak-42/variant-cr02-0.webp"
+        ],
+        "color_code": "CR02"
+      }
+    ]
+  },
+  "castello-csr-12": {
+    "images": [
+      "/products/castello-csr-12/base-0.webp",
+      "/products/castello-csr-12/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CSR02",
+        "images": [
+          "/products/castello-csr-12/variant-csr02-0.webp",
+          "/products/castello-csr-12/variant-csr02-1.webp"
+        ],
+        "color_code": "CSR02"
+      },
+      {
+        "name": "Renk Kodu: CSR03",
+        "images": [
+          "/products/castello-csr-12/variant-csr03-0.webp",
+          "/products/castello-csr-12/variant-csr03-1.webp"
+        ],
+        "color_code": "CSR03"
+      },
+      {
+        "name": "Renk Kodu: CSR04",
+        "images": [
+          "/products/castello-csr-12/variant-csr04-0.webp",
+          "/products/castello-csr-12/variant-csr04-1.webp"
+        ],
+        "color_code": "CSR04"
+      },
+      {
+        "name": "Renk Kodu: CSR05",
+        "images": [
+          "/products/castello-csr-12/variant-csr05-0.webp",
+          "/products/castello-csr-12/variant-csr05-1.webp"
+        ],
+        "color_code": "CSR05"
+      },
+      {
+        "name": "Renk Kodu: CSR06",
+        "images": [
+          "/products/castello-csr-12/variant-csr06-0.webp",
+          "/products/castello-csr-12/variant-csr06-1.webp"
+        ],
+        "color_code": "CSR06"
+      },
+      {
+        "name": "Renk Kodu: CSR07",
+        "images": [
+          "/products/castello-csr-12/variant-csr07-0.webp",
+          "/products/castello-csr-12/variant-csr07-1.webp"
+        ],
+        "color_code": "CSR07"
+      }
+    ]
+  },
+  "castello-csr-12-en": {
+    "images": [
+      "/products/castello-csr-12/base-0.webp",
+      "/products/castello-csr-12/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CSR02",
+        "images": [
+          "/products/castello-csr-12/variant-csr02-0.webp",
+          "/products/castello-csr-12/variant-csr02-1.webp"
+        ],
+        "color_code": "CSR02"
+      },
+      {
+        "name": "Renk Kodu: CSR03",
+        "images": [
+          "/products/castello-csr-12/variant-csr03-0.webp",
+          "/products/castello-csr-12/variant-csr03-1.webp"
+        ],
+        "color_code": "CSR03"
+      },
+      {
+        "name": "Renk Kodu: CSR04",
+        "images": [
+          "/products/castello-csr-12/variant-csr04-0.webp",
+          "/products/castello-csr-12/variant-csr04-1.webp"
+        ],
+        "color_code": "CSR04"
+      },
+      {
+        "name": "Renk Kodu: CSR05",
+        "images": [
+          "/products/castello-csr-12/variant-csr05-0.webp",
+          "/products/castello-csr-12/variant-csr05-1.webp"
+        ],
+        "color_code": "CSR05"
+      },
+      {
+        "name": "Renk Kodu: CSR06",
+        "images": [
+          "/products/castello-csr-12/variant-csr06-0.webp",
+          "/products/castello-csr-12/variant-csr06-1.webp"
+        ],
+        "color_code": "CSR06"
+      },
+      {
+        "name": "Renk Kodu: CSR07",
+        "images": [
+          "/products/castello-csr-12/variant-csr07-0.webp",
+          "/products/castello-csr-12/variant-csr07-1.webp"
+        ],
+        "color_code": "CSR07"
+      }
+    ]
+  },
+  "castello-blp": {
+    "images": [
+      "/products/castello-blp/base-0.webp",
+      "/products/castello-blp/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-blp/variant-cr02-0.webp",
+          "/products/castello-blp/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-blp/variant-cr03-0.webp",
+          "/products/castello-blp/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR04",
+        "images": [
+          "/products/castello-blp/variant-cr04-0.webp",
+          "/products/castello-blp/variant-cr04-1.webp"
+        ],
+        "color_code": "CR04"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-blp/variant-cr05-0.webp",
+          "/products/castello-blp/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR06",
+        "images": [
+          "/products/castello-blp/variant-cr06-0.webp",
+          "/products/castello-blp/variant-cr06-1.webp"
+        ],
+        "color_code": "CR06"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-blp/variant-cr07-0.webp",
+          "/products/castello-blp/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR08",
+        "images": [
+          "/products/castello-blp/variant-cr08-0.webp",
+          "/products/castello-blp/variant-cr08-1.webp"
+        ],
+        "color_code": "CR08"
+      },
+      {
+        "name": "Renk Kodu: CR09",
+        "images": [
+          "/products/castello-blp/variant-cr09-0.webp",
+          "/products/castello-blp/variant-cr09-1.webp"
+        ],
+        "color_code": "CR09"
+      }
+    ]
+  },
+  "castello-blp-en": {
+    "images": [
+      "/products/castello-blp/base-0.webp",
+      "/products/castello-blp/base-1.webp"
+    ],
+    "variants": [
+      {
+        "name": "Standart / Siyah (CR01)",
+        "images": [],
+        "color_code": "CR01"
+      },
+      {
+        "name": "Renk Kodu: CR02",
+        "images": [
+          "/products/castello-blp/variant-cr02-0.webp",
+          "/products/castello-blp/variant-cr02-1.webp"
+        ],
+        "color_code": "CR02"
+      },
+      {
+        "name": "Renk Kodu: CR03",
+        "images": [
+          "/products/castello-blp/variant-cr03-0.webp",
+          "/products/castello-blp/variant-cr03-1.webp"
+        ],
+        "color_code": "CR03"
+      },
+      {
+        "name": "Renk Kodu: CR04",
+        "images": [
+          "/products/castello-blp/variant-cr04-0.webp",
+          "/products/castello-blp/variant-cr04-1.webp"
+        ],
+        "color_code": "CR04"
+      },
+      {
+        "name": "Renk Kodu: CR05",
+        "images": [
+          "/products/castello-blp/variant-cr05-0.webp",
+          "/products/castello-blp/variant-cr05-1.webp"
+        ],
+        "color_code": "CR05"
+      },
+      {
+        "name": "Renk Kodu: CR06",
+        "images": [
+          "/products/castello-blp/variant-cr06-0.webp",
+          "/products/castello-blp/variant-cr06-1.webp"
+        ],
+        "color_code": "CR06"
+      },
+      {
+        "name": "Renk Kodu: CR07",
+        "images": [
+          "/products/castello-blp/variant-cr07-0.webp",
+          "/products/castello-blp/variant-cr07-1.webp"
+        ],
+        "color_code": "CR07"
+      },
+      {
+        "name": "Renk Kodu: CR08",
+        "images": [
+          "/products/castello-blp/variant-cr08-0.webp",
+          "/products/castello-blp/variant-cr08-1.webp"
+        ],
+        "color_code": "CR08"
+      },
+      {
+        "name": "Renk Kodu: CR09",
+        "images": [
+          "/products/castello-blp/variant-cr09-0.webp",
+          "/products/castello-blp/variant-cr09-1.webp"
+        ],
+        "color_code": "CR09"
+      }
+    ]
+  }
+}

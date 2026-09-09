@@ -4,8 +4,26 @@ import { Product, Category } from "@/types/product";
 import { isSupabaseConfigured, getSupabaseProducts, getSupabaseProductBySlug } from "./supabase";
 import { getSecureImageUrl } from "./image-crypto";
 
+let staticImagesMap: Record<string, { images?: string[]; variants?: any[] }> = {};
+try {
+  staticImagesMap = require("./static-images-map.json");
+} catch {
+  // Graceful fallback if static map is not yet generated
+}
+
 function secureProduct(p: Product): Product {
   if (!p) return p;
+
+  const slugKey = p.slug_tr || p.slug_en || p.id;
+  const staticEntry = staticImagesMap[slugKey];
+  if (staticEntry) {
+    if (Array.isArray(staticEntry.images) && staticEntry.images.length > 0) {
+      p.images = staticEntry.images;
+    }
+    if (Array.isArray(staticEntry.variants) && staticEntry.variants.length > 0) {
+      p.variants = staticEntry.variants;
+    }
+  }
 
   const rawVariants =
     Array.isArray(p.variants) && p.variants.length > 0
