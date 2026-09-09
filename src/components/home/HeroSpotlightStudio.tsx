@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye } from "lucide-react";
@@ -58,13 +58,58 @@ export default function HeroSpotlightStudio({
   const [copied, setCopied] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
 
-  // Check desktop viewport
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [safeOffset, setSafeOffset] = useState<{ x: number; y: number }>({
+    x: DEFAULT_CONFIG.offsetX,
+    y: DEFAULT_CONFIG.offsetY,
+  });
+
+  // Check desktop viewport & dynamically clamp offsets so card never slips under header
   useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    const updateLayout = () => {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktop(desktop);
+
+      if (desktop && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        // Calculate the slot position at scroll = 0
+        const pageTop = rect.top + window.scrollY;
+
+        // Navbar is fixed h-16 (64px). Safe distance from top of viewport is 80px (16px clearance buffer)
+        const minTop = 80;
+        const maxNegativeY = minTop - pageTop;
+        const safeY = Math.max(config.offsetY, maxNegativeY);
+
+        // Clamped horizontal offset to prevent hugging or overflowing right edge
+        const pageRight = rect.right + window.scrollX;
+        const maxAllowedRight = window.innerWidth - 16;
+        const safeX =
+          config.offsetX > 0
+            ? Math.min(config.offsetX, Math.max(0, maxAllowedRight - pageRight))
+            : config.offsetX;
+
+        setSafeOffset({
+          x: Math.round(safeX),
+          y: Math.round(safeY),
+        });
+      }
+    };
+
+    updateLayout();
+    window.addEventListener("resize", updateLayout);
+
+    const parentSection = containerRef.current?.closest("section");
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && parentSection) {
+      observer = new ResizeObserver(() => updateLayout());
+      observer.observe(parentSection);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateLayout);
+      if (observer) observer.disconnect();
+    };
+  }, [config]);
 
   // Studio is hidden for normal visitors, but activates whenever ?design=1 is in URL or saved in localStorage
   useEffect(() => {
@@ -153,6 +198,7 @@ export default function HeroSpotlightStudio({
     <>
       {/* 1. SPOTLIGHT CARD CONTAINER (Serbest Masaüstü Konumlandırma) */}
       <div
+        ref={containerRef}
         className="w-full sm:max-w-md lg:max-w-none lg:w-auto lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-75"
       >
         {/* Dynamic Desktop Sizing & Translation Wrapper */}
@@ -160,7 +206,7 @@ export default function HeroSpotlightStudio({
           className="w-full transition-all duration-75"
           style={{
             maxWidth: isDesktop ? `${config.width}px` : "100%",
-            transform: isDesktop ? `translate3d(${config.offsetX}px, ${config.offsetY}px, 0)` : "none",
+            transform: isDesktop ? `translate3d(${safeOffset.x}px, ${safeOffset.y}px, 0)` : "none",
             marginLeft: "auto",
           }}
         >
@@ -370,6 +416,11 @@ export default function HeroSpotlightStudio({
                   <span className="text-neutral-300 font-bold">↕️ Dikey Konum (Yukarı / Aşağı):</span>
                   <span className="font-mono text-[#d4af37] font-bold">
                     {config.offsetY < 0 ? `${Math.abs(config.offsetY)}px Yukarı` : `${config.offsetY}px Aşağı`}
+                    {safeOffset.y !== config.offsetY && (
+                      <span className="text-[9px] text-emerald-400 ml-1.5 font-normal">
+                        (Aktif: {Math.abs(safeOffset.y)}px)
+                      </span>
+                    )}
                   </span>
                 </div>
                 <input
