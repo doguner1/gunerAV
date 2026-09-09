@@ -21,12 +21,16 @@ create table if not exists public.analytics_events (
   results_count int,
   whatsapp_source text,
   path text,
+  duration_seconds int,                  -- Sayfada kalma süresi (sn)
   device_type text,                      -- 'desktop' | 'mobile' | 'tablet'
   referrer text,
   ip_hash text,                          -- KVKK: Ham IP asla saklanmaz, SHA-256 ile hash'lenir
   user_agent text,
   raw_params jsonb default '{}'::jsonb
 );
+
+-- Eğer tablo zaten varsa yeni kolonu güvenle ekler:
+alter table public.analytics_events add column if not exists duration_seconds int;
 
 -- 2. HIZLI RAPORLAMA İNDEKSLERİ
 create index if not exists idx_analytics_event_type on public.analytics_events(event_type);

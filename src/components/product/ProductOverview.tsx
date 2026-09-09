@@ -9,6 +9,7 @@ import { formatPrice, generateWhatsAppLink } from "@/lib/utils";
 import { STORE_INFO } from "@/lib/store";
 import {
   trackProductView,
+  trackProductTimeSpent,
   trackVariantSelect,
   trackWhatsAppClick,
   trackPhoneClick,
@@ -43,6 +44,7 @@ export default function ProductOverview({
   const isTr = locale === "tr";
   const name = isTr ? product.name_tr : product.name_en;
   const description = isTr ? product.description_tr : product.description_en;
+  const productSlug = product.slug_tr || product.slug_en || product.id;
 
   const variants = product.variants || [];
   const hasVariants = variants.length > 0;
@@ -50,16 +52,50 @@ export default function ProductOverview({
   // Selected variant state
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
 
-  // Track product view on page load
+  // Track product view and dwell time
   useEffect(() => {
+    // 1. Immediate view track
     trackProductView({
       id: product.id,
       name,
       category: categoryName || product.category,
       price: product.price,
-      slug: product.slug_tr || product.slug_en || product.id,
+      slug: productSlug,
     });
-  }, [product.id, name, categoryName]);
+
+    // 2. Dwell time tracking (visibilitychange & beforeunload)
+    const startTime = Date.now();
+    let sent = false;
+
+    const reportTimeSpent = () => {
+      if (sent) return;
+      const elapsedSeconds = Math.round((Date.now() - startTime) / 1000);
+      if (elapsedSeconds >= 2) {
+        sent = true;
+        trackProductTimeSpent({
+          id: product.id,
+          name,
+          slug: productSlug,
+          durationSeconds: elapsedSeconds,
+        });
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        reportTimeSpent();
+      }
+    };
+
+    window.addEventListener("beforeunload", reportTimeSpent);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      reportTimeSpent();
+      window.removeEventListener("beforeunload", reportTimeSpent);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [product.id, name, categoryName, productSlug]);
 
   const activeVariant: ProductVariant | undefined = hasVariants
     ? variants[selectedVariantIndex] || variants[0]
@@ -90,6 +126,8 @@ export default function ProductOverview({
           key={activeVariant ? `${activeVariant.color_code || selectedVariantIndex}` : "base"}
           images={displayImages}
           productName={`${name}${variantSuffix}`}
+          productId={product.id}
+          productSlug={productSlug}
         />
       </div>
 

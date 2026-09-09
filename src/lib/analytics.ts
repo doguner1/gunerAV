@@ -99,24 +99,47 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
     localStorage.setItem(LOCAL_STORAGE_LOG_KEY, JSON.stringify(existing));
   } catch (err) {}
 
-  // 4. Send background event to server API (reliable across iOS/iPadOS Safari & desktop)
+  // 4. Send background event to neutral server API endpoint (/api/collect to bypass iOS ad-blockers)
   try {
+    const endpoint = "/api/collect";
     const bodyStr = JSON.stringify({ event: eventName, params: eventPayload });
-    if (typeof fetch === "function") {
-      fetch("/api/analytics", {
+
+    // iOS Safari detection (easyPrivacy and iOS ad-blockers block "analytics", and sendBeacon is flaky on iOS)
+    const isIosOrSafari =
+      typeof navigator !== "undefined" &&
+      (/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (/Safari/i.test(navigator.userAgent) && !/Chrome|CriOS|Android/i.test(navigator.userAgent)));
+
+    let beaconSucceeded = false;
+
+    // Non-iOS: Try sendBeacon first for lowest overhead
+    if (!isIosOrSafari && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      try {
+        const blob = new Blob([bodyStr], { type: "application/json" });
+        beaconSucceeded = navigator.sendBeacon(endpoint, blob);
+      } catch {
+        beaconSucceeded = false;
+      }
+    }
+
+    // Fallback: If on iOS/Safari, or if sendBeacon was false/unavailable, use fetch with keepalive
+    if (!beaconSucceeded && typeof fetch === "function") {
+      fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: bodyStr,
         keepalive: true,
       }).catch(() => {
-        if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-          try {
-            navigator.sendBeacon("/api/analytics", bodyStr);
-          } catch {}
-        }
+        // Fallback to legacy endpoint if collect failed
+        try {
+          fetch("/api/analytics", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: bodyStr,
+            keepalive: true,
+          }).catch(() => {});
+        } catch {}
       });
-    } else if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-      navigator.sendBeacon("/api/analytics", bodyStr);
     }
   } catch (err) {}
 
@@ -170,14 +193,34 @@ export function trackProductView(product: {
 export function trackProductZoom(product: {
   id: string;
   name: string;
+  slug?: string;
   imageIndex?: number;
   type: "lens" | "lightbox" | "touch";
 }) {
   trackEvent("product_zoom", {
     item_id: product.id,
     item_name: product.name,
+    slug: product.slug || product.id,
     image_index: product.imageIndex ?? 0,
     zoom_type: product.type,
+  });
+}
+
+/**
+ * 3. Product Dwell Time / Time Spent (YENİ ÖZELLİK 2)
+ */
+export function trackProductTimeSpent(product: {
+  id: string;
+  name: string;
+  slug?: string;
+  durationSeconds: number;
+}) {
+  if (product.durationSeconds < 2) return;
+  trackEvent("product_time_spent", {
+    item_id: product.id,
+    item_name: product.name,
+    slug: product.slug || product.id,
+    duration_seconds: product.durationSeconds,
   });
 }
 

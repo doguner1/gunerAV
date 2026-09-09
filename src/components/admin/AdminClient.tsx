@@ -33,6 +33,10 @@ import {
   AlertCircle,
   Database,
   Calendar,
+  Clock,
+  Route,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface AnalyticsEvent {
@@ -220,9 +224,28 @@ export default function AdminClient() {
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [timeRange, setTimeRange] = useState<"all" | "today" | "7d" | "30d">("all");
+  const [analyticsProductFilter, setAnalyticsProductFilter] = useState("");
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+
+  const toggleSession = (sessionId: string) => {
+    setExpandedSessions((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) next.delete(sessionId);
+      else next.add(sessionId);
+      return next;
+    });
+  };
+
   const [dashboardData, setDashboardData] = useState<{
     dataSource: "supabase" | "fallback_disk";
     range: string;
+    supabaseStatus?: {
+      connected: boolean;
+      isConfigured: boolean;
+      missingEnv: string[];
+      tableRowCount: number;
+      storageType: string;
+    };
     summary: {
       totalEvents: number;
       uniqueVisitors: number;
@@ -232,6 +255,7 @@ export default function AdminClient() {
       locationClicks: number;
       searches: number;
       zooms: number;
+      totalCatalogProducts?: number;
     };
     topProducts: Array<{
       productId: string;
@@ -240,7 +264,28 @@ export default function AdminClient() {
       views: number;
       zooms: number;
       whatsappClicks: number;
+      avgDurationSeconds?: number;
+      hasAnomaly?: boolean;
       conversionRate: string;
+    }>;
+    sessions?: Array<{
+      sessionId: string;
+      visitorId: string;
+      deviceType: string;
+      clientIp: string;
+      startTime: string;
+      endTime: string;
+      durationFormatted: string;
+      totalDurationSeconds: number;
+      hasWhatsAppLead: boolean;
+      stepCount: number;
+      steps: Array<{
+        time: string;
+        timestamp: string;
+        eventType: string;
+        description: string;
+        badge: { text: string; color: "green" | "blue" | "purple" | "amber" | "gray" };
+      }>;
     }>;
     searchTerms: Array<{
       term: string;
@@ -981,6 +1026,13 @@ export default function AdminClient() {
           zooms: 0,
         };
         const topProducts = dashboardData?.topProducts || [];
+        const displayedTopProducts = analyticsProductFilter.trim()
+          ? topProducts.filter(
+              (p) =>
+                p.productName.toLowerCase().includes(analyticsProductFilter.toLowerCase()) ||
+                p.slug.toLowerCase().includes(analyticsProductFilter.toLowerCase())
+            )
+          : topProducts;
         const searchTerms = dashboardData?.searchTerms || [];
         const missedDemand = dashboardData?.missedDemand || [];
         const deviceBreakdown = dashboardData?.deviceBreakdown || {
@@ -1058,6 +1110,31 @@ export default function AdminClient() {
                 </button>
               </div>
             </div>
+
+            {/* Supabase Diagnostic & Persistence Status Banner */}
+            {!isSupabaseSource ? (
+              <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-amber-300">
+                      Supabase Kalıcı Veritabanı Henüz Bağlı Değil (Geçici Yerel Disk Modu Aktif)
+                    </p>
+                    <p className="text-[11px] text-amber-200/80 mt-0.5">
+                      Vercel sunucusu yeniden başladığında verilerin sıfırlanmaması için Vercel Dashboard &gt; Settings &gt; Environment Variables bölümüne{" "}
+                      <code className="bg-black/50 px-1 py-0.5 rounded text-amber-300 font-mono">NEXT_PUBLIC_SUPABASE_URL</code> ve{" "}
+                      <code className="bg-black/50 px-1 py-0.5 rounded text-amber-300 font-mono">SUPABASE_SERVICE_ROLE_KEY</code> değerlerini ekleyiniz.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-3 text-xs text-emerald-300 flex items-center gap-2.5">
+                <Database className="h-4 w-4 text-emerald-400 shrink-0" />
+                <span className="font-bold">Supabase Kalıcı Veritabanı Aktif:</span>
+                <span className="text-neutral-300">Tüm ziyaretçi ve ürün hareketleri bulutta kalıcı olarak saklanıyor ({summary.totalEvents} olay).</span>
+              </div>
+            )}
 
             {/* Summary Metric Cards (6 Cards Grid) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -1191,15 +1268,28 @@ export default function AdminClient() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Column: Top Products & Conversion Table (7 cols) */}
               <div className="lg:col-span-7 rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-xl p-5">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-3 border-b border-neutral-800">
                   <div>
                     <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-[#d4af37]" />
-                      <span>En Çok İlgi Gören Ürünler & Dönüşüm</span>
+                      <span>Tüm Ürünlerin İlgi & Dönüşüm Tablosu</span>
+                      <span className="rounded-md bg-neutral-800 text-neutral-300 text-[10px] px-2 py-0.5 font-bold font-mono">
+                        {topProducts.length} Ürün
+                      </span>
                     </h3>
                     <p className="text-[11px] text-neutral-400 mt-0.5">
-                      Görüntülenme, büyüteç (HD zoom) ve WhatsApp sipariş talebi oranı
+                      Görüntülenme, HD büyüteç zoom, ortalama sayfada kalma ve WhatsApp sipariş oranı
                     </p>
+                  </div>
+                  <div className="relative w-full sm:w-48">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-500" />
+                    <input
+                      type="text"
+                      placeholder="Ürün filtrele..."
+                      value={analyticsProductFilter}
+                      onChange={(e) => setAnalyticsProductFilter(e.target.value)}
+                      className="w-full pl-8 pr-2.5 py-1 text-xs rounded-lg bg-black/80 border border-neutral-700 text-white placeholder-neutral-500 focus:border-[#d4af37] outline-none font-sans"
+                    />
                   </div>
                 </div>
 
@@ -1210,21 +1300,35 @@ export default function AdminClient() {
                         <th className="px-3 py-2.5">Ürün Adı</th>
                         <th className="px-3 py-2.5 text-center">İnceleme</th>
                         <th className="px-3 py-2.5 text-center">Zoom</th>
+                        <th className="px-3 py-2.5 text-center">Ort. Süre</th>
                         <th className="px-3 py-2.5 text-center">WhatsApp</th>
                         <th className="px-3 py-2.5 text-right">Dönüşüm</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-800/80 font-mono">
-                      {topProducts.map((tp, idx) => (
+                      {displayedTopProducts.map((tp, idx) => (
                         <tr key={tp.productId || idx} className="hover:bg-neutral-800/40 transition-colors">
                           <td className="px-3 py-2.5 font-sans font-medium text-white truncate max-w-[200px]" title={tp.productName}>
-                            {tp.productName}
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate">{tp.productName}</span>
+                              {tp.hasAnomaly && (
+                                <span
+                                  className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-sans font-bold whitespace-nowrap"
+                                  title="Anomali: Zoom sayısı inceleme sayısından fazla!"
+                                >
+                                  ⚠️ Anomali
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-2.5 text-center text-purple-300 font-bold">
                             {tp.views}
                           </td>
                           <td className="px-3 py-2.5 text-center text-blue-300">
                             {tp.zooms}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-amber-300 font-mono">
+                            {tp.avgDurationSeconds && tp.avgDurationSeconds > 0 ? `${tp.avgDurationSeconds} sn` : "-"}
                           </td>
                           <td className="px-3 py-2.5 text-center text-emerald-400 font-bold">
                             {tp.whatsappClicks}
@@ -1236,10 +1340,10 @@ export default function AdminClient() {
                           </td>
                         </tr>
                       ))}
-                      {topProducts.length === 0 && (
+                      {displayedTopProducts.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-neutral-500 font-sans text-xs">
-                            Seçilen tarih aralığında henüz ürün incelemesi kaydedilmedi.
+                          <td colSpan={6} className="py-8 text-center text-neutral-500 font-sans text-xs">
+                            Aramanıza uygun ürün bulunamadı.
                           </td>
                         </tr>
                       )}
@@ -1315,6 +1419,139 @@ export default function AdminClient() {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* VISITOR JOURNEYS & CUSTOMER JOURNEY TIMELINE (YENİ ÖZELLİK 2) */}
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-2xl p-5">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-4 mb-4 border-b border-neutral-800">
+                <div>
+                  <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <Route className="h-4 w-4 text-[#d4af37]" />
+                    <span>Ziyaretçi Oturumları & Müşteri Yolculuğu</span>
+                    <span className="rounded-md bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-[10px] px-2 py-0.5 font-bold">
+                      {(dashboardData?.sessions || []).length} Oturum
+                    </span>
+                  </h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Müşterilerin sitede gezinme, ürün inceleme, HD büyüteç zoom ve WhatsApp sipariş adımlarının kronolojik dökümü.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {(dashboardData?.sessions || []).map((session, idx) => {
+                  const isExpanded = expandedSessions.has(session.sessionId) || idx === 0;
+                  return (
+                    <div
+                      key={session.sessionId || idx}
+                      className="rounded-xl border border-neutral-800 bg-black/60 overflow-hidden transition-colors hover:border-neutral-700"
+                    >
+                      {/* Session Header Card */}
+                      <button
+                        type="button"
+                        onClick={() => toggleSession(session.sessionId)}
+                        className="w-full px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-left hover:bg-neutral-800/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-mono text-xs font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded">
+                            {session.sessionId}
+                          </span>
+                          <span className="text-xs text-neutral-400 flex items-center gap-1">
+                            {session.deviceType === "mobile" ? (
+                              <Smartphone className="h-3.5 w-3.5 text-blue-400" />
+                            ) : session.deviceType === "tablet" ? (
+                              <Tablet className="h-3.5 w-3.5 text-purple-400" />
+                            ) : (
+                              <Laptop className="h-3.5 w-3.5 text-emerald-400" />
+                            )}
+                            <span className="capitalize">{session.deviceType}</span>
+                          </span>
+                          <span className="text-[11px] text-neutral-500 font-mono">
+                            {new Date(session.startTime).toLocaleString("tr-TR")}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {session.hasWhatsAppLead && (
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              WhatsApp Siparişi
+                            </span>
+                          )}
+                          <span className="px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 text-[10px] font-mono">
+                            <Clock className="h-3 w-3 inline mr-1 text-[#d4af37]" />
+                            {session.durationFormatted} ({session.stepCount} Adım)
+                          </span>
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-neutral-400" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-neutral-400" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Expandable Timeline Steps */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-1 border-t border-neutral-800/60 bg-neutral-950/40">
+                          <div className="relative pl-6 space-y-3 pt-3 before:absolute before:left-2.5 before:top-4 before:bottom-2 before:w-0.5 before:bg-neutral-800">
+                            {session.steps.map((step, sIdx) => {
+                              const badgeBg =
+                                step.badge.color === "green"
+                                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                  : step.badge.color === "purple"
+                                  ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                  : step.badge.color === "blue"
+                                  ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                                  : step.badge.color === "amber"
+                                  ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                  : "bg-neutral-800 text-neutral-400 border-neutral-700";
+
+                              const dotBg =
+                                step.badge.color === "green"
+                                  ? "bg-emerald-400"
+                                  : step.badge.color === "purple"
+                                  ? "bg-purple-400"
+                                  : step.badge.color === "blue"
+                                  ? "bg-blue-400"
+                                  : step.badge.color === "amber"
+                                  ? "bg-amber-400"
+                                  : "bg-neutral-500";
+
+                              return (
+                                <div key={sIdx} className="relative flex items-start gap-3">
+                                  {/* Timeline bullet dot */}
+                                  <div
+                                    className={`absolute -left-6 top-1.5 h-2 w-2 rounded-full ${dotBg} ring-4 ring-black`}
+                                  />
+                                  <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[11px] font-mono text-neutral-400">
+                                        {step.time}
+                                      </span>
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${badgeBg}`}>
+                                        {step.badge.text}
+                                      </span>
+                                      <span className="text-xs font-medium text-neutral-200">
+                                        {step.description}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {(!dashboardData?.sessions || dashboardData.sessions.length === 0) && (
+                  <div className="text-center py-6 text-neutral-500 text-xs">
+                    Henüz kayıtlı ziyaretçi oturumu bulunmuyor.
+                  </div>
+                )}
               </div>
             </div>
 

@@ -17,9 +17,16 @@ import {
 interface ProductGalleryProps {
   images: string[];
   productName: string;
+  productId?: string;
+  productSlug?: string;
 }
 
-export default function ProductGallery({ images, productName }: ProductGalleryProps) {
+export default function ProductGallery({
+  images,
+  productName,
+  productId,
+  productSlug,
+}: ProductGalleryProps) {
   const locale = useLocale();
   const isTr = locale === "tr";
   const [selected, setSelected] = useState(0);
@@ -160,13 +167,25 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
         ref={containerRef}
         onMouseEnter={() => {
           setIsHovered(true);
-          trackProductZoom({ id: productName, name: productName, imageIndex: selected, type: "lens" });
+          trackProductZoom({
+            id: productId || productSlug || productName,
+            name: productName,
+            slug: productSlug,
+            imageIndex: selected,
+            type: "lens",
+          });
         }}
         onMouseLeave={() => setIsHovered(false)}
         onMouseMove={handleMouseMove}
         onClick={() => {
           setIsLightboxOpen(true);
-          trackProductZoom({ id: productName, name: productName, imageIndex: selected, type: "lightbox" });
+          trackProductZoom({
+            id: productId || productSlug || productName,
+            name: productName,
+            slug: productSlug,
+            imageIndex: selected,
+            type: "lightbox",
+          });
         }}
         className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white shadow-sm dark:shadow-2xl cursor-zoom-in select-none"
       >
