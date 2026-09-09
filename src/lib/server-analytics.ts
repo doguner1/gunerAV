@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getSupabaseAdminClient, hashIp } from "@/lib/server-supabase";
+import { detectDeviceType } from "@/lib/device-detect";
 
 // Local Fallback Storage Configuration
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -122,18 +123,9 @@ export async function recordAnalyticsEvent(
   const p = body.params || {};
 
   const uaLower = userAgent.toLowerCase();
-  const isTablet =
-    p.device_type === "tablet" ||
-    uaLower.includes("ipad") ||
-    uaLower.includes("tablet") ||
-    (uaLower.includes("android") && !uaLower.includes("mobile"));
-  const isMobile =
-    p.device_type === "mobile" ||
-    uaLower.includes("iphone") ||
-    uaLower.includes("mobile") ||
-    uaLower.includes("ipod");
-
-  const deviceType = p.device_type || (isTablet ? "tablet" : isMobile ? "mobile" : "desktop");
+  // BUG A FIX: Cihaz tipi her zaman sunucu tarafındaki User-Agent'tan tespit edilir.
+  // Client'tan gelen p.device_type değeri KULLANILMAZ (ekran genişliğine dayalı ve güvenilmez).
+  const deviceType = detectDeviceType(userAgent);
   const entryId = `evt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const receivedAt = new Date().toISOString();
   const durationSec = typeof p.duration_seconds === "number" ? Math.round(p.duration_seconds) : null;

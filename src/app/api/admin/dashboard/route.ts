@@ -3,6 +3,7 @@ import { getAllProducts } from "@/lib/products";
 import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { isAdminAuthorized } from "@/lib/server-auth";
 import { loadFallbackEvents, StoredAnalyticsEvent } from "@/lib/server-analytics";
+import { detectDeviceType } from "@/lib/device-detect";
 
 export interface JourneyStep {
   time: string;
@@ -216,8 +217,12 @@ export async function GET(req: NextRequest) {
       uniqueVisitorsSet.add(visitorId);
     }
 
-    // Devices
-    const dev = (ev.device_type || "").toLowerCase();
+    // Devices (BUG A FIX: UA bazlı doğru tespit, client ekran genişliği hatasını düzeltir)
+    const dev =
+      ev.user_agent && ev.user_agent !== "unknown"
+        ? detectDeviceType(ev.user_agent)
+        : (ev.device_type || "desktop").toLowerCase();
+
     if (dev === "mobile") mobileCount++;
     else if (dev === "tablet") tabletCount++;
     else desktopCount++;
@@ -257,7 +262,8 @@ export async function GET(req: NextRequest) {
       if (evName === "product_zoom") productStatsMap[finalKey].zooms++;
       if (evName.includes("whatsapp")) productStatsMap[finalKey].whatsappClicks++;
 
-      if (evName === "product_time_spent") {
+      // BUG C FIX: page_time_spent ve product_time_spent ikisini de destekle
+      if (evName === "product_time_spent" || evName === "page_time_spent") {
         const sec = typeof p.duration_seconds === "number" ? p.duration_seconds : ev.duration_seconds;
         if (typeof sec === "number" && sec >= 2) {
           productStatsMap[finalKey].totalDurationSeconds += sec;
@@ -290,7 +296,7 @@ export async function GET(req: NextRequest) {
     if (!sessionMap.has(sId)) {
       sessionMap.set(sId, {
         events: [],
-        deviceType: ev.device_type || "desktop",
+        deviceType: dev,
         clientIp: ev.client_ip || "gizli",
         visitorId: p.visitor_id || "anonim",
       });
@@ -303,7 +309,9 @@ export async function GET(req: NextRequest) {
     .map((p) => {
       const conversionRate = p.views > 0 ? ((p.whatsappClicks / p.views) * 100).toFixed(1) : "0.0";
       const avgDurationSeconds = p.durationCount > 0 ? Math.round(p.totalDurationSeconds / p.durationCount) : 0;
-      const hasAnomaly = p.zooms > p.views;
+      // BUG B FIX: Anomali sadece zoom_count > 0 AND view_count === 0 olduğunda geçerlidir.
+      // 1 view ve 6 zoom normaldir ve ANOMALİ DEĞİLDİR.
+      const hasAnomaly = p.views === 0 && p.zooms > 0;
 
       return {
         productId: p.productId,
@@ -363,7 +371,7 @@ export async function GET(req: NextRequest) {
       if (evName === "view_item") {
         description = `Ürün İnceleme: ${p.item_name || p.slug || "Ürün Detayı"}`;
         badge = { text: "İnceleme", color: "blue" };
-      } else if (evName === "product_time_spent") {
+      } else if (evName === "product_time_spent" || evName === "page_time_spent") {
         const sec = typeof p.duration_seconds === "number" ? p.duration_seconds : 0;
         description = `${p.item_name || "Ürün sayfasında"} ${sec} sn vakit geçirdi`;
         badge = { text: `${sec} sn`, color: "purple" };

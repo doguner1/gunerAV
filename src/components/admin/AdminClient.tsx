@@ -1314,7 +1314,7 @@ export default function AdminClient() {
                               {tp.hasAnomaly && (
                                 <span
                                   className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-sans font-bold whitespace-nowrap"
-                                  title="Anomali: Zoom sayısı inceleme sayısından fazla!"
+                                  title="Anomali: İnceleme (view) kaydı olmadan Zoom yapılmış!"
                                 >
                                   ⚠️ Anomali
                                 </span>

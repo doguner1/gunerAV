@@ -9,11 +9,11 @@ import { formatPrice, generateWhatsAppLink } from "@/lib/utils";
 import { STORE_INFO } from "@/lib/store";
 import {
   trackProductView,
-  trackProductTimeSpent,
   trackVariantSelect,
   trackWhatsAppClick,
   trackPhoneClick,
 } from "@/lib/analytics";
+import { usePageEngagementTracker } from "@/hooks/usePageEngagementTracker";
 import ProductGallery from "@/components/product/ProductGallery";
 import LicenseNotice from "@/components/product/LicenseNotice";
 import {
@@ -52,9 +52,16 @@ export default function ProductOverview({
   // Selected variant state
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
 
-  // Track product view and dwell time
+  // BUG C FIX: Route değişimine ve sekme görünürlüğüne duyarlı sayfa süresi takibi
+  usePageEngagementTracker({
+    type: "product",
+    id: product.id,
+    name,
+    slug: productSlug,
+  });
+
+  // Track product view on page load
   useEffect(() => {
-    // 1. Immediate view track
     trackProductView({
       id: product.id,
       name,
@@ -62,39 +69,6 @@ export default function ProductOverview({
       price: product.price,
       slug: productSlug,
     });
-
-    // 2. Dwell time tracking (visibilitychange & beforeunload)
-    const startTime = Date.now();
-    let sent = false;
-
-    const reportTimeSpent = () => {
-      if (sent) return;
-      const elapsedSeconds = Math.round((Date.now() - startTime) / 1000);
-      if (elapsedSeconds >= 2) {
-        sent = true;
-        trackProductTimeSpent({
-          id: product.id,
-          name,
-          slug: productSlug,
-          durationSeconds: elapsedSeconds,
-        });
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        reportTimeSpent();
-      }
-    };
-
-    window.addEventListener("beforeunload", reportTimeSpent);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      reportTimeSpent();
-      window.removeEventListener("beforeunload", reportTimeSpent);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
   }, [product.id, name, categoryName, productSlug]);
 
   const activeVariant: ProductVariant | undefined = hasVariants

@@ -58,9 +58,8 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
   if (typeof window === "undefined") return;
 
   const timestamp = new Date().toISOString();
-  const screenWidth = window.innerWidth;
-  const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0);
-  const deviceType = screenWidth < 768 ? "mobile" : (screenWidth < 1024 || (isTouch && screenWidth <= 1366)) ? "tablet" : "desktop";
+  // NOT: Cihaz tipi artık client-side ekran genişliğiyle HESAPLANMAZ.
+  // Sunucu tarafı User-Agent tespiti (server-analytics.ts → detectDeviceType) tek doğruluk kaynağıdır.
   const visitorId = getVisitorId();
   const sessionId = getSessionId();
 
@@ -68,7 +67,6 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
     event: eventName,
     visitor_id: visitorId,
     session_id: sessionId,
-    device_type: deviceType,
     screen_resolution: `${window.screen.width}x${window.screen.height}`,
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     path: window.location.pathname,
@@ -94,7 +92,7 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
   // 3. Local debug log in localStorage (for instant review and export)
   try {
     const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_LOG_KEY) || "[]");
-    existing.unshift({ event: eventName, params, timestamp, device: deviceType, path: window.location.pathname });
+    existing.unshift({ event: eventName, params, timestamp, path: window.location.pathname });
     if (existing.length > MAX_LOCAL_LOGS) existing.pop();
     localStorage.setItem(LOCAL_STORAGE_LOG_KEY, JSON.stringify(existing));
   } catch (err) {}
