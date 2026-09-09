@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
-import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye } from "lucide-react";
+import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye, Monitor, Smartphone } from "lucide-react";
 import { Product } from "@/types/product";
 
 interface HeroSpotlightStudioProps {
@@ -19,7 +19,7 @@ interface HeroSpotlightStudioProps {
   inspectText: string;
 }
 
-interface DesignConfig {
+export interface DesignConfig {
   width: number;        // px
   offsetX: number;      // px (translate X: negative = left/center, positive = right)
   offsetY: number;      // px (translate Y: negative = up, positive = down)
@@ -29,10 +29,22 @@ interface DesignConfig {
   padding: number;      // px
 }
 
-const DEFAULT_CONFIG: DesignConfig = {
+// 1. TAM EKRAN (1920x1080) KULLANICININ SABİTLEDİĞİ AYAR (KORUMALI)
+export const FULLSCREEN_CONFIG: DesignConfig = {
   width: 445,
   offsetX: 80,
   offsetY: -200,
+  imageHeight: 315,
+  borderRadius: 40,
+  bgOpacity: 30,
+  padding: 18,
+};
+
+// 2. PENCERE / YARIM EKRAN BAŞLANGIÇ AYARI (KULLANICI DİLEDİĞİ GİBİ DEĞİŞTİREBİLİR)
+export const DEFAULT_WINDOWED_CONFIG: DesignConfig = {
+  width: 445,
+  offsetX: 30,
+  offsetY: -75,
   imageHeight: 315,
   borderRadius: 40,
   bgOpacity: 30,
@@ -51,132 +63,133 @@ export default function HeroSpotlightStudio({
   reviewCount,
   inspectText,
 }: HeroSpotlightStudioProps) {
-  const [config, setConfig] = useState<DesignConfig>(DEFAULT_CONFIG);
+  const [fullscreenConfig, setFullscreenConfig] = useState<DesignConfig>(FULLSCREEN_CONFIG);
+  const [windowedConfig, setWindowedConfig] = useState<DesignConfig>(DEFAULT_WINDOWED_CONFIG);
+
   const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [isStudioEnabled, setIsStudioEnabled] = useState(false);
+  const [isStudioEnabled, setIsStudioEnabled] = useState(true); // Kullanıcı için buton ve panel açık
   const [isDesktop, setIsDesktop] = useState(false);
+  const [screenSize, setScreenSize] = useState({ width: 1920, height: 1080 });
+  const [editMode, setEditMode] = useState<"windowed" | "fullscreen">("windowed");
   const [copied, setCopied] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [safeOffset, setSafeOffset] = useState<{ x: number; y: number }>({
-    x: DEFAULT_CONFIG.offsetX,
-    y: DEFAULT_CONFIG.offsetY,
-  });
-
-  // Check desktop viewport & dynamically clamp offsets so card never slips under header
+  // Ekran boyutunu anlık takip et
   useEffect(() => {
-    const updateLayout = () => {
-      const desktop = window.innerWidth >= 1024;
-      setIsDesktop(desktop);
+    const handleResize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      setIsDesktop(w >= 1024);
+      setScreenSize({ width: w, height: h });
 
-      if (desktop && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        // Calculate the slot position at scroll = 0
-        const pageTop = rect.top + window.scrollY;
-
-        // Navbar is fixed h-16 (64px). Safe distance from top of viewport is 80px (16px clearance buffer)
-        const minTop = 80;
-        const maxNegativeY = minTop - pageTop;
-        const safeY = Math.max(config.offsetY, maxNegativeY);
-
-        // Clamped horizontal offset to prevent hugging or overflowing right edge
-        const pageRight = rect.right + window.scrollX;
-        const maxAllowedRight = window.innerWidth - 16;
-        const safeX =
-          config.offsetX > 0
-            ? Math.min(config.offsetX, Math.max(0, maxAllowedRight - pageRight))
-            : config.offsetX;
-
-        setSafeOffset({
-          x: Math.round(safeX),
-          y: Math.round(safeY),
-        });
+      // Eğer pencere küçükse otomatik pencere moduna geç
+      if (w < 1600 || h < 900) {
+        setEditMode("windowed");
       }
     };
 
-    updateLayout();
-    window.addEventListener("resize", updateLayout);
-
-    const parentSection = containerRef.current?.closest("section");
-    let observer: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined" && parentSection) {
-      observer = new ResizeObserver(() => updateLayout());
-      observer.observe(parentSection);
-    }
-
-    return () => {
-      window.removeEventListener("resize", updateLayout);
-      if (observer) observer.disconnect();
-    };
-  }, [config]);
-
-  // Studio is hidden for normal visitors, but activates whenever ?design=1 is in URL or saved in localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.has("design") || params.has("studio") || params.has("edit") || localStorage.getItem("gunerav_studio_active") === "true") {
-        setIsStudioEnabled(true);
-      }
-    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Load from localStorage if user tweaked it previously in this browser session
+  // Şu anki ekran pencere / yarım ekran modunda mı?
+  const isCurrentlyWindowed = isDesktop && (screenSize.width < 1600 || screenSize.height < 900);
+
+  // Önceden ayarlanmış değerler varsa yükle
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("gunerav_hero_design_config_v2");
-      if (saved) {
-        setConfig(JSON.parse(saved));
+      const savedWin = localStorage.getItem("gunerav_hero_windowed_config_v2");
+      if (savedWin) {
+        setWindowedConfig(JSON.parse(savedWin));
+      }
+      const savedFull = localStorage.getItem("gunerav_hero_fullscreen_config_v2");
+      if (savedFull) {
+        setFullscreenConfig(JSON.parse(savedFull));
       }
     } catch {
       // ignore
     }
   }, []);
 
+  // Seçili modun parametresini güncelle
   const updateParam = (key: keyof DesignConfig, value: number) => {
-    setConfig((prev) => {
-      const next = { ...prev, [key]: value };
-      try {
-        localStorage.setItem("gunerav_hero_design_config_v2", JSON.stringify(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
-
-  const applyPreset = (preset: Partial<DesignConfig>) => {
-    setConfig((prev) => {
-      const next = { ...prev, ...preset };
-      try {
-        localStorage.setItem("gunerav_hero_design_config_v2", JSON.stringify(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
-
-  const resetDefaults = () => {
-    setConfig(DEFAULT_CONFIG);
-    try {
-      localStorage.removeItem("gunerav_hero_design_config_v2");
-    } catch {
-      // ignore
+    if (editMode === "windowed") {
+      setWindowedConfig((prev) => {
+        const next = { ...prev, [key]: value };
+        try {
+          localStorage.setItem("gunerav_hero_windowed_config_v2", JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    } else {
+      setFullscreenConfig((prev) => {
+        const next = { ...prev, [key]: value };
+        try {
+          localStorage.setItem("gunerav_hero_fullscreen_config_v2", JSON.stringify(next));
+        } catch {}
+        return next;
+      });
     }
   };
 
+  // Hazır konumu uygula
+  const applyPreset = (preset: Partial<DesignConfig>) => {
+    if (editMode === "windowed") {
+      setWindowedConfig((prev) => {
+        const next = { ...prev, ...preset };
+        try {
+          localStorage.setItem("gunerav_hero_windowed_config_v2", JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    } else {
+      setFullscreenConfig((prev) => {
+        const next = { ...prev, ...preset };
+        try {
+          localStorage.setItem("gunerav_hero_fullscreen_config_v2", JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+  };
+
+  // Sıfırla
+  const resetCurrentMode = () => {
+    if (editMode === "windowed") {
+      setWindowedConfig(DEFAULT_WINDOWED_CONFIG);
+      try {
+        localStorage.removeItem("gunerav_hero_windowed_config_v2");
+      } catch {}
+    } else {
+      setFullscreenConfig(FULLSCREEN_CONFIG);
+      try {
+        localStorage.removeItem("gunerav_hero_fullscreen_config_v2");
+      } catch {}
+    }
+  };
+
+  // Ekranda canlı uygulanan aktif config:
+  // Pencere modunda isek windowedConfig, tam ekranda isek fullscreenConfig!
+  const activeConfig = isCurrentlyWindowed ? windowedConfig : fullscreenConfig;
+  const currentConfig = editMode === "windowed" ? windowedConfig : fullscreenConfig;
+
+  // Log JSON formatı
   const getLogJson = () => {
+    const targetConfig = editMode === "windowed" ? windowedConfig : fullscreenConfig;
+    const modeLabel = editMode === "windowed" ? "Pencere / Yarım Ekran Modu" : "Tam Ekran Modu";
     return JSON.stringify(
       {
-        kartGenislik: `${config.width}px`,
-        yatayKonum: `${config.offsetX}px (${config.offsetX < 0 ? `${Math.abs(config.offsetX)}px Sola/Ortaya` : `${config.offsetX}px Sağa`})`,
-        dikeyKonum: `${config.offsetY}px (${config.offsetY < 0 ? `${Math.abs(config.offsetY)}px Yukarı` : `${config.offsetY}px Aşağı`})`,
-        resimYukseklik: `${config.imageHeight}px`,
-        koseYuvarlakligi: `${config.borderRadius}px`,
-        arkaplanSaydamlik: `%${config.bgOpacity}`,
-        icBosluk: `${config.padding}px`,
-        hamDegerler: config,
+        ayarTuru: modeLabel,
+        mevcutEkran: `${screenSize.width}x${screenSize.height}px`,
+        kartGenislik: `${targetConfig.width}px`,
+        yatayKonum: `${targetConfig.offsetX}px (${targetConfig.offsetX < 0 ? `${Math.abs(targetConfig.offsetX)}px Sola` : `${targetConfig.offsetX}px Sağa`})`,
+        dikeyKonum: `${targetConfig.offsetY}px (${targetConfig.offsetY < 0 ? `${Math.abs(targetConfig.offsetY)}px Yukarı` : `${targetConfig.offsetY}px Aşağı`})`,
+        resimYukseklik: `${targetConfig.imageHeight}px`,
+        koseYuvarlakligi: `${targetConfig.borderRadius}px`,
+        arkaplanSaydamlik: `%${targetConfig.bgOpacity}`,
+        icBosluk: `${targetConfig.padding}px`,
+        hamDegerler: targetConfig,
       },
       null,
       2
@@ -196,17 +209,18 @@ export default function HeroSpotlightStudio({
 
   return (
     <>
-      {/* 1. SPOTLIGHT CARD CONTAINER (Serbest Masaüstü Konumlandırma) */}
+      {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma) */}
       <div
-        ref={containerRef}
         className="w-full sm:max-w-md lg:max-w-none lg:w-auto lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-75"
       >
         {/* Dynamic Desktop Sizing & Translation Wrapper */}
         <div
           className="w-full transition-all duration-75"
           style={{
-            maxWidth: isDesktop ? `${config.width}px` : "100%",
-            transform: isDesktop ? `translate3d(${safeOffset.x}px, ${safeOffset.y}px, 0)` : "none",
+            maxWidth: isDesktop ? `${activeConfig.width}px` : "100%",
+            transform: isDesktop
+              ? `translate3d(${activeConfig.offsetX}px, ${activeConfig.offsetY}px, 0)`
+              : "none",
             marginLeft: "auto",
           }}
         >
@@ -214,9 +228,9 @@ export default function HeroSpotlightStudio({
           <div
             className="relative bg-neutral-900 dark:bg-black backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75"
             style={{
-              borderRadius: `${config.borderRadius}px`,
-              backgroundColor: `rgba(18, 18, 18, ${config.bgOpacity / 100})`,
-              padding: `${config.padding}px`,
+              borderRadius: `${activeConfig.borderRadius}px`,
+              backgroundColor: `rgba(18, 18, 18, ${activeConfig.bgOpacity / 100})`,
+              padding: `${activeConfig.padding}px`,
             }}
           >
             {/* Spotlight Header Bar */}
@@ -235,12 +249,12 @@ export default function HeroSpotlightStudio({
               </div>
             </div>
 
-            {/* Hero Product Visual Display - Height controlled live */}
+            {/* Hero Product Visual Display */}
             <Link
               href={featuredProductSlug}
               className="group block relative my-3 rounded-xl bg-black/45 border border-white/15 overflow-hidden backdrop-blur-xl shadow-inner p-3 transition-all duration-75"
               style={{
-                height: `${config.imageHeight}px`,
+                height: `${activeConfig.imageHeight}px`,
               }}
             >
               <Image
@@ -293,242 +307,308 @@ export default function HeroSpotlightStudio({
         </div>
       </div>
 
-      {/* 2. FLOATING LIVE DESIGN TOOLBOX (Yalnızca ?design=1 ile açılır, normal ziyaretçilere kapalıdır) */}
+      {/* 2. FLOATING LIVE DESIGN TOOLBOX */}
       {isStudioEnabled && (
         <div className="hidden lg:block fixed bottom-6 left-6 z-50">
-        {!isPanelOpen ? (
-          <button
-            onClick={() => setIsPanelOpen(true)}
-            className="flex items-center gap-2.5 rounded-2xl bg-neutral-950/90 hover:bg-black border border-[#d4af37]/60 text-white px-4 py-3 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all hover:scale-105 group"
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d4af37] text-black font-bold">
-              <Sliders className="h-4 w-4" />
-            </div>
-            <span className="text-xs font-black uppercase tracking-wider text-[#d4af37]">
-              🛠️ Tasarım Editörünü Aç
-            </span>
-          </button>
-        ) : (
-          <div className="w-80 rounded-2xl bg-neutral-950/95 border border-neutral-700/80 shadow-[0_25px_60px_rgba(0,0,0,0.9)] backdrop-blur-2xl p-4 text-white">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#d4af37] text-black font-bold">
-                  <Sliders className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-heading font-black text-white uppercase tracking-wider">
-                    Canlı Tasarım Editörü
-                  </h4>
-                  <p className="text-[10px] text-neutral-400">Kaydırarak anlık yerini ve boyutunu değiştirin</p>
-                </div>
+          {!isPanelOpen ? (
+            <button
+              onClick={() => setIsPanelOpen(true)}
+              className="flex items-center gap-2.5 rounded-2xl bg-neutral-950/90 hover:bg-black border border-[#d4af37]/70 text-white px-4 py-3 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all hover:scale-105 group"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d4af37] text-black font-bold">
+                <Sliders className="h-4 w-4" />
               </div>
-              <button
-                onClick={() => setIsPanelOpen(false)}
-                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Quick Presets */}
-            <div className="mb-3 pb-3 border-b border-neutral-800">
-              <span className="text-[10px] uppercase font-bold text-[#d4af37] block mb-1.5">
-                ⚡ Hızlı Hazır Konumlar:
+              <span className="text-xs font-black uppercase tracking-wider text-[#d4af37]">
+                🛠️ Tasarım Editörünü Aç
               </span>
-              <div className="grid grid-cols-2 gap-1.5">
+              {isCurrentlyWindowed && (
+                <span className="rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] px-1.5 py-0.5 font-bold">
+                  Yarım Ekran
+                </span>
+              )}
+            </button>
+          ) : (
+            <div className="w-84 rounded-2xl bg-neutral-950/95 border border-neutral-700/80 shadow-[0_25px_60px_rgba(0,0,0,0.9)] backdrop-blur-2xl p-4 text-white">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-neutral-800">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#d4af37] text-black font-bold">
+                    <Sliders className="h-3.5 w-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-heading font-black text-white uppercase tracking-wider">
+                      Canlı Tasarım Stüdyosu
+                    </h4>
+                    <p className="text-[10px] text-neutral-400">
+                      Anlık Çözünürlük: {screenSize.width}x{screenSize.height}px
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsPanelOpen(false)}
+                  className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* DUAL-MODE SWITCHER (Yarım Ekran vs Tam Ekran) */}
+              <div className="flex rounded-xl bg-black/80 p-1 border border-neutral-800 mb-3 gap-1">
                 <button
                   type="button"
-                  onClick={() => applyPreset({ width: 440, offsetX: -140, offsetY: -40, imageHeight: 230 })}
-                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                  onClick={() => setEditMode("windowed")}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-[10.5px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                    editMode === "windowed"
+                      ? "bg-[#d4af37] text-black shadow-md"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
                 >
-                  🎯 Namlu Üzeri (Dengeli)
+                  <span>💻 Yarım / Pencere Ekran</span>
+                  {isCurrentlyWindowed && (
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="Şu Anki Ekranınız Bu Modda" />
+                  )}
                 </button>
                 <button
                   type="button"
-                  onClick={() => applyPreset({ width: 460, offsetX: -320, offsetY: -20, imageHeight: 250 })}
-                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                  onClick={() => setEditMode("fullscreen")}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-[10.5px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                    editMode === "fullscreen"
+                      ? "bg-[#d4af37] text-black shadow-md"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
                 >
-                  🎯 Ortaya Doğru
+                  <span>🖥️ Tam Ekran</span>
+                  {!isCurrentlyWindowed && (
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="Şu Anki Ekranınız Bu Modda" />
+                  )}
                 </button>
+              </div>
+
+              {/* Status Note */}
+              <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-neutral-300 flex items-center justify-between">
+                <span>
+                  Şu an <strong>{editMode === "windowed" ? "Yarım Ekran / Pencere" : "Tam Ekran"}</strong> ayarını düzenliyorsunuz.
+                </span>
+                {isCurrentlyWindowed && editMode === "windowed" && (
+                  <span className="text-emerald-400 font-bold">● Canlı Görünüm</span>
+                )}
+                {!isCurrentlyWindowed && editMode === "fullscreen" && (
+                  <span className="text-emerald-400 font-bold">● Canlı Görünüm</span>
+                )}
+              </div>
+
+              {/* Quick Presets */}
+              <div className="mb-3 pb-3 border-b border-neutral-800">
+                <span className="text-[10px] uppercase font-bold text-[#d4af37] block mb-1.5">
+                  ⚡ Hızlı Hazır Konumlar ({editMode === "windowed" ? "Pencere" : "Tam Ekran"}):
+                </span>
+                {editMode === "windowed" ? (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset({ width: 445, offsetX: 30, offsetY: -75, imageHeight: 315 })}
+                      className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                    >
+                      🎯 Dengeli Pencere
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset({ width: 420, offsetX: -40, offsetY: -60, imageHeight: 290 })}
+                      className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                    >
+                      🎯 Ortaya Doğru
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset({ width: 400, offsetX: 0, offsetY: -50, imageHeight: 260 })}
+                      className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                    >
+                      🎯 Kompakt Boyut
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset({ width: 450, offsetX: -80, offsetY: -40, imageHeight: 315 })}
+                      className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                    >
+                      🎯 Namlu Hizasında
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset(FULLSCREEN_CONFIG)}
+                      className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                    >
+                      🎯 Mükemmel Tam Ekran
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset({ width: 445, offsetX: 40, offsetY: -180, imageHeight: 315 })}
+                      className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                    >
+                      🎯 Hafif Alçak
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Controls */}
+              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1 text-xs">
+                {/* 1. Genişlik (En) */}
+                <div>
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-neutral-300 font-bold">📏 Kart Genişliği:</span>
+                    <span className="font-mono text-[#d4af37] font-bold">{currentConfig.width}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="300"
+                    max="650"
+                    step="5"
+                    value={currentConfig.width}
+                    onChange={(e) => updateParam("width", Number(e.target.value))}
+                    className="w-full accent-[#d4af37] cursor-pointer"
+                  />
+                </div>
+
+                {/* 2. Yatay Konum (Sağa / Sola / Ortaya) */}
+                <div>
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-neutral-300 font-bold">↔️ Yatay Konum (Sola / Sağa):</span>
+                    <span className="font-mono text-[#d4af37] font-bold">
+                      {currentConfig.offsetX < 0 ? `${Math.abs(currentConfig.offsetX)}px Sola` : `${currentConfig.offsetX}px Sağa`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-600"
+                    max="150"
+                    step="5"
+                    value={currentConfig.offsetX}
+                    onChange={(e) => updateParam("offsetX", Number(e.target.value))}
+                    className="w-full accent-[#d4af37] cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                    <span>⬅️ Ekran Ortasına (Sola)</span>
+                    <span>Sağa Doğru ➡️</span>
+                  </div>
+                </div>
+
+                {/* 3. Dikey Konum (Yukarı / Aşağı) */}
+                <div>
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-neutral-300 font-bold">↕️ Dikey Konum (Yukarı / Aşağı):</span>
+                    <span className="font-mono text-[#d4af37] font-bold">
+                      {currentConfig.offsetY < 0 ? `${Math.abs(currentConfig.offsetY)}px Yukarı` : `${currentConfig.offsetY}px Aşağı`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-200"
+                    max="150"
+                    step="5"
+                    value={currentConfig.offsetY}
+                    onChange={(e) => updateParam("offsetY", Number(e.target.value))}
+                    className="w-full accent-[#d4af37] cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                    <span>⬆️ Daha Yukarı</span>
+                    <span>Daha Aşağı ⬇️</span>
+                  </div>
+                </div>
+
+                {/* 4. Resim Yüksekliği */}
+                <div>
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-neutral-300 font-bold">🖼️ Fotoğraf Yüksekliği:</span>
+                    <span className="font-mono text-[#d4af37] font-bold">{currentConfig.imageHeight}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="140"
+                    max="400"
+                    step="5"
+                    value={currentConfig.imageHeight}
+                    onChange={(e) => updateParam("imageHeight", Number(e.target.value))}
+                    className="w-full accent-[#d4af37] cursor-pointer"
+                  />
+                </div>
+
+                {/* 5. Köşe Yuvarlaklığı */}
+                <div>
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-neutral-300 font-bold">🔘 Köşe Yuvarlaklığı:</span>
+                    <span className="font-mono text-[#d4af37] font-bold">{currentConfig.borderRadius}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="8"
+                    max="40"
+                    step="2"
+                    value={currentConfig.borderRadius}
+                    onChange={(e) => updateParam("borderRadius", Number(e.target.value))}
+                    className="w-full accent-[#d4af37] cursor-pointer"
+                  />
+                </div>
+
+                {/* 6. Arkaplan Koyu Saydamlığı */}
+                <div>
+                  <div className="flex justify-between text-[11px] mb-1">
+                    <span className="text-neutral-300 font-bold">🌫️ Arkaplan Saydamlığı:</span>
+                    <span className="font-mono text-[#d4af37] font-bold">%{currentConfig.bgOpacity}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="95"
+                    step="5"
+                    value={currentConfig.bgOpacity}
+                    onChange={(e) => updateParam("bgOpacity", Number(e.target.value))}
+                    className="w-full accent-[#d4af37] cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-3.5 pt-3 border-t border-neutral-800 flex flex-col gap-2">
                 <button
-                  type="button"
-                  onClick={() => applyPreset({ width: 400, offsetX: 0, offsetY: -80, imageHeight: 210 })}
-                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
+                  onClick={handleCopyLog}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-500 hover:from-amber-400 hover:to-amber-500 text-black font-heading font-black py-2.5 px-4 text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                 >
-                  🎯 Tam Sağ Üst
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  <span>{copied ? "Log Kopyalandı!" : `📋 ${editMode === "windowed" ? "Yarım Ekran" : "Tam Ekran"} Logunu Kopyala`}</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => applyPreset({ width: 520, offsetX: -160, offsetY: -30, imageHeight: 280 })}
-                  className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-left truncate transition-colors"
-                >
-                  🎯 Geniş & Büyük Vitrin
-                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={resetCurrentMode}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 py-1.5 px-2 text-[10px] font-bold transition-colors"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span>Sıfırla</span>
+                  </button>
+                  <button
+                    onClick={() => setShowLogModal(true)}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 py-1.5 px-2 text-[10px] font-bold transition-colors"
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span>Kodu Gör</span>
+                  </button>
+                </div>
               </div>
             </div>
-
-            {/* Controls */}
-            <div className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1 text-xs">
-              {/* 1. Genişlik (En) */}
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">📏 Kart Genişliği:</span>
-                  <span className="font-mono text-[#d4af37] font-bold">{config.width}px</span>
-                </div>
-                <input
-                  type="range"
-                  min="300"
-                  max="650"
-                  step="5"
-                  value={config.width}
-                  onChange={(e) => updateParam("width", Number(e.target.value))}
-                  className="w-full accent-[#d4af37] cursor-pointer"
-                />
-              </div>
-
-              {/* 2. Yatay Konum (Sağa / Sola / Ortaya) */}
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">↔️ Yatay Konum (Sola / Sağa):</span>
-                  <span className="font-mono text-[#d4af37] font-bold">
-                    {config.offsetX < 0 ? `${Math.abs(config.offsetX)}px Sola` : `${config.offsetX}px Sağa`}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="-650"
-                  max="150"
-                  step="5"
-                  value={config.offsetX}
-                  onChange={(e) => updateParam("offsetX", Number(e.target.value))}
-                  className="w-full accent-[#d4af37] cursor-pointer"
-                />
-                <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
-                  <span>⬅️ Ekranın Ortasına (Sola)</span>
-                  <span>Sağa Doğru ➡️</span>
-                </div>
-              </div>
-
-              {/* 3. Dikey Konum (Yukarı / Aşağı) */}
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">↕️ Dikey Konum (Yukarı / Aşağı):</span>
-                  <span className="font-mono text-[#d4af37] font-bold">
-                    {config.offsetY < 0 ? `${Math.abs(config.offsetY)}px Yukarı` : `${config.offsetY}px Aşağı`}
-                    {safeOffset.y !== config.offsetY && (
-                      <span className="text-[9px] text-emerald-400 ml-1.5 font-normal">
-                        (Aktif: {Math.abs(safeOffset.y)}px)
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="-200"
-                  max="150"
-                  step="5"
-                  value={config.offsetY}
-                  onChange={(e) => updateParam("offsetY", Number(e.target.value))}
-                  className="w-full accent-[#d4af37] cursor-pointer"
-                />
-                <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
-                  <span>⬆️ Daha Yukarı</span>
-                  <span>Daha Aşağı ⬇️</span>
-                </div>
-              </div>
-
-              {/* 4. Resim Yüksekliği */}
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">🖼️ Fotoğraf Yüksekliği:</span>
-                  <span className="font-mono text-[#d4af37] font-bold">{config.imageHeight}px</span>
-                </div>
-                <input
-                  type="range"
-                  min="140"
-                  max="400"
-                  step="5"
-                  value={config.imageHeight}
-                  onChange={(e) => updateParam("imageHeight", Number(e.target.value))}
-                  className="w-full accent-[#d4af37] cursor-pointer"
-                />
-              </div>
-
-              {/* 5. Köşe Yuvarlaklığı */}
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">🔘 Köşe Yuvarlaklığı:</span>
-                  <span className="font-mono text-[#d4af37] font-bold">{config.borderRadius}px</span>
-                </div>
-                <input
-                  type="range"
-                  min="8"
-                  max="40"
-                  step="2"
-                  value={config.borderRadius}
-                  onChange={(e) => updateParam("borderRadius", Number(e.target.value))}
-                  className="w-full accent-[#d4af37] cursor-pointer"
-                />
-              </div>
-
-              {/* 6. Arkaplan Koyu Saydamlığı */}
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-neutral-300 font-bold">🌫️ Arkaplan Saydamlığı:</span>
-                  <span className="font-mono text-[#d4af37] font-bold">%{config.bgOpacity}</span>
-                </div>
-                <input
-                  type="range"
-                  min="30"
-                  max="95"
-                  step="5"
-                  value={config.bgOpacity}
-                  onChange={(e) => updateParam("bgOpacity", Number(e.target.value))}
-                  className="w-full accent-[#d4af37] cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-4 pt-3 border-t border-neutral-800 flex flex-col gap-2">
-              <button
-                onClick={handleCopyLog}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-500 hover:from-amber-400 hover:to-amber-500 text-black font-heading font-black py-2.5 px-4 text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                <span>{copied ? "Log Kopyalandı!" : "📋 Bitti! Log Çıkart & Kopyala"}</span>
-              </button>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={resetDefaults}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 py-1.5 px-2 text-[10px] font-bold transition-colors"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  <span>Sıfırla</span>
-                </button>
-                <button
-                  onClick={() => setShowLogModal(true)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 py-1.5 px-2 text-[10px] font-bold transition-colors"
-                >
-                  <Eye className="h-3 w-3" />
-                  <span>Kodu Gör</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
 
-      {/* 3. LOG MODAL (Eğer panoya kopyalama çalışmazsa direkt seçebilsin) */}
+      {/* 3. LOG MODAL */}
       {showLogModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-neutral-900 border border-[#d4af37]/40 p-5 shadow-2xl text-white">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-neutral-800">
               <h3 className="font-heading font-black text-sm text-[#d4af37] uppercase">
-                Tasarım Yapılandırma Logu
+                {editMode === "windowed" ? "💻 Yarım Ekran" : "🖥️ Tam Ekran"} Tasarım Logu
               </h3>
               <button
                 onClick={() => setShowLogModal(false)}
@@ -538,7 +618,7 @@ export default function HeroSpotlightStudio({
               </button>
             </div>
             <p className="text-xs text-neutral-300 mb-2">
-              Aşağıdaki kodları kopyalayıp bana (sohbete) yapıştırın. Kartı tam olarak belirlediğiniz bu ölçülere sabitleyeceğim:
+              Aşağıdaki kodları kopyalayıp sohbete yapıştırın. Bu ölçüleri kalıcı olarak sisteme kodlayacağım:
             </p>
             <textarea
               readOnly
