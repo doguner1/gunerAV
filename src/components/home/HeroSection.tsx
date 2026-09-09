@@ -15,6 +15,7 @@ import {
 import StoreStatusBadge from "@/components/common/StoreStatusBadge";
 import { getHeroSpotlightProduct } from "@/lib/products";
 import { Product } from "@/types/product";
+import HeroSpotlightStudio from "@/components/home/HeroSpotlightStudio";
 
 export default function HeroSection({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Hero");
@@ -160,79 +161,19 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Premium Apple-grade Tactical Spotlight Card in Top-Right */}
-          <div className="w-full sm:max-w-md lg:w-[400px] xl:w-[430px] 2xl:w-[450px] lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:-mt-10 xl:-mt-14 2xl:-mt-18 lg:-mr-4 xl:-mr-8 2xl:-mr-12">
-            {/* iOS Liquid Glass Container - Sleek, tactical, prominent showcase */}
-            <div className="relative rounded-2xl lg:rounded-[24px] bg-neutral-900/60 dark:bg-black/60 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] p-4 sm:p-5 overflow-hidden text-white">
-              {/* Spotlight Header Bar */}
-              <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/15">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/10 backdrop-blur-md border border-white/20">
-                    <Crosshair className="h-3.5 w-3.5 text-[#d4af37]" />
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-white/90">
-                    {t("spotlightBadge")}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md shadow-sm">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>{t("spotlightInStock")}</span>
-                </div>
-              </div>
-
-              {/* Hero Product Visual Display - Spacious, crisp, uncompressed */}
-              <Link
-                href={featuredProductSlug}
-                className="group block relative my-3 rounded-xl bg-black/45 border border-white/15 overflow-hidden h-52 sm:h-60 lg:h-48 xl:h-52 backdrop-blur-xl shadow-inner p-3"
-              >
-                <Image
-                  src={spotlightImage}
-                  alt={spotlightTitle}
-                  fill
-                  unoptimized={spotlightImage.startsWith("http") || spotlightImage.startsWith("/api/img")}
-                  sizes="(max-width: 768px) 100vw, 450px"
-                  className="object-contain p-2 object-center transition-transform duration-500 group-hover:scale-105"
-                />
-                {spotlightProduct ? (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-3 pointer-events-none">
-                    <div className="text-white min-w-0">
-                      <div className="text-[9.5px] font-mono font-bold tracking-widest text-[#d4af37] uppercase truncate">
-                        [ + ] {t("spotlightFeaturedModel")}
-                      </div>
-                      <div className="text-sm font-heading font-black truncate">
-                        {spotlightTitle}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                )}
-              </Link>
-
-              {/* Spotlight Footer & Action */}
-              <div className="flex items-center justify-between pt-3 border-t border-white/15 gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <MapPin className="h-4 w-4 text-[#d4af37] shrink-0" />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10.5px] uppercase tracking-wider font-bold text-white/90 truncate">
-                      {t("spotlightStorePickup")}
-                    </span>
-                    <span className="text-[9.5px] text-white/60 truncate">
-                      Google 5.0 &#9733; ({STORE_INFO.reviewCount})
-                    </span>
-                  </div>
-                </div>
-
-                <Link
-                  href={featuredProductSlug}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black px-4 py-2 text-xs font-black uppercase tracking-wider shadow-lg transition-all hover:scale-105 active:scale-95 shrink-0"
-                >
-                  <span>{t("spotlightInspect")}</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-          </div>
+          {/* RIGHT COLUMN: Interactive Hero Spotlight with Live Design Studio */}
+          <HeroSpotlightStudio
+            spotlightProduct={spotlightProduct}
+            featuredProductSlug={featuredProductSlug}
+            spotlightTitle={spotlightTitle}
+            spotlightImage={spotlightImage}
+            badgeText={t("spotlightBadge")}
+            inStockText={t("spotlightInStock")}
+            featuredModelText={t("spotlightFeaturedModel")}
+            storePickupText={t("spotlightStorePickup")}
+            reviewCount={STORE_INFO.reviewCount}
+            inspectText={t("spotlightInspect")}
+          />
         </div>
       </div>
     </section>
