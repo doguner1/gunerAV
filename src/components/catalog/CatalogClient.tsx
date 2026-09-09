@@ -153,7 +153,7 @@ export default function CatalogClient({
                 key={product.id}
                 product={product}
                 categoryName={isTr ? cat?.name_tr : cat?.name_en}
-                priority={idx < 4}
+                priority={idx < 12}
               />
             );
           })}

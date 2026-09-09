@@ -48,7 +48,7 @@ export default function ProductCard({ product, categoryName, priority = false }:
               alt={name}
               fill
               priority={priority}
-              unoptimized={mainImage.startsWith("http") || mainImage.startsWith("/api/img")}
+              unoptimized={true}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               onLoad={() => setIsLoaded(true)}
               className={`object-contain transition-all duration-500 group-hover:scale-105 pointer-events-none ${
