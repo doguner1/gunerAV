@@ -26,8 +26,8 @@ export function StoreJsonLd() {
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": "5.0",
-      "reviewCount": "48",
+      "ratingValue": STORE_INFO.rating.toFixed(1),
+      "reviewCount": STORE_INFO.reviewCount.toString(),
       "bestRating": "5",
       "worstRating": "1",
     },
@@ -97,6 +97,30 @@ export function ProductJsonLd({
           },
         }
       : {}),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+export function BreadcrumbListJsonLd({
+  items,
+}: {
+  items: { name: string; url: string }[];
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": items.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": item.name,
+      "item": item.url.startsWith("http") ? item.url : `${STORE_INFO.siteUrl}${item.url}`,
+    })),
   };
 
   return (

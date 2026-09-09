@@ -1,4 +1,16 @@
 -- ==============================================================================
+-- ⚠️ WARNING: DO NOT RUN THIS IN PRODUCTION ⚠️
+-- 
+-- This script opens anonymous write access to your products table, which allows
+-- ANYONE on the internet to add or modify products if they find your anon key.
+--
+-- This was a temporary workaround for the Chrome extension during development.
+-- For production, ALWAYS use the `service_role` key in the extension settings
+-- (which bypasses RLS safely as an admin) and run `security-harden.sql` instead
+-- to ensure the database remains secure!
+-- ==============================================================================
+--
+-- ==============================================================================
 -- GÜNER AV (gunerav.site) - Eklenti Yazma İzni / Supabase RLS Düzeltme Kodu
 -- ==============================================================================
 -- HATA SEBEBİ:

@@ -12,7 +12,7 @@ import {
 import { STORE_INFO } from "@/lib/store";
 import ProductOverview from "@/components/product/ProductOverview";
 import ProductCard from "@/components/product/ProductCard";
-import { ProductJsonLd } from "@/components/seo/JsonLd";
+import { ProductJsonLd, BreadcrumbListJsonLd } from "@/components/seo/JsonLd";
 import { ChevronRight } from "lucide-react";
 
 export const dynamicParams = true;
@@ -90,6 +90,14 @@ export default async function ProductDetailPage({
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
       <ProductJsonLd product={product} locale={locale} />
+      <BreadcrumbListJsonLd
+        items={[
+          { name: tCommon("home"), url: `/${locale}` },
+          { name: tCommon("catalog"), url: `/${locale}/products` },
+          ...(category ? [{ name: categoryName || category.id, url: `/${locale}/products?category=${category.id}` }] : []),
+          { name: name, url: `/${locale}/products/${slug}` },
+        ]}
+      />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}

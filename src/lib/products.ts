@@ -122,7 +122,7 @@ export function getHeroSpotlightProduct(list?: Product[]): Product | undefined {
   const arr = list || localProducts;
   return (
     arr.find((p) => p.is_hero_spotlight) ||
-    arr.find((p) => p.featured) ||
+    arr.find((p) => p.id === "castello-mod-505-otomatik-av-tufegi") ||
     arr[0]
   );
 }

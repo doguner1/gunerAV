@@ -1,10 +1,10 @@
 import crypto from "crypto";
 
-const SECRET_SEED =
-  process.env.IMAGE_PROXY_SECRET ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "guner-av-malatya-secure-2026-secret-key-token";
+const SECRET_SEED = process.env.IMAGE_PROXY_SECRET;
+
+if (!SECRET_SEED) {
+  throw new Error("IMAGE_PROXY_SECRET is not defined in environment variables. Critical security vulnerability.");
+}
 
 // Derive fixed 32-byte key for AES-256
 const KEY = crypto.createHash("sha256").update(SECRET_SEED).digest();

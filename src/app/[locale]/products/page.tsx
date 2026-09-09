@@ -5,6 +5,7 @@ import { getAllProducts, getAllCategories } from "@/lib/products";
 import CatalogClient from "@/components/catalog/CatalogClient";
 import { STORE_INFO } from "@/lib/store";
 import { Suspense } from "react";
+import { BreadcrumbListJsonLd } from "@/components/seo/JsonLd";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -52,11 +53,20 @@ export default async function ProductsPage({
 }) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "CatalogPage" });
+  const tCommon = await getTranslations({ locale, namespace: "Common" });
   const products = await getAllProducts();
   const categories = getAllCategories();
+  const isTr = locale === "tr";
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
+      <BreadcrumbListJsonLd
+        items={[
+          { name: tCommon("home"), url: `/${locale}` },
+          { name: t("heading"), url: `/${locale}/products` },
+        ]}
+      />
+      
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <div className="mb-10 max-w-3xl">
@@ -81,6 +91,21 @@ export default async function ProductsPage({
         >
           <CatalogClient initialProducts={products} categories={categories} />
         </Suspense>
+
+        {/* SEO Text */}
+        <div className="mt-20 pt-10 border-t border-neutral-200 dark:border-neutral-900 prose prose-neutral dark:prose-invert max-w-none text-sm text-neutral-600 dark:text-neutral-400">
+          <h2 className="text-xl font-bold mb-4 text-neutral-900 dark:text-white">{isTr ? "Malatya Av Malzemeleri ve Kamp Ekipmanları" : "Hunting and Camping Gear in Malatya"}</h2>
+          <p className="mb-4">
+            {isTr
+              ? "Malatya av bayii arayışınızda Güner Av, doğa tutkunlarına ve avcılara en kaliteli ekipmanları sunmaktan gurur duyar. İster hafta sonu kampına çıkıyor olun, ister profesyonel bir av deneyimi arıyor olun, mağazamızda ihtiyacınız olan her türlü taktik dürbün, fener, av giyimi ve kamp malzemesini bulabilirsiniz. Malatya'nın doğa sporları ve avcılık potansiyelini bilen uzman ekibimiz, yerel avlaklara ve doğa şartlarına en uygun ürünleri seçmeniz için size rehberlik eder."
+              : "When searching for a hunting dealer in Malatya, Guner AV is proud to offer the highest quality equipment to nature enthusiasts and hunters. Whether you're going on a weekend camping trip or looking for a professional hunting experience, you can find all kinds of tactical scopes, flashlights, hunting apparel, and camping gear in our store. Our expert team, who knows the outdoor sports and hunting potential of Malatya, will guide you to choose the most suitable products for local hunting grounds and natural conditions."}
+          </p>
+          <p>
+            {isTr
+              ? "Bölgemizdeki av tutkunlarının öncelikli tercihi olan işletmemiz, taktik giyimden güvenilir outdoor ayakkabılarına kadar geniş bir yelpazede hizmet vermektedir. Malatya'da av tüfeği ve mühimmatı gibi ruhsatlı ürünleri online mağazamızda listelemesek de, mağazamızı ziyaret ederek veya WhatsApp üzerinden bizimle iletişime geçerek detaylı bilgi alabilirsiniz. Kalite, dayanıklılık ve doğayla uyumlu ekipmanlar için Güner Av'ı tercih edin."
+              : "Our business, the primary choice of hunting enthusiasts in our region, provides a wide range of services from tactical clothing to reliable outdoor shoes. Although we do not list licensed products such as hunting shotguns and ammunition in our online store in Malatya, you can get detailed information by visiting our physical store or contacting us via WhatsApp. Choose Guner AV for quality, durability, and nature-friendly equipment."}
+          </p>
+        </div>
       </div>
     </div>
   );
