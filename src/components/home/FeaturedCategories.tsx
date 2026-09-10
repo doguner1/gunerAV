@@ -52,7 +52,7 @@ export default function FeaturedCategories({ products = [] }: { products?: Produ
             }).length;
             const name = isTr ? category.name_tr : category.name_en;
             const desc = isTr ? category.description_tr : category.description_en;
-            const isLicenseReq = (category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-")) && category.id !== "tufek-aksesuar";
+            const isLicenseReq = (category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-")) && category.id !== "tufek-aksesuar" && category.id !== "tufek-bakim";
 
             // Category specific tag
             const badgeTag = isLicenseReq

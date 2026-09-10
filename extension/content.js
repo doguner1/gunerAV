@@ -1141,10 +1141,6 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       titleLower.includes("bipod") ||
       titleLower.includes("çatal ayak") ||
       titleLower.includes("catal ayak") ||
-      titleLower.includes("temizleme seti") ||
-      titleLower.includes("bakım seti") ||
-      titleLower.includes("bakım yağı") ||
-      titleLower.includes("harbi") ||
       titleLower.includes("picatinny") ||
       titleLower.includes("ray adaptör") ||
       titleLower.includes("ray pedi") ||
@@ -1154,9 +1150,31 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       titleLower.includes("pikatin")
     );
 
+  const isBakim =
+    titleLower.includes("temizleme seti") ||
+    titleLower.includes("bakım seti") ||
+    titleLower.includes("bakim seti") ||
+    titleLower.includes("bakım yağı") ||
+    titleLower.includes("bakim yagi") ||
+    titleLower.includes("silah yağı") ||
+    titleLower.includes("silah yagi") ||
+    titleLower.includes("harbi") ||
+    titleLower.includes("namlu temizleme") ||
+    titleLower.includes("pas sökücü") ||
+    titleLower.includes("pas sokucu") ||
+    titleLower.includes("koruyucu yağ") ||
+    titleLower.includes("koruyucu yag") ||
+    titleLower.includes("bore cleaner") ||
+    titleLower.includes("gun oil") ||
+    titleLower.includes("gun cleaner") ||
+    fullText.includes("bakim-malzemeleri") ||
+    fullText.includes("temizleme-bakim") ||
+    fullText.includes("silah-bakim");
+
   const isFirearm =
     !isOptic &&
-    !isAccessory && (
+    !isAccessory &&
+    !isBakim && (
       titleLower.includes("tüfek") ||
       titleLower.includes("tufek") ||
       titleLower.includes("tabanca") ||
@@ -1172,6 +1190,9 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   if (isOptic) {
     result.requires_license = false;
     result.category = "optik";
+  } else if (isBakim) {
+    result.requires_license = false;
+    result.category = "tufek-bakim";
   } else if (isAccessory) {
     result.requires_license = false;
     result.category = "tufek-aksesuar";

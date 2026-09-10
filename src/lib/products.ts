@@ -69,14 +69,40 @@ function secureProduct(p: Product): Product {
       slugLower.includes("lazer-aparati")
     ));
 
+  const isGunMaintenance =
+    category === "tufek-bakim" ||
+    ((!category || category === "tufek" || category === "silah-muhimmat") && (
+      nameLower.includes("temizleme seti") ||
+      nameLower.includes("bakım seti") ||
+      nameLower.includes("bakim seti") ||
+      nameLower.includes("bakım yağı") ||
+      nameLower.includes("bakim yagi") ||
+      nameLower.includes("silah yağı") ||
+      nameLower.includes("silah yagi") ||
+      nameLower.includes("harbi") ||
+      nameLower.includes("namlu temizleme") ||
+      nameLower.includes("pas sökücü") ||
+      nameLower.includes("pas sokucu") ||
+      nameLower.includes("koruyucu yağ") ||
+      nameLower.includes("koruyucu yag") ||
+      nameLower.includes("bore cleaner") ||
+      nameLower.includes("gun oil") ||
+      slugLower.includes("temizleme-seti") ||
+      slugLower.includes("bakim-seti") ||
+      slugLower.includes("silah-yagi") ||
+      slugLower.includes("harbi")
+    ));
+
   const isOtherNonOptic =
     category?.startsWith("kamp") ||
     category?.startsWith("muhimmat") ||
     category?.startsWith("bicak") ||
-    category?.startsWith("giyim");
+    category?.startsWith("giyim") ||
+    category === "tufek-bakim" ||
+    isGunMaintenance ||
+    isGunAccessory;
 
   const isOptic =
-    !isGunAccessory &&
     !isOtherNonOptic && (
       category === "optik" ||
       nameLower.includes("dürbün") ||
@@ -101,7 +127,10 @@ function secureProduct(p: Product): Product {
       slugLower.includes("reddot")
     );
 
-  if (isGunAccessory) {
+  if (isGunMaintenance) {
+    category = "tufek-bakim";
+    requiresLicense = false;
+  } else if (isGunAccessory) {
     category = "tufek-aksesuar";
     requiresLicense = false;
   } else if (isOptic) {
@@ -112,6 +141,8 @@ function secureProduct(p: Product): Product {
   } else if (category === "muhimmat" || category?.startsWith("muhimmat-")) {
     requiresLicense = false;
   } else if (category === "bicak" || category?.startsWith("bicak-")) {
+    requiresLicense = false;
+  } else if (category === "tufek-bakim") {
     requiresLicense = false;
   } else if (category?.startsWith("tufek-") || category === "tufek") {
     requiresLicense = true;
@@ -295,13 +326,32 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
     return arr.filter((p) => p.category === "optik");
   }
   if (category === "tufek") {
-    return arr.filter((p) => (p.category.startsWith("tufek") || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar") || p.category === "aksesuar") && p.category !== "optik");
+    return arr.filter(
+      (p) =>
+        (p.category.startsWith("tufek") || p.category === "silah-muhimmat") &&
+        p.category !== "tufek-aksesuar" &&
+        p.category !== "tufek-aksesuarlar" &&
+        p.category !== "tufek-bakim" &&
+        p.category !== "optik" &&
+        !p.category.startsWith("aksesuar")
+    );
   }
   if (category === "tufek-aksesuar" || category === "tufek-aksesuarlar") {
     return arr.filter((p) => (p.category === "tufek-aksesuar" || p.category === "tufek-aksesuarlar" || p.category.startsWith("aksesuar") || p.category === "aksesuar" || p.category === "bicak-av") && p.category !== "optik");
   }
+  if (category === "tufek-bakim") {
+    return arr.filter((p) => p.category === "tufek-bakim");
+  }
   if (category === "silah-muhimmat") {
-    return arr.filter((p) => (p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar")) && p.category !== "optik");
+    return arr.filter(
+      (p) =>
+        (p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat") &&
+        p.category !== "tufek-aksesuar" &&
+        p.category !== "tufek-aksesuarlar" &&
+        p.category !== "tufek-bakim" &&
+        p.category !== "optik" &&
+        !p.category.startsWith("aksesuar")
+    );
   }
   if (category === "bicak") {
     return arr.filter((p) => p.category === "bicak");

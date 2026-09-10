@@ -56,6 +56,12 @@
         "slug": "tufek-aksesuar",
         "name_tr": "Aksesuarlar",
         "name_en": "Accessories"
+      },
+      {
+        "id": "tufek-bakim",
+        "slug": "tufek-bakim",
+        "name_tr": "Bakım Malzemeleri",
+        "name_en": "Maintenance & Care"
       }
     ]
   },

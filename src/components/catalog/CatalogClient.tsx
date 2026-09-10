@@ -247,7 +247,8 @@ export default function CatalogClient({
         prodCat.startsWith("kamp") ||
         prodCat.startsWith("muhimmat") ||
         prodCat.startsWith("bicak") ||
-        prodCat.startsWith("giyim");
+        prodCat.startsWith("giyim") ||
+        prodCat === "tufek-bakim";
 
       const isAccessory =
         prodCat === "tufek-aksesuar" ||
@@ -289,19 +290,21 @@ export default function CatalogClient({
           if (isAccessory || isOtherCategory) return false;
           if (!isOptic && prodCat !== "optik") return false;
         } else if (selectedCategory === "tufek") {
-          // "Tüm Tüfekler" seçildiğinde müşteriler yalnızca gerçek tüfekleri görmeli. Dürbün veya aksesuar asla görünmemeli.
-          if (isOptic || isAccessory || prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar" || prodCat.startsWith("aksesuar") || prodCat === "aksesuar") {
+          // "Tüm Tüfekler" seçildiğinde müşteriler yalnızca gerçek tüfekleri görmeli. Dürbün, aksesuar veya bakım malzemeleri asla görünmemeli.
+          if (isOptic || isAccessory || prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar" || prodCat === "tufek-bakim" || prodCat.startsWith("aksesuar") || prodCat === "aksesuar") {
             return false;
           }
           const isShotgun =
-            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar") ||
+            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim") ||
             prodCat === "tufek" ||
             prodCat === "silah-muhimmat";
           if (!isShotgun) return false;
+        } else if (selectedCategory === "tufek-bakim") {
+          if (prodCat !== "tufek-bakim") return false;
         } else if (selectedCategory === "silah-muhimmat") {
-          if (isOptic || isAccessory) return false;
+          if (isOptic || isAccessory || prodCat === "tufek-bakim") return false;
           const isFirearmOrAmmo =
-            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar") ||
+            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim") ||
             prodCat === "tufek" ||
             prodCat === "muhimmat" ||
             prodCat === "silah-muhimmat";
