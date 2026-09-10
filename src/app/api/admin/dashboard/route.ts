@@ -69,12 +69,7 @@ export async function GET(req: NextRequest) {
   let activeVisitorsCount = 0;
 
   // 1. Query Supabase
-  let supabase: ReturnType<typeof getSupabaseAdminClient> | null = null;
-  try {
-    supabase = getSupabaseAdminClient();
-  } catch (err: any) {
-    console.warn("[Dashboard Supabase Admin Init]:", err.message);
-  }
+  const supabase = getSupabaseAdminClient();
   if (supabase) {
     // 1.a Fire-and-forget 30-day cleanup of active_visitors (runs in background)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();

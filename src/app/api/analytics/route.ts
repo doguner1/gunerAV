@@ -30,10 +30,12 @@ export async function POST(req: NextRequest) {
       }
 
       const supabase = getSupabaseAdminClient();
-      try {
-        await supabase.from("analytics_events").delete().neq("event_type", "___never___");
-      } catch (dbErr) {
-        console.error("[Analytics Clear Supabase Error]:", dbErr);
+      if (supabase) {
+        try {
+          await supabase.from("analytics_events").delete().neq("event_type", "___never___");
+        } catch (dbErr) {
+          console.error("[Analytics Clear Supabase Error]:", dbErr);
+        }
       }
 
       return NextResponse.json({ success: true, message: "Analitik logları sıfırlandı." });
@@ -57,6 +59,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = getSupabaseAdminClient();
+    if (!supabase) {
+      return NextResponse.json({ authenticated: true, events: [] });
+    }
     const { data, error } = await supabase
       .from("analytics_events")
       .select("*")

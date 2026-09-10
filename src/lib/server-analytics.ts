@@ -6,22 +6,18 @@ import { detectDeviceType } from "@/lib/device-detect";
  * Core event ingestion engine.
  * Receives raw HTTP request, processes metadata, logs to console,
  * and persists directly to Supabase analytics_events table.
+ * NO file-based or synchronous disk fallback.
  */
 export async function recordAnalyticsEvent(
   req: NextRequest,
   parsedBody?: any
-): Promise<{ success: boolean; persisted: "supabase"; id: string }> {
+): Promise<{ success: boolean; persisted: "supabase" | "none"; id?: string }> {
   let body: any = parsedBody;
 
   if (!body) {
-    const text = await req.text();
-    if (text) {
-      try {
-        body = JSON.parse(text);
-      } catch {
-        body = { raw: text };
-      }
-    } else {
+    try {
+      body = await req.json();
+    } catch {
       body = {};
     }
   }
@@ -49,8 +45,11 @@ export async function recordAnalyticsEvent(
     hashedClientIp.slice(0, 8)
   );
 
-  // Supabase Veritabanı Yazımı
   const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    console.error("[analytics] Supabase client kurulamadı — env değişkenlerini kontrol et");
+    return { success: false, persisted: "none" };
+  }
 
   const { error } = await supabase.from("analytics_events").insert({
     event_type: eventName,
@@ -73,8 +72,8 @@ export async function recordAnalyticsEvent(
   });
 
   if (error) {
-    console.error("[Supabase Analytics Insert Error]:", error);
-    throw error;
+    console.error("[analytics insert error]", error.message, error.code);
+    return { success: false, persisted: "none" };
   }
 
   return {

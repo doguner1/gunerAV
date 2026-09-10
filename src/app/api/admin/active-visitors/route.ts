@@ -9,15 +9,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Yetkisiz erişim" }, { status: 401 });
   }
 
-  let supabase: ReturnType<typeof getSupabaseAdminClient> | null = null;
-  try {
-    supabase = getSupabaseAdminClient();
-  } catch (err: any) {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
     return NextResponse.json({
       success: false,
       count: 0,
       activeVisitors: [],
-      error: err.message || "Supabase bağlantısı kurulamadı",
+      error: "Supabase bağlantısı kurulamadı (SUPABASE_SERVICE_ROLE_KEY eksik)",
     });
   }
 

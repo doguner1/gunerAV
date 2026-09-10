@@ -3,14 +3,13 @@ import crypto from "crypto";
 
 let cachedClient: SupabaseClient | null = null;
 
-export function getSupabaseAdminClient(): SupabaseClient {
+export function getSupabaseAdminClient(): SupabaseClient | null {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY; // SADECE bu, fallback YOK
 
   if (!url || !key) {
-    throw new Error(
-      "[Supabase Admin] Missing required environment variables: SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY must be defined."
-    );
+    console.error("[analytics] SUPABASE_SERVICE_ROLE_KEY tanımlı değil! Vercel env ayarlarını kontrol et.");
+    return null;
   }
 
   if (!cachedClient) {
