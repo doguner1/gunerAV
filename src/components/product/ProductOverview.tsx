@@ -12,6 +12,7 @@ import {
   trackVariantSelect,
   trackWhatsAppClick,
   trackPhoneClick,
+  trackMapClick,
 } from "@/lib/analytics";
 import { sendPresenceHeartbeat } from "@/lib/presence";
 import { usePageEngagementTracker } from "@/hooks/usePageEngagementTracker";
@@ -297,6 +298,7 @@ export default function ProductOverview({
 
             <Link
               href="/contact"
+              onClick={() => trackMapClick("product_detail_directions")}
               className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-black py-3 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-300 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white shadow-sm"
             >
               <MapPin className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />

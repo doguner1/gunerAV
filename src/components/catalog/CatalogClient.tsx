@@ -243,6 +243,12 @@ export default function CatalogClient({
         JSON.stringify(product.specs_tr || {})
       ).toLocaleLowerCase("tr");
 
+      const isOtherCategory =
+        prodCat.startsWith("kamp") ||
+        prodCat.startsWith("muhimmat") ||
+        prodCat.startsWith("bicak") ||
+        prodCat.startsWith("giyim");
+
       const isAccessory =
         prodCat === "tufek-aksesuar" ||
         prodCat === "tufek-aksesuarlar" ||
@@ -260,7 +266,8 @@ export default function CatalogClient({
         fullText.includes("atış kulaklığı");
 
       const isOptic =
-        !isAccessory && (
+        !isAccessory &&
+        !isOtherCategory && (
           prodCat === "optik" ||
           fullText.includes("dürbün") ||
           fullText.includes("durbun") ||
@@ -268,7 +275,10 @@ export default function CatalogClient({
           fullText.includes("red dot") ||
           fullText.includes("reddot") ||
           fullText.includes("red-dot") ||
-          fullText.includes("termal") ||
+          fullText.includes("termal dürbün") ||
+          fullText.includes("termal kamera") ||
+          fullText.includes("termal nişangah") ||
+          fullText.includes("termal optik") ||
           fullText.includes("boresighter") ||
           fullText.includes("sıfırlama lazeri") ||
           fullText.includes("sifirlama lazeri")
@@ -276,7 +286,7 @@ export default function CatalogClient({
 
       if (selectedCategory !== "all") {
         if (selectedCategory === "optik") {
-          if (isAccessory) return false;
+          if (isAccessory || isOtherCategory) return false;
           if (!isOptic && prodCat !== "optik") return false;
         } else if (selectedCategory === "tufek") {
           // "Tüm Tüfekler" seçildiğinde müşteriler yalnızca gerçek tüfekleri görmeli. Dürbün veya aksesuar asla görünmemeli.

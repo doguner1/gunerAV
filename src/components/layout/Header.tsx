@@ -271,6 +271,7 @@ export default function Header() {
               {/* Phone quick bar */}
               <a
                 href={`tel:${STORE_INFO.phone}`}
+                onClick={() => trackPhoneClick("header_drawer_call")}
                 className="flex items-center justify-center gap-2 rounded-xl bg-neutral-100 dark:bg-neutral-900 p-3 text-sm font-bold text-neutral-950 dark:text-white"
               >
                 <Phone className="h-4 w-4 text-[#d4af37]" />

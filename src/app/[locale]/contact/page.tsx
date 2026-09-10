@@ -4,6 +4,7 @@ import { routing } from "@/i18n/routing";
 import { STORE_INFO } from "@/lib/store";
 import { generateWhatsAppLink } from "@/lib/utils";
 import ContactForm from "@/components/contact/ContactForm";
+import TrackedExternalLink from "@/components/common/TrackedExternalLink";
 import {
   MapPin,
   Phone,
@@ -91,7 +92,9 @@ export default async function ContactPage({ params }: {
 
             {/* Quick Direct Buttons */}
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <a
+              <TrackedExternalLink
+                type="whatsapp"
+                eventName="contact_page_whatsapp"
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -99,15 +102,17 @@ export default async function ContactPage({ params }: {
               >
                 <MessageCircle className="h-4 w-4 fill-neutral-950 text-neutral-950" />
                 <span>{t("whatsappChat")}</span>
-              </a>
+              </TrackedExternalLink>
 
-              <a
+              <TrackedExternalLink
+                type="phone"
+                eventName="contact_page_call"
                 href={`tel:${STORE_INFO.phone}`}
                 className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 py-3 text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 shadow-sm"
               >
                 <Phone className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />
                 <span>{STORE_INFO.phone}</span>
-              </a>
+              </TrackedExternalLink>
             </div>
           </div>
 
@@ -187,7 +192,9 @@ export default async function ContactPage({ params }: {
               </div>
 
               <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900">
-                <a
+                <TrackedExternalLink
+                  type="map"
+                  eventName="contact_page_directions"
                   href={STORE_INFO.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -195,7 +202,7 @@ export default async function ContactPage({ params }: {
                 >
                   <Navigation className="h-4 w-4" />
                   <span>{tStore("getDirections")}</span>
-                </a>
+                </TrackedExternalLink>
               </div>
             </div>
 

@@ -295,7 +295,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Session Grouping
-    const sId = p.session_id || p.visitor_id || ev.client_ip || "sess_unknown";
+    let sId = p.session_id || p.visitor_id || ev.client_ip || "sess_unknown";
+    if (sId === "sess_anon" || sId === "vis_anon" || sId === "sess_unknown") {
+      sId = `${sId}_${ev.client_ip}_${ev.user_agent?.substring(0, 15) || "noua"}`;
+    }
+    
     if (!sessionMap.has(sId)) {
       sessionMap.set(sId, {
         events: [],

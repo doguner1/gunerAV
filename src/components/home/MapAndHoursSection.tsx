@@ -1,5 +1,8 @@
+"use client";
+
 import { useTranslations, useLocale } from "next-intl";
 import { STORE_INFO } from "@/lib/store";
+import TrackedExternalLink from "@/components/common/TrackedExternalLink";
 import {
   MapPin,
   Clock,
@@ -116,7 +119,9 @@ export default function MapAndHoursSection() {
 
             {/* Action Buttons */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-              <a
+              <TrackedExternalLink
+                type="map"
+                eventName="map_section_directions"
                 href={STORE_INFO.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -124,15 +129,17 @@ export default function MapAndHoursSection() {
               >
                 <Navigation className="h-4 w-4" />
                 <span>{t("getDirections")}</span>
-              </a>
+              </TrackedExternalLink>
 
-              <a
+              <TrackedExternalLink
+                type="phone"
+                eventName="map_section_call"
                 href={`tel:${STORE_INFO.phone}`}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-3 text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white transition-all hover:bg-neutral-100 dark:hover:bg-neutral-750"
               >
                 <Phone className="h-4 w-4 text-[#b45309] dark:text-[#d4af37]" />
                 <span>{tCommon("callDirect")}</span>
-              </a>
+              </TrackedExternalLink>
             </div>
           </div>
 

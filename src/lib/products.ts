@@ -67,8 +67,15 @@ function secureProduct(p: Product): Product {
     slugLower.includes("montaj-rayi") ||
     slugLower.includes("lazer-aparati");
 
+  const isOtherNonOptic =
+    category?.startsWith("kamp") ||
+    category?.startsWith("muhimmat") ||
+    category?.startsWith("bicak") ||
+    category?.startsWith("giyim");
+
   const isOptic =
-    !isGunAccessory && (
+    !isGunAccessory &&
+    !isOtherNonOptic && (
       category === "optik" ||
       nameLower.includes("dürbün") ||
       nameLower.includes("durbun") ||
@@ -76,7 +83,10 @@ function secureProduct(p: Product): Product {
       nameLower.includes("red dot") ||
       nameLower.includes("reddot") ||
       nameLower.includes("red-dot") ||
-      nameLower.includes("termal") ||
+      nameLower.includes("termal dürbün") ||
+      nameLower.includes("termal kamera") ||
+      nameLower.includes("termal nişangah") ||
+      nameLower.includes("termal optik") ||
       nameLower.includes("sıfırlama lazeri") ||
       nameLower.includes("sifirlama lazeri") ||
       nameLower.includes("boresighter") ||

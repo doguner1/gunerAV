@@ -23,6 +23,9 @@ declare global {
 const LOCAL_STORAGE_LOG_KEY = "gunerav_analytics_log";
 const MAX_LOCAL_LOGS = 100;
 
+let memVisitorId: string | null = null;
+let memSessionId: string | null = null;
+
 export function getOrCreateVisitorId(): string {
   if (typeof window === "undefined") return "anon";
   try {
@@ -33,7 +36,8 @@ export function getOrCreateVisitorId(): string {
     }
     return vid;
   } catch {
-    return "vis_anon";
+    if (!memVisitorId) memVisitorId = "vis_mem_" + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    return memVisitorId;
   }
 }
 
@@ -49,7 +53,8 @@ export function getSessionId(): string {
     }
     return sid;
   } catch {
-    return "sess_anon";
+    if (!memSessionId) memSessionId = "sess_mem_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    return memSessionId;
   }
 }
 
@@ -248,7 +253,7 @@ export function trackSearch(query: string, resultsCount: number) {
  * 4. WhatsApp Direct Contact Click (Conversion Event)
  */
 export function trackWhatsAppClick(source: string, product?: { id?: string; name?: string }) {
-  trackEvent("contact_whatsapp", {
+  trackExternalClick("contact_whatsapp", {
     source,
     item_id: product?.id,
     item_name: product?.name,
@@ -280,12 +285,50 @@ export function trackVariantSelect(product: { id: string; name: string }, varian
  * 7. Phone Call Click
  */
 export function trackPhoneClick(source: string, details: Record<string, any> = {}) {
-  trackEvent("click_phone", { source, ...details });
+  trackExternalClick("click_phone", { source, ...details });
 }
 
 /**
  * 8. Map & Store Directions Click
  */
 export function trackMapClick(source: string, details: Record<string, any> = {}) {
-  trackEvent("click_map_directions", { source, ...details });
+  trackExternalClick("click_map_directions", { source, ...details });
 }
+
+/**
+ * Helper to force sendBeacon for external links (tel:, maps:, wa.me:)
+ * to avoid WebKit cancelling fetch requests when app switches.
+ */
+function trackExternalClick(eventName: string, params: AnalyticsEventParams = {}) {
+  // First record the event properly with standard trackEvent
+  trackEvent(eventName, params);
+
+  // Then forcefully try sendBeacon regardless of OS to ensure delivery 
+  // before the browser suspends the context.
+  try {
+    if (typeof window !== "undefined" && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const isProbablyIpadPro = 
+        /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1;
+      
+      const eventPayload = {
+        session_id: getSessionId(),
+        visitor_id: getVisitorId(),
+        timestamp: new Date().toISOString(),
+        path: window.location.pathname,
+        ...params,
+      };
+
+      const bodyStr = JSON.stringify({ 
+        event: eventName, 
+        is_ipad_pro_hint: isProbablyIpadPro, 
+        params: eventPayload 
+      });
+      
+      const blob = new Blob([bodyStr], { type: "application/json" });
+      navigator.sendBeacon("/api/collect", blob);
+    }
+  } catch (e) {
+    // silently fail
+  }
+}
+

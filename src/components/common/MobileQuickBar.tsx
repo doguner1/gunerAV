@@ -3,6 +3,7 @@
 import { STORE_INFO } from "@/lib/store";
 import { MapPin, PhoneCall } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { trackMapClick, trackPhoneClick } from "@/lib/analytics";
 
 export default function MobileQuickBar() {
   const t = useTranslations("Hero");
@@ -18,6 +19,7 @@ export default function MobileQuickBar() {
           href={STORE_INFO.mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackMapClick("mobile_quickbar_directions")}
           className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-xl bg-white text-black hover:bg-neutral-100 active:scale-95 font-bold text-xs uppercase tracking-wider shadow-md transition-all"
         >
           <MapPin className="h-4 w-4 text-[#b45309] fill-[#b45309]/20 shrink-0" />
@@ -27,6 +29,7 @@ export default function MobileQuickBar() {
         {/* Hemen Ara */}
         <a
           href={`tel:${STORE_INFO.phoneIntl || STORE_INFO.phone}`}
+          onClick={() => trackPhoneClick("mobile_quickbar_call")}
           className="flex items-center justify-center gap-2 py-3.5 px-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 font-bold text-xs uppercase tracking-wider shadow-md transition-all"
         >
           <PhoneCall className="h-4 w-4 shrink-0 animate-pulse" />
