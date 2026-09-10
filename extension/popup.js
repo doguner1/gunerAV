@@ -564,8 +564,12 @@ function populateForm(data) {
     titleLower.includes("çifte") ||
     titleLower.includes("cifte");
 
-  // 1. Ateşli Silah / Av Tüfeği Tespiti (Ruhsat KESİNLİKLE Zorunlu)
-  if (isFirearm) {
+  // 0. Öncelikli Kategori (Eğer scraper zaten spesifik bir alt kategori belirlediyse doğrudan kullan)
+  if (data.category && data.category !== "kamp" && data.category !== "tufek" && data.category !== "muhimmat") {
+    ensureCategoryOption(catSelect, data.category, data.category);
+    catSelect.value = data.category;
+    licenseChk.checked = data.category.startsWith("tufek");
+  } else if (isFirearm) {
     licenseChk.checked = true;
     if (fullText.includes("bullpup")) {
       catSelect.value = "tufek-bullpup";
