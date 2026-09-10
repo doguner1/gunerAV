@@ -1556,7 +1556,7 @@ async function runBatchScrape() {
       appendBatchLog(`📁 Seçilen kategori uygulandı: ${batchCategory}`, "info");
     } else {
       // Liste linki veya geçerli sekme URL'sinden otomatik kategori tespiti
-      const activeUrl = (document.getElementById("fldBatchUrl")?.value || targetTabUrl || "").toLowerCase();
+      const activeUrl = (document.getElementById("fldBatchUrl")?.value || tab?.url || targetTab?.url || "").toLowerCase();
       let autoDetectedCat = null;
       if (
         activeUrl.includes("av-taktik-aksesuar") ||
