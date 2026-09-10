@@ -19,6 +19,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const chkGroup = document.getElementById("chkBatchGroupVariants");
   const chkSupplierDesc = document.getElementById("chkBatchUseSupplierDesc");
   const selCat = document.getElementById("fldBatchCategory");
+  const selBatchSup = document.getElementById("fldBatchSupplierId");
+  const inpBatchSupCustom = document.getElementById("fldBatchSupplierIdCustom");
   const inpUrl = document.getElementById("fldBatchUrl");
   const lblGroup = document.getElementById("lblBatchGroupVariants");
   const descGroup = document.getElementById("descBatchGroupVariants");
@@ -40,6 +42,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       "batchGroupVariants",
       "batchUseSupplierDesc",
       "batchCategory",
+      "batchSupplierId",
+      "batchSupplierIdCustom",
       "batchUrl",
     ]);
 
@@ -54,6 +58,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (selCat && savedBatch.batchCategory) {
       selCat.value = savedBatch.batchCategory;
+    }
+    if (selBatchSup && savedBatch.batchSupplierId) {
+      selBatchSup.value = savedBatch.batchSupplierId;
+      if (inpBatchSupCustom) {
+        inpBatchSupCustom.style.display = savedBatch.batchSupplierId === "custom" ? "block" : "none";
+        if (savedBatch.batchSupplierIdCustom) inpBatchSupCustom.value = savedBatch.batchSupplierIdCustom;
+      }
     }
     if (inpUrl && savedBatch.batchUrl) {
       inpUrl.value = savedBatch.batchUrl;
@@ -76,6 +87,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   selCat?.addEventListener("change", (e) => {
     chrome.storage.local.set({ batchCategory: e.target.value });
+  });
+  selBatchSup?.addEventListener("change", (e) => {
+    if (inpBatchSupCustom) {
+      inpBatchSupCustom.style.display = e.target.value === "custom" ? "block" : "none";
+    }
+    chrome.storage.local.set({ batchSupplierId: e.target.value });
+  });
+  inpBatchSupCustom?.addEventListener("input", (e) => {
+    chrome.storage.local.set({ batchSupplierIdCustom: e.target.value });
   });
   inpUrl?.addEventListener("input", (e) => {
     chrome.storage.local.set({ batchUrl: e.target.value });
@@ -235,6 +255,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     "fldPrice",
     "fldBrand",
     "fldModel",
+    "fldSupplierId",
+    "fldSupplierIdCustom",
     "fldDiscountPercent",
     "chkFeatured",
     "chkHeroSpotlight",
@@ -250,6 +272,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!el) return;
     el.addEventListener("input", saveFormDraft);
     el.addEventListener("change", saveFormDraft);
+  });
+
+  // Tedarikçi değiştiğinde özel ID alanını göster/gizle
+  const selSupplier = document.getElementById("fldSupplierId");
+  const inpSupplierCustom = document.getElementById("fldSupplierIdCustom");
+  selSupplier?.addEventListener("change", (e) => {
+    if (inpSupplierCustom) {
+      inpSupplierCustom.style.display = e.target.value === "custom" ? "block" : "none";
+    }
+    saveFormDraft();
   });
 
   // Kategori değiştiğinde tüfek ise ruhsat zorunluluğunu otomatik aç, aksesuar / mühimmat veya diğerlerinde kapat
@@ -435,6 +467,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const slug = slugify(nameTr) || `product-${Date.now()}`;
 
+      const supSelect = document.getElementById("fldSupplierId")?.value || "2";
+      let finalSupplierId = 2;
+      if (supSelect === "custom") {
+        const parsed = parseInt(document.getElementById("fldSupplierIdCustom")?.value, 10);
+        finalSupplierId = isNaN(parsed) ? 2 : parsed;
+      } else {
+        finalSupplierId = parseInt(supSelect, 10) || 2;
+      }
+
       const payload = {
         id: slug,
         slug_tr: slug,
@@ -455,6 +496,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         in_stock: inStock,
         specs_tr: specs,
         specs_en: specs,
+        supplier_id: finalSupplierId,
       };
 
       const endpoint = `${savedCfg.supabaseUrl}/rest/v1/products`;
@@ -509,6 +551,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         batchGroupVariants: document.getElementById("chkBatchGroupVariants")?.checked ?? true,
         batchUseSupplierDesc: document.getElementById("chkBatchUseSupplierDesc")?.checked ?? false,
         batchCategory: document.getElementById("fldBatchCategory")?.value || "auto",
+        batchSupplierId: document.getElementById("fldBatchSupplierId")?.value || "auto",
+        batchSupplierIdCustom: document.getElementById("fldBatchSupplierIdCustom")?.value || "",
         batchUrl: document.getElementById("fldBatchUrl")?.value || "",
       };
       await chrome.storage.local.set(batchSettings);

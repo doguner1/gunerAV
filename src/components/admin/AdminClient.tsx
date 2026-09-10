@@ -2044,8 +2044,10 @@ export default function AdminClient() {
                         className="w-full px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-left hover:bg-neutral-800/30 transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
-                          <span className="font-mono text-xs font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded">
-                            {session.sessionId}
+                          <span className="font-mono text-xs font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded flex items-center gap-2">
+                            <span className="text-[#d4af37]" title="Kalıcı Cihaz Kimliği">Cihaz: {session.visitorId?.slice(0, 10)}</span>
+                            <span className="text-neutral-500">|</span>
+                            <span className="text-neutral-400" title="Oturum (Session)">{session.sessionId?.slice(0, 10)}</span>
                           </span>
                           <span className="text-xs text-neutral-400 flex items-center gap-1">
                             {session.deviceType === "mobile" ? (

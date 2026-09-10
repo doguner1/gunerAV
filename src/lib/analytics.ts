@@ -46,11 +46,21 @@ export const getVisitorId = getOrCreateVisitorId;
 export function getSessionId(): string {
   if (typeof window === "undefined") return "sess";
   try {
-    let sid = sessionStorage.getItem("gunerav_session_id");
-    if (!sid) {
-      sid = "sess_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-      sessionStorage.setItem("gunerav_session_id", sid);
+    const now = Date.now();
+    let sid = localStorage.getItem("gunerav_session_id");
+    let lastActiveStr = localStorage.getItem("gunerav_session_last_active");
+    
+    // 30 dakika (1800000 ms) inaktivite süresi
+    const isExpired = !lastActiveStr || (now - parseInt(lastActiveStr)) > 30 * 60 * 1000;
+    
+    if (!sid || isExpired) {
+      sid = "sess_" + Math.random().toString(36).substring(2, 9) + now.toString(36);
+      localStorage.setItem("gunerav_session_id", sid);
     }
+    
+    // Her çağrıda son aktif zamanı güncelle
+    localStorage.setItem("gunerav_session_last_active", now.toString());
+    
     return sid;
   } catch {
     if (!memSessionId) memSessionId = "sess_mem_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);

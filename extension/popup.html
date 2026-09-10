@@ -229,6 +229,23 @@
         </select>
       </div>
 
+      <!-- Tedarikçi Seçimi -->
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label style="font-weight: 700; color: #38bdf8; font-size: 11px;">🏢 Tedarikçi (Supplier ID - Tüm ürünlere atanır):</label>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <select id="fldBatchSupplierId" style="flex: 1;">
+            <option value="auto" selected>✨ Otomatik Algıla (Castello=1, ÖzlerAv=2)</option>
+            <option value="2">2 - Özler Av (ozlerav.com)</option>
+            <option value="1">1 - Arslan Silah (arslansilah.com)</option>
+            <option value="3">3 - Tedarikçi 3</option>
+            <option value="4">4 - Tedarikçi 4</option>
+            <option value="5">5 - Tedarikçi 5</option>
+            <option value="custom">Özel ID Gir...</option>
+          </select>
+          <input type="number" id="fldBatchSupplierIdCustom" style="display: none; width: 85px;" placeholder="ID (örn: 6)" min="1">
+        </div>
+      </div>
+
       <!-- Manuel URL Seçeneği (Opsiyonel) -->
       <div class="form-group" style="margin-bottom: 10px;">
         <label>Özel Liste URL'si (Boş bırakırsanız açık olan sekme taranır):</label>
@@ -396,6 +413,21 @@
         <div class="col form-group">
           <label>Model:</label>
           <input type="text" id="fldModel" placeholder="Örn: MOD-505">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label style="color: #38bdf8; font-weight: 700; font-size: 11px;">🏢 Tedarikçi (Supplier ID):</label>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <select id="fldSupplierId" style="flex: 1;">
+            <option value="2">2 - Özler Av (ozlerav.com)</option>
+            <option value="1">1 - Arslan Silah (arslansilah.com)</option>
+            <option value="3">3 - Tedarikçi 3</option>
+            <option value="4">4 - Tedarikçi 4</option>
+            <option value="5">5 - Tedarikçi 5</option>
+            <option value="custom">Özel ID Gir...</option>
+          </select>
+          <input type="number" id="fldSupplierIdCustom" style="display: none; width: 85px;" placeholder="ID (örn: 6)" min="1">
         </div>
       </div>
 

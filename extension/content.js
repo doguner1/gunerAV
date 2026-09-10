@@ -1384,6 +1384,19 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     }
   }
 
+  result.url = currentUrl;
+
+  // Supplier ID Otomatik Tespiti (Castello/Arslan Silah = 1, Özler Av = 2)
+  const urlLow = (currentUrl || "").toLowerCase();
+  const nameLow = ((result.title || "") + " " + (result.brand || "")).toLowerCase();
+  if (urlLow.includes("arslansilah") || nameLow.includes("castello")) {
+    result.supplier_id = 1;
+  } else if (urlLow.includes("ozlerav")) {
+    result.supplier_id = 2;
+  } else {
+    result.supplier_id = 2;
+  }
+
   return result;
 }
 
