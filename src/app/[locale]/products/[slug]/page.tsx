@@ -48,9 +48,6 @@ export async function generateMetadata({ params }: {
   const categoryName = isTr ? category?.name_tr : category?.name_en;
   const brandStr = product.brand || "";
 
-  const keywords = (isTr
-    ? [brandStr, name, categoryName, "Malatya", "Malatya av bayii", "fiyatları", "özellikleri", "satın al", brandStr && `${brandStr} Malatya`, "tüfek", "fişek"].filter(Boolean)
-    : [brandStr, name, categoryName, "Malatya hunting", "dealer", "price", "specs", brandStr && `${brandStr} Malatya`].filter(Boolean)) as string[];
 
   const ogImage =
     Array.isArray(product.images) && product.images.length > 0 && product.images[0]
@@ -60,7 +57,6 @@ export async function generateMetadata({ params }: {
   return {
     title,
     description,
-    keywords,
     alternates: {
       canonical: `${STORE_INFO.siteUrl}/${locale}/products/${slug}`,
       languages: {
@@ -106,7 +102,7 @@ export default async function ProductDetailPage({ params }: {
         items={[
           { name: tCommon("home"), url: `/${locale}` },
           { name: tCommon("catalog"), url: `/${locale}/products` },
-          ...(category ? [{ name: categoryName || category.id, url: `/${locale}/products?category=${category.id}` }] : []),
+          ...(category ? [{ name: categoryName || category.id, url: `/${locale}/kategori/${category.id}` }] : []),
           { name: name, url: `/${locale}/products/${slug}` },
         ]}
       />
@@ -128,7 +124,7 @@ export default async function ProductDetailPage({ params }: {
             <>
               <ChevronRight className="h-3 w-3 text-neutral-400 dark:text-neutral-600" />
               <Link
-                href={`/products?category=${category.id}`}
+                href={`/kategori/${category.id}`}
                 className="hover:text-black dark:hover:text-white transition-colors"
               >
                 {categoryName}

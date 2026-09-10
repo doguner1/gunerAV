@@ -12,11 +12,15 @@ import { trackSearch, trackCategoryClick } from "@/lib/analytics";
 interface CatalogClientProps {
   initialProducts: Product[];
   categories: Category[];
+  initialCategory?: string;
+  basePath?: string;
 }
 
 export default function CatalogClient({
   initialProducts,
   categories,
+  initialCategory,
+  basePath,
 }: CatalogClientProps) {
   const searchParams = useSearchParams();
   const locale = useLocale();
@@ -27,7 +31,7 @@ export default function CatalogClient({
   const SESSION_KEY = "gunerav_catalog_state";
 
   // Initial read from URL query params
-  const categoryParam = searchParams.get("category") || "all";
+  const categoryParam = initialCategory || searchParams.get("category") || "all";
   const queryParam = searchParams.get("q") || "";
   const licenseParam = searchParams.get("license") === "1";
   const dealsParam = searchParams.get("deals") === "1";
@@ -211,7 +215,8 @@ export default function CatalogClient({
     }
 
     const queryString = params.toString();
-    const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}`;
+    const currentPath = basePath || window.location.pathname;
+    const newUrl = `${currentPath}${queryString ? `?${queryString}` : ""}`;
 
     // Update URL via replaceState so back button returns to this exact filtered view
     window.history.replaceState(null, "", newUrl);

@@ -43,7 +43,6 @@ export async function generateMetadata({ params }: {
       default: t("siteTitle"),
     },
     description: t("siteDescription"),
-    keywords: t("keywords"),
     metadataBase: new URL(siteUrl),
     alternates: {
       canonical: `${siteUrl}/${locale}`,
