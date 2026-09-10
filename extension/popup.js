@@ -14,6 +14,73 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tabs = document.querySelectorAll(".tab");
   const tabPanes = document.querySelectorAll(".tab-pane");
 
+  // 1b. Toplu Çekim Ayarları & Canlı Etiket Güncelleyici
+  const chkAllPages = document.getElementById("chkBatchAllPages");
+  const chkGroup = document.getElementById("chkBatchGroupVariants");
+  const chkSupplierDesc = document.getElementById("chkBatchUseSupplierDesc");
+  const selCat = document.getElementById("fldBatchCategory");
+  const inpUrl = document.getElementById("fldBatchUrl");
+  const lblGroup = document.getElementById("lblBatchGroupVariants");
+  const descGroup = document.getElementById("descBatchGroupVariants");
+
+  function updateGroupVariantsUI(isChecked) {
+    if (!lblGroup || !descGroup) return;
+    if (isChecked) {
+      lblGroup.innerHTML = 'Varyant Birleştirme: <span style="color:#d4af37; font-weight:bold;">AÇIK (Varyantlı)</span>';
+      descGroup.innerHTML = 'Aynı ürünün renklerini tek üründe toplar (Örn: 41 linkten 34 zengin varyantlı ürün).';
+    } else {
+      lblGroup.innerHTML = 'Varyant Birleştirme: <span style="color:#94a3b8; font-weight:bold;">KAPALI (Birebir Aktar)</span>';
+      descGroup.innerHTML = '<b>Varyantlar kapalı:</b> Sayfadaki tüm linkler (41 ürünün 41\'i de) tek tek bağımsız ürün olarak eklenir.';
+    }
+  }
+
+  try {
+    const savedBatch = await chrome.storage.local.get([
+      "batchAllPages",
+      "batchGroupVariants",
+      "batchUseSupplierDesc",
+      "batchCategory",
+      "batchUrl",
+    ]);
+
+    if (chkAllPages && typeof savedBatch.batchAllPages === "boolean") {
+      chkAllPages.checked = savedBatch.batchAllPages;
+    }
+    if (chkGroup && typeof savedBatch.batchGroupVariants === "boolean") {
+      chkGroup.checked = savedBatch.batchGroupVariants;
+    }
+    if (chkSupplierDesc && typeof savedBatch.batchUseSupplierDesc === "boolean") {
+      chkSupplierDesc.checked = savedBatch.batchUseSupplierDesc;
+    }
+    if (selCat && savedBatch.batchCategory) {
+      selCat.value = savedBatch.batchCategory;
+    }
+    if (inpUrl && savedBatch.batchUrl) {
+      inpUrl.value = savedBatch.batchUrl;
+    }
+  } catch (e) {}
+
+  if (chkGroup) {
+    updateGroupVariantsUI(chkGroup.checked);
+    chkGroup.addEventListener("change", (e) => {
+      updateGroupVariantsUI(e.target.checked);
+      chrome.storage.local.set({ batchGroupVariants: e.target.checked });
+    });
+  }
+
+  chkAllPages?.addEventListener("change", (e) => {
+    chrome.storage.local.set({ batchAllPages: e.target.checked });
+  });
+  chkSupplierDesc?.addEventListener("change", (e) => {
+    chrome.storage.local.set({ batchUseSupplierDesc: e.target.checked });
+  });
+  selCat?.addEventListener("change", (e) => {
+    chrome.storage.local.set({ batchCategory: e.target.value });
+  });
+  inpUrl?.addEventListener("input", (e) => {
+    chrome.storage.local.set({ batchUrl: e.target.value });
+  });
+
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       tabs.forEach((t) => t.classList.remove("active"));
@@ -435,9 +502,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const isPopup = window.innerWidth < 800;
     if (isPopup) {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab) {
-        await chrome.storage.local.set({ targetBatchTabId: tab.id });
-      }
+      const batchSettings = {
+        targetBatchTabId: tab ? tab.id : null,
+        batchAllPages: document.getElementById("chkBatchAllPages")?.checked ?? true,
+        batchGroupVariants: document.getElementById("chkBatchGroupVariants")?.checked ?? true,
+        batchUseSupplierDesc: document.getElementById("chkBatchUseSupplierDesc")?.checked ?? false,
+        batchCategory: document.getElementById("fldBatchCategory")?.value || "auto",
+        batchUrl: document.getElementById("fldBatchUrl")?.value || "",
+      };
+      await chrome.storage.local.set(batchSettings);
       chrome.tabs.create({ url: chrome.runtime.getURL("popup.html") + "?batch=1" });
     } else {
       runBatchScrape();
@@ -1977,16 +2050,18 @@ async function runBatchScrape() {
 
     let finalProducts = [];
     if (groupVariants) {
-      appendBatchLog("⚡ Renk ve model varyantları akıllı olarak analiz ediliyor...", "info");
+      appendBatchLog("⚡ Varyant Birleştirme AÇIK: Renk ve model varyantları akıllı olarak analiz ediliyor...", "info");
       finalProducts = groupProductsByVariant(rawProducts, { useSupplierDesc });
       appendBatchLog(`✨ Analiz tamamlandı: ${rawProducts.length} linkten ${finalProducts.length} adet tekil/zengin ürün oluşturuldu.`, "success");
     } else {
+      appendBatchLog(`📦 Varyant Birleştirme KAPALI: ${rawProducts.length} linkin tamamı (birebir) ayrı ayrı ürün olarak hazırlanıyor...`, "warn");
       finalProducts = rawProducts.map((p) => ({
         ...p,
         name_tr: p.title,
         description_tr: useSupplierDesc && p.description ? p.description : generateStandardDescription(p, p.specs),
         description_en: useSupplierDesc && p.description ? p.description : generateStandardDescription(p, p.specs),
       }));
+      appendBatchLog(`✅ Hazır: Toplam ${finalProducts.length} ürünün tamamı ayrı ayrı yüklenecek.`, "success");
     }
 
     // 4. Supabase'e Sırayla Yükle
@@ -2010,7 +2085,13 @@ async function runBatchScrape() {
       );
 
       const nameTr = p.name_tr || p.title;
-      const slug = slugify(nameTr) || `product-${Date.now()}-${j}`;
+      let slug = slugify(nameTr) || `product-${Date.now()}-${j}`;
+      if (!groupVariants) {
+        const prevWithSameSlug = finalProducts.slice(0, j).filter(prev => (slugify(prev.name_tr || prev.title) === slug));
+        if (prevWithSameSlug.length > 0) {
+          slug = `${slug}-${prevWithSameSlug.length + 1}`;
+        }
+      }
       const specs = p.specs_tr || p.specs || {};
       const variants = p.variants || [];
       if (variants.length > 0) {
