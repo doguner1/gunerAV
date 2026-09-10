@@ -10,6 +10,7 @@ interface FilterBarProps {
   onSelectCategory: (categoryId: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSearchSubmit?: () => void;
   licenseOnly: boolean;
   onToggleLicense: () => void;
   dealsOnly: boolean;
@@ -23,6 +24,7 @@ export default function FilterBar({
   onSelectCategory,
   searchQuery,
   onSearchChange,
+  onSearchSubmit,
   licenseOnly,
   onToggleLicense,
   dealsOnly,
@@ -54,6 +56,15 @@ export default function FilterBar({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onSearchSubmit?.();
+              }
+            }}
+            onBlur={() => {
+              onSearchSubmit?.();
+            }}
             placeholder={t("searchPlaceholder")}
             className="w-full rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/90 py-2.5 pr-4 pl-10 text-sm text-neutral-950 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 transition-colors focus:border-black dark:focus:border-white focus:outline-none focus:bg-white"
           />

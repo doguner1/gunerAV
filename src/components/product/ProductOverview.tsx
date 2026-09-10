@@ -42,9 +42,9 @@ export default function ProductOverview({
   const tCommon = useTranslations("Common");
 
   const isTr = locale === "tr";
-  const name = isTr ? product.name_tr : product.name_en;
-  const description = isTr ? product.description_tr : product.description_en;
-  const productSlug = product.slug_tr || product.slug_en || product.id;
+  const name = (isTr ? product.name_tr : product.name_en) || product.name_tr || product.name_en || "";
+  const description = (isTr ? product.description_tr : product.description_en) || product.description_tr || "";
+  const productSlug = (isTr ? product.slug_tr : product.slug_en) || product.slug_tr || product.id || "";
 
   const variants = product.variants || [];
   const hasVariants = variants.length > 0;

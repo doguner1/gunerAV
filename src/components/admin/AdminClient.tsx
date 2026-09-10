@@ -306,7 +306,7 @@ export default function AdminClient() {
         timestamp: string;
         eventType: string;
         description: string;
-        badge: { text: string; color: "green" | "blue" | "purple" | "amber" | "gray" };
+        badge: { text: string; color: "green" | "blue" | "purple" | "amber" | "gray" | "red" };
       }>;
     }>;
     searchTerms: Array<{
@@ -1230,8 +1230,8 @@ export default function AdminClient() {
         const displayedTopProducts = analyticsProductFilter.trim()
           ? topProducts.filter(
               (p) =>
-                p.productName.toLowerCase().includes(analyticsProductFilter.toLowerCase()) ||
-                p.slug.toLowerCase().includes(analyticsProductFilter.toLowerCase())
+                (p.productName || "").toLowerCase().includes(analyticsProductFilter.toLowerCase()) ||
+                (p.slug || "").toLowerCase().includes(analyticsProductFilter.toLowerCase())
             )
           : topProducts;
         const searchTerms = dashboardData?.searchTerms || [];
@@ -1706,6 +1706,8 @@ export default function AdminClient() {
                                   ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
                                   : step.badge.color === "amber"
                                   ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                  : step.badge.color === "red"
+                                  ? "bg-red-500/20 text-red-400 border-red-500/30"
                                   : "bg-neutral-800 text-neutral-400 border-neutral-700";
 
                               const dotBg =
@@ -1717,6 +1719,8 @@ export default function AdminClient() {
                                   ? "bg-blue-400"
                                   : step.badge.color === "amber"
                                   ? "bg-amber-400"
+                                  : step.badge.color === "red"
+                                  ? "bg-red-400"
                                   : "bg-neutral-500";
 
                               return (

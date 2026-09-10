@@ -23,11 +23,14 @@ export default function ProductCard({ product, categoryName, priority = false }:
   const tCommon = useTranslations("Common");
 
   const isTr = locale === "tr";
-  const name = isTr ? product.name_tr : product.name_en;
-  const description = isTr ? product.description_tr : product.description_en;
-  const slug = (isTr ? product.slug_tr : product.slug_en) || product.id;
+  const name = (isTr ? product.name_tr : product.name_en) || product.name_tr || product.name_en || "";
+  const description = (isTr ? product.description_tr : product.description_en) || product.description_tr || "";
+  const slug = (isTr ? product.slug_tr : product.slug_en) || product.slug_tr || product.id || "";
 
-  const mainImage = product.images[0] || "/images/products/optics-1.webp";
+  const mainImage =
+    Array.isArray(product.images) && product.images.length > 0 && product.images[0]
+      ? product.images[0]
+      : "/images/products/optics-1.webp";
 
   const waMsg = isTr
     ? `Merhaba Güner Av Bayii, ${name} ürününün fiyatını öğrenmek istiyorum.`

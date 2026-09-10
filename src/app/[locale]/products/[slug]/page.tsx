@@ -41,8 +41,8 @@ export async function generateMetadata({
   if (!product) return {};
 
   const isTr = locale === "tr";
-  const name = isTr ? product.name_tr : product.name_en;
-  const description = isTr ? product.description_tr : product.description_en;
+  const name = (isTr ? product.name_tr : product.name_en) || product.name_tr || product.name_en || "";
+  const description = (isTr ? product.description_tr : product.description_en) || product.description_tr || "";
   const title = `${name} | ${STORE_INFO.name}`;
 
   const category = getCategoryById(product.category);
@@ -52,6 +52,11 @@ export async function generateMetadata({
   const keywords = (isTr
     ? [brandStr, name, categoryName, "Malatya", "Malatya av bayii", "fiyatları", "özellikleri", "satın al", brandStr && `${brandStr} Malatya`, "tüfek", "fişek"].filter(Boolean)
     : [brandStr, name, categoryName, "Malatya hunting", "dealer", "price", "specs", brandStr && `${brandStr} Malatya`].filter(Boolean)) as string[];
+
+  const ogImage =
+    Array.isArray(product.images) && product.images.length > 0 && product.images[0]
+      ? product.images[0]
+      : "/images/og-image.jpg";
 
   return {
     title,
@@ -68,7 +73,7 @@ export async function generateMetadata({
       title,
       description,
       url: `${STORE_INFO.siteUrl}/${locale}/products/${slug}`,
-      images: product.images[0] ? [product.images[0]] : ["/images/og-image.jpg"],
+      images: [ogImage],
     },
   };
 }
@@ -89,8 +94,8 @@ export default async function ProductDetailPage({
   const tCommon = await getTranslations({ locale, namespace: "Common" });
 
   const isTr = locale === "tr";
-  const name = isTr ? product.name_tr : product.name_en;
-  const description = isTr ? product.description_tr : product.description_en;
+  const name = (isTr ? product.name_tr : product.name_en) || product.name_tr || product.name_en || "";
+  const description = (isTr ? product.description_tr : product.description_en) || product.description_tr || "";
   const category = getCategoryById(product.category);
   const categoryName = isTr ? category?.name_tr : category?.name_en;
   const specs = isTr ? product.specs_tr : product.specs_en;

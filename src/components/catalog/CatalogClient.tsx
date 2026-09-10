@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Product, Category } from "@/types/product";
 import FilterBar from "./FilterBar";
@@ -46,31 +46,32 @@ export default function CatalogClient({
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
       // Category filter
+      const prodCat = product.category || "";
       if (selectedCategory !== "all") {
         if (selectedCategory === "tufek") {
           const isShotgun =
-            product.category.startsWith("tufek") ||
-            product.category === "silah-muhimmat";
+            prodCat.startsWith("tufek") ||
+            prodCat === "silah-muhimmat";
           if (!isShotgun) return false;
         } else if (selectedCategory === "silah-muhimmat") {
           const isFirearmOrAmmo =
-            product.category.startsWith("tufek") ||
-            product.category === "muhimmat" ||
-            product.category === "silah-muhimmat";
+            prodCat.startsWith("tufek") ||
+            prodCat === "muhimmat" ||
+            prodCat === "silah-muhimmat";
           if (!isFirearmOrAmmo) return false;
         } else if (selectedCategory === "bicak" || selectedCategory === "aksesuar") {
-          if (product.category !== "bicak" && product.category !== "aksesuar") return false;
+          if (prodCat !== "bicak" && prodCat !== "aksesuar") return false;
         } else if (selectedCategory.startsWith("tufek-")) {
-          if (product.category === selectedCategory) {
+          if (prodCat === selectedCategory) {
             // Direct match
-          } else if (product.category === "silah-muhimmat") {
+          } else if (prodCat === "silah-muhimmat") {
             // Backward compatibility matching for legacy Supabase entries
             const subType = selectedCategory.replace("tufek-", "");
             const fullText = (
               (product.name_tr || "") + " " +
               (product.description_tr || "") + " " +
               JSON.stringify(product.specs_tr || {})
-            ).toLowerCase();
+            ).toLocaleLowerCase("tr");
 
             const matchKeywords: Record<string, string[]> = {
               "bullpup": ["bullpup"],
@@ -90,19 +91,19 @@ export default function CatalogClient({
           }
         } else if (selectedCategory === "muhimmat") {
           const isAmmo =
-            product.category === "muhimmat" ||
-            product.category.startsWith("muhimmat-");
+            prodCat === "muhimmat" ||
+            prodCat.startsWith("muhimmat-");
           if (!isAmmo) return false;
         } else if (selectedCategory.startsWith("muhimmat-")) {
-          if (product.category === selectedCategory) {
+          if (prodCat === selectedCategory) {
             // Direct match
-          } else if (product.category === "muhimmat") {
+          } else if (prodCat === "muhimmat") {
             const subType = selectedCategory.replace("muhimmat-", "");
             const fullText = (
               (product.name_tr || "") + " " +
               (product.description_tr || "") + " " +
               JSON.stringify(product.specs_tr || {})
-            ).toLowerCase();
+            ).toLocaleLowerCase("tr");
 
             if (subType === "tek-kursun") {
               if (!fullText.includes("tek kurşun") && !fullText.includes("tek kursun") && !fullText.includes("slug")) return false;
@@ -136,10 +137,10 @@ export default function CatalogClient({
             return false;
           }
         } else if (selectedCategory === "kamp") {
-          if (!product.category.startsWith("kamp")) return false;
+          if (!prodCat.startsWith("kamp")) return false;
         } else if (selectedCategory.startsWith("kamp-")) {
-          if (product.category !== selectedCategory) return false;
-        } else if (product.category !== selectedCategory) {
+          if (prodCat !== selectedCategory) return false;
+        } else if (prodCat !== selectedCategory) {
           return false;
         }
       }
@@ -154,18 +155,20 @@ export default function CatalogClient({
         return false;
       }
 
-      // Search query
+      // Search query - Fully null-safe with Turkish locale normalization
       if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
-        const nameMatch =
-          product.name_tr.toLowerCase().includes(query) ||
-          product.name_en.toLowerCase().includes(query);
-        const descMatch =
-          product.description_tr.toLowerCase().includes(query) ||
-          product.description_en.toLowerCase().includes(query);
+        const query = searchQuery.trim().toLocaleLowerCase("tr");
+        const nameTr = (product.name_tr || "").toLocaleLowerCase("tr");
+        const nameEn = (product.name_en || "").toLocaleLowerCase("tr");
+        const descTr = (product.description_tr || "").toLocaleLowerCase("tr");
+        const descEn = (product.description_en || "").toLocaleLowerCase("tr");
+
+        const nameMatch = nameTr.includes(query) || nameEn.includes(query);
+        const descMatch = descTr.includes(query) || descEn.includes(query);
         const specMatch = Object.entries(product.specs_tr || {}).some(
           ([k, v]) =>
-            k.toLowerCase().includes(query) || (v ? v.toLowerCase().includes(query) : false)
+            String(k || "").toLocaleLowerCase("tr").includes(query) ||
+            String(v ?? "").toLocaleLowerCase("tr").includes(query)
         );
 
         if (!nameMatch && !descMatch && !specMatch) {
@@ -177,13 +180,38 @@ export default function CatalogClient({
     });
   }, [initialProducts, selectedCategory, licenseOnly, dealsOnly, searchQuery]);
 
-  // Debounced search query analytics
+  // Debounced search query analytics (1000ms debounce to prevent typing spam)
+  const lastTrackedQueryRef = useRef<string>("");
+
+  const triggerSearchAnalytics = useCallback((query: string, count: number) => {
+    const trimmed = query.trim();
+    if (!trimmed || trimmed === lastTrackedQueryRef.current) return;
+    if (trimmed.length < 2) return;
+
+    lastTrackedQueryRef.current = trimmed;
+    trackSearch(trimmed, count);
+  }, []);
+
   useEffect(() => {
-    if (!searchQuery.trim()) return;
+    const trimmed = searchQuery.trim();
+    if (!trimmed || trimmed.length < 2 || trimmed === lastTrackedQueryRef.current) {
+      return;
+    }
+
     const timer = setTimeout(() => {
-      trackSearch(searchQuery, filteredProducts.length);
-    }, 600);
+      triggerSearchAnalytics(trimmed, filteredProducts.length);
+    }, 1000);
+
     return () => clearTimeout(timer);
+  }, [searchQuery, filteredProducts.length, triggerSearchAnalytics]);
+
+  // Immediate submit on Enter or input blur
+  const handleSearchSubmit = useCallback(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed && trimmed !== lastTrackedQueryRef.current) {
+      lastTrackedQueryRef.current = trimmed;
+      trackSearch(trimmed, filteredProducts.length);
+    }
   }, [searchQuery, filteredProducts.length]);
 
   const handleSelectCategory = (cat: string) => {
@@ -191,7 +219,7 @@ export default function CatalogClient({
     trackCategoryClick(cat);
   };
 
-const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
 
   return (
     <div className="space-y-8">
@@ -202,6 +230,7 @@ const visibleProducts = filteredProducts.slice(0, visibleCount);
         onSelectCategory={handleSelectCategory}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onSearchSubmit={handleSearchSubmit}
         licenseOnly={licenseOnly}
         onToggleLicense={() => setLicenseOnly(!licenseOnly)}
         dealsOnly={dealsOnly}

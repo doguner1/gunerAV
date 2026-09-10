@@ -10,7 +10,7 @@ export interface JourneyStep {
   timestamp: string;
   eventType: string;
   description: string;
-  badge: { text: string; color: "green" | "blue" | "purple" | "amber" | "gray" };
+  badge: { text: string; color: "green" | "blue" | "purple" | "amber" | "gray" | "red" };
 }
 
 export interface VisitorJourneySession {
@@ -231,7 +231,6 @@ export async function GET(req: NextRequest) {
     if (evName.includes("whatsapp")) whatsappLeads++;
     else if (evName.includes("call") || evName.includes("phone")) phoneCalls++;
     else if (evName.includes("direction") || evName.includes("map") || evName.includes("location")) locationClicks++;
-    else if (evName === "search") searches++;
     else if (evName === "product_zoom") zooms++;
     else if (evName === "view_item") totalPageViews++;
 
@@ -272,25 +271,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Search tracking
-    if (evName === "search" && p.search_term) {
-      const termKey = String(p.search_term).trim().toLowerCase();
-      if (termKey) {
-        if (!searchTermsMap[termKey]) {
-          searchTermsMap[termKey] = {
-            term: p.search_term,
-            count: 0,
-            zeroResultCount: 0,
-            lastSearched: ev.received_at,
-          };
-        }
-        searchTermsMap[termKey].count++;
-        if (p.results_count === 0) {
-          searchTermsMap[termKey].zeroResultCount++;
-        }
-      }
-    }
-
     // Session Grouping
     const sId = p.session_id || p.visitor_id || ev.client_ip || "sess_unknown";
     if (!sessionMap.has(sId)) {
@@ -303,6 +283,74 @@ export async function GET(req: NextRequest) {
     }
     sessionMap.get(sId)!.events.push(ev);
   }
+
+  // 5.b Akıllı Arama & Yazım Birleştirme (Smart Keystroke Consolidation)
+  // Kullanıcı "Huğulu" yazarken ara harflerde ("hu", "huğ") 0 sonuç çıksa bile,
+  // aynı oturumda devam edip kelimeyi tamamladıysa aradaki eksik harfler Kaçırılan Talepler'e DÜŞMEZ.
+  // Sadece yazmayı bırakıp o şekilde terk ettiği gerçek sonuçlar Kaçırılan Talepler'de yer alır.
+  let validSearchCount = 0;
+  const supersededSearchEventIds = new Set<string>();
+
+  for (const sessionData of Array.from(sessionMap.values())) {
+    const sessionSearchEvents = sessionData.events
+      .filter((ev) => (ev.event || "").toLowerCase() === "search" && ev.params?.search_term)
+      .sort((a, b) => new Date(a.received_at).getTime() - new Date(b.received_at).getTime());
+
+    for (let i = 0; i < sessionSearchEvents.length; i++) {
+      const currEv = sessionSearchEvents[i];
+      const rawTerm = String(currEv.params.search_term).trim();
+      if (!rawTerm) continue;
+
+      const currNorm = rawTerm.toLocaleLowerCase("tr");
+      const currTime = new Date(currEv.received_at).getTime();
+
+      // Bu oturumda daha sonra yazılmış ve bu kelimeyle başlayıp daha uzun olan bir arama var mı?
+      const isSuperseded = sessionSearchEvents.slice(i + 1).some((laterEv) => {
+        const laterRaw = String(laterEv.params?.search_term || "").trim();
+        const laterNorm = laterRaw.toLocaleLowerCase("tr");
+        const laterTime = new Date(laterEv.received_at).getTime();
+
+        const timeDiffMs = !isNaN(laterTime) && !isNaN(currTime) ? laterTime - currTime : 0;
+        // Kısa yazımlarda (<= 4 karakter, örn "hu", "tüf") 3 dakikalık pencere; uzunlarda 60 saniye
+        const maxWindowMs = currNorm.length <= 4 ? 3 * 60 * 1000 : 60 * 1000;
+
+        return (
+          laterNorm.startsWith(currNorm) &&
+          laterNorm.length > currNorm.length &&
+          timeDiffMs <= maxWindowMs
+        );
+      });
+
+      if (isSuperseded) {
+        if (currEv.id) supersededSearchEventIds.add(currEv.id);
+        continue;
+      }
+
+      // Tamamlanmış / Gerçek arama
+      validSearchCount++;
+      const termKey = currNorm;
+      if (!searchTermsMap[termKey]) {
+        searchTermsMap[termKey] = {
+          term: rawTerm,
+          count: 0,
+          zeroResultCount: 0,
+          lastSearched: currEv.received_at,
+        };
+      }
+      searchTermsMap[termKey].count++;
+      if (currEv.params.results_count === 0) {
+        searchTermsMap[termKey].zeroResultCount++;
+      }
+      if (
+        new Date(currEv.received_at).getTime() >
+        new Date(searchTermsMap[termKey].lastSearched).getTime()
+      ) {
+        searchTermsMap[termKey].lastSearched = currEv.received_at;
+      }
+    }
+  }
+
+  searches = validSearchCount;
 
   // 6. Format Product Stats (All Products Included, with Dwell Time & Anomaly Detection)
   const topProducts = Object.values(productStatsMap)
@@ -383,8 +431,17 @@ export async function GET(req: NextRequest) {
         description = `WhatsApp Sipariş / Fiyat Butonuna Tıklandı (${p.item_name ? `"${p.item_name}"` : p.source || "Siteden"})`;
         badge = { text: "WhatsApp Satış", color: "green" };
       } else if (evName === "search") {
-        description = `Arama Yapıldı: "${p.search_term || ""}" (${p.results_count ?? 0} sonuç)`;
-        badge = { text: "Arama", color: "amber" };
+        if (ev.id && supersededSearchEventIds.has(ev.id)) {
+          // Ara yazım harflerini yolculuk zaman tünelinde gizle, sadece tamamlanmış aramayı göster
+          continue;
+        }
+        const isZero = p.results_count === 0;
+        description = isZero
+          ? `Arama Yapıldı: "${p.search_term || ""}" (0 Sonuç - Kaçırılan Talep)`
+          : `Arama Yapıldı: "${p.search_term || ""}" (${p.results_count ?? 0} sonuç)`;
+        badge = isZero
+          ? { text: "0 Sonuç", color: "red" }
+          : { text: "Arama", color: "amber" };
       } else if (evName === "select_category") {
         description = `Kategori Seçildi: ${p.category_name || p.category_id || "Kategori"}`;
         badge = { text: "Kategori", color: "amber" };
