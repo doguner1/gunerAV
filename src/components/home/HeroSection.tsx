@@ -69,10 +69,10 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       {/* Fine Tactical Grid Overlay */}
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
 
-      <div className="relative z-10 mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16 w-full">
+      <div className="relative z-10 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
         <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-6 sm:space-y-8 lg:pt-2">
+          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-6 sm:space-y-8 lg:pt-14 xl:pt-18 2xl:pt-20">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
