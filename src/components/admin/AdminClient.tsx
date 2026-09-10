@@ -1182,6 +1182,21 @@ export default function AdminClient() {
                                 <span className="uppercase font-mono text-[#d4af37] font-semibold">{p.category}</span>
                                 <span>&bull;</span>
                                 <span className="font-mono text-neutral-500 truncate">{p.id}</span>
+                                {p.supplier_id ? (
+                                  <>
+                                    <span>&bull;</span>
+                                    <a
+                                      href={p.supplier_id === 1 ? "https://arslansilah.com/" : "https://ozlerav.com/"}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="font-mono text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-neutral-800 text-blue-400 hover:text-blue-300 hover:bg-neutral-700 transition-colors"
+                                      title="Tedarikçi Sitesine Git"
+                                    >
+                                      {p.supplier_id === 1 ? "arslansilah" : "ozlerav"}
+                                    </a>
+                                  </>
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -2305,6 +2320,65 @@ export default function AdminClient() {
           </div>
         );
       })()}
+
+      {/* PRODUCT IMAGE PREVIEW MODAL */}
+      {previewProduct && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setPreviewProduct(null)}
+        >
+          <div 
+            className="bg-neutral-900 border border-neutral-700 p-6 rounded-2xl max-w-2xl w-full flex flex-col relative shadow-2xl" 
+            onClick={e => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setPreviewProduct(null)} 
+              className="absolute top-4 right-4 p-2 rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-bold text-white pr-10 mb-2 truncate">
+              {previewProduct.name_tr}
+            </h3>
+            <div className="flex items-center gap-2 mb-4 text-xs">
+              <span className="text-[#d4af37] uppercase font-mono font-bold tracking-wider">{previewProduct.category}</span>
+              <span className="text-neutral-600">&bull;</span>
+              <span className="text-neutral-400 font-mono">ID: {previewProduct.id}</span>
+            </div>
+            
+            <div className="relative aspect-square md:aspect-video w-full bg-black rounded-xl overflow-hidden border border-neutral-800">
+              {previewProduct.images && previewProduct.images.length > 0 ? (
+                <Image
+                  src={previewProduct.images[previewImageIdx] || previewProduct.images[0]}
+                  alt={previewProduct.name_tr}
+                  fill
+                  unoptimized
+                  className="object-contain"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-full h-full text-neutral-600 font-mono">
+                  Görsel Yok
+                </div>
+              )}
+              
+              {/* Image Navigation */}
+              {previewProduct.images && previewProduct.images.length > 1 && (
+                <div className="absolute bottom-4 inset-x-0 flex justify-center gap-2">
+                  {previewProduct.images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setPreviewImageIdx(idx)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        idx === previewImageIdx ? "bg-[#d4af37] w-4" : "bg-white/40 hover:bg-white/80"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

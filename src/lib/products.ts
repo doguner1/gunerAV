@@ -217,6 +217,16 @@ function secureProduct(p: Product): Product {
       ? p.images.map(getSecureImageUrl)
       : ["/images/products/optics-1.webp"];
 
+  // Supplier ID Fallback Mapping
+  let supplierId = p.supplier_id;
+  if (!supplierId) {
+    if (nameLower.includes("castello")) {
+      supplierId = 1;
+    } else {
+      supplierId = 2; // Default
+    }
+  }
+
   return {
     ...p,
     category,
@@ -225,6 +235,7 @@ function secureProduct(p: Product): Product {
     variants: cleanedVariants,
     specs_tr: cleanSpecsTr,
     specs_en: cleanSpecsEn,
+    supplier_id: supplierId,
   };
 }
 
