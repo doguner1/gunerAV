@@ -51,27 +51,32 @@ export default function CatalogClient({
         if (selectedCategory === "tufek") {
           const isShotgun =
             prodCat.startsWith("tufek") ||
-            prodCat === "silah-muhimmat";
+            prodCat === "silah-muhimmat" ||
+            prodCat.startsWith("aksesuar") ||
+            prodCat === "aksesuar";
           if (!isShotgun) return false;
         } else if (selectedCategory === "silah-muhimmat") {
           const isFirearmOrAmmo =
             prodCat.startsWith("tufek") ||
             prodCat === "muhimmat" ||
-            prodCat === "silah-muhimmat";
+            prodCat === "silah-muhimmat" ||
+            prodCat.startsWith("aksesuar");
           if (!isFirearmOrAmmo) return false;
-        } else if (selectedCategory === "bicak" || selectedCategory === "aksesuar") {
-          if (!prodCat.startsWith("bicak") && !prodCat.startsWith("aksesuar")) return false;
-        } else if (selectedCategory.startsWith("bicak-") || selectedCategory.startsWith("aksesuar-")) {
-          if (prodCat !== selectedCategory) return false;
-        } else if (selectedCategory.startsWith("tufek-")) {
-          const isAccessory = selectedCategory === "tufek-aksesuar" || selectedCategory === "tufek-aksesuarlar";
+        } else if (selectedCategory === "bicak") {
+          if (prodCat !== "bicak" && !prodCat.startsWith("bicak-")) return false;
+        } else if (selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar") {
+          const isAccessory =
+            selectedCategory === "tufek-aksesuar" ||
+            selectedCategory === "tufek-aksesuarlar" ||
+            selectedCategory.startsWith("aksesuar") ||
+            selectedCategory === "aksesuar";
           const isDirectMatch = isAccessory
-            ? (prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar")
+            ? (prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar" || prodCat.startsWith("aksesuar") || prodCat === "aksesuar" || prodCat === "bicak-av")
             : prodCat === selectedCategory;
 
           if (isDirectMatch) {
             // Direct match
-          } else if (prodCat === "silah-muhimmat" || (isAccessory && (prodCat === "tufek" || prodCat === "bicak" || prodCat === "aksesuar"))) {
+          } else if (prodCat === "silah-muhimmat" || (isAccessory && (prodCat === "tufek" || prodCat === "bicak"))) {
             // Backward compatibility matching for legacy Supabase entries
             const subType = selectedCategory.replace("tufek-", "");
             const fullText = (

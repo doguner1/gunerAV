@@ -16,10 +16,32 @@ if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage)
     if (request.action === "EXTRACT_LISTING_LINKS") {
       try {
         const links = extractListingLinks();
-        sendResponse({ success: true, count: links.length, links });
+        const paginationPages = extractPaginationPages();
+        sendResponse({ success: true, count: links.length, links, paginationPages });
       } catch (error) {
         sendResponse({ success: false, error: error.message });
       }
+      return true;
+    }
+
+    if (request.action === "FETCH_PAGE_LINKS") {
+      (async () => {
+        try {
+          const res = await fetch(request.url, { credentials: "include" });
+          if (!res.ok) {
+            sendResponse({ success: false, error: `HTTP ${res.status}: Sayfa okunamadı` });
+            return;
+          }
+          const html = await res.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const links = extractListingLinks(doc);
+          const paginationPages = extractPaginationPages(doc);
+          sendResponse({ success: true, count: links.length, links, paginationPages });
+        } catch (error) {
+          sendResponse({ success: false, error: error.message });
+        }
+      })();
       return true;
     }
 
@@ -94,6 +116,23 @@ function extractListingLinks(doc = (typeof document !== "undefined" ? document :
   });
 
   return Array.from(foundUrls);
+}
+
+function extractPaginationPages(doc = (typeof document !== "undefined" ? document : null)) {
+  if (!doc) return [];
+  const foundPages = new Set();
+  const origin = typeof window !== "undefined" && window.location ? window.location.origin : "";
+  const anchors = doc.querySelectorAll("a[href*='PageNumber='], a[href*='sayfa='], .pagination a, .sayfalama a");
+  anchors.forEach((a) => {
+    const href = a.getAttribute("href");
+    if (href && (href.includes("PageNumber=") || href.includes("sayfa="))) {
+      try {
+        const full = new URL(href, origin || "https://www.ozlerav.com.tr").href;
+        foundPages.add(full);
+      } catch (e) {}
+    }
+  });
+  return Array.from(foundPages);
 }
 
 function parseTurkishPrice(rawStr) {
@@ -1098,19 +1137,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
 
   if (isAccessory) {
     result.requires_license = false;
-    if (titleLower.includes("şarjör") || titleLower.includes("sarjor") || titleLower.includes("tambur")) {
-      result.category = "aksesuar-sarjor";
-    } else if (titleLower.includes("arpacık") || titleLower.includes("arpacik") || titleLower.includes("gez") || titleLower.includes("nişangah") || titleLower.includes("nisangah")) {
-      result.category = "aksesuar-nisangah";
-    } else if (titleLower.includes("tutamak") || titleLower.includes("tutamağı") || titleLower.includes("tutamagi") || titleLower.includes("foregrip") || titleLower.includes("kelepçe") || titleLower.includes("kelepce") || titleLower.includes("bipod") || titleLower.includes("picatinny") || titleLower.includes("kundak") || titleLower.includes("dipçik")) {
-      result.category = "aksesuar-taktik";
-    } else if (titleLower.includes("çanta") || titleLower.includes("canta") || titleLower.includes("kılıf") || titleLower.includes("kilif") || titleLower.includes("kayış") || titleLower.includes("kayis") || titleLower.includes("askı") || titleLower.includes("aski")) {
-      result.category = "aksesuar-kilif-canta";
-    } else if (titleLower.includes("şok") || titleLower.includes("sok") || titleLower.includes("bakım") || titleLower.includes("bakim") || titleLower.includes("temizleme") || titleLower.includes("harbi") || titleLower.includes("yağ") || titleLower.includes("yag")) {
-      result.category = "aksesuar-bakim-sok";
-    } else {
-      result.category = "bicak";
-    }
+    result.category = "tufek-aksesuar";
   } else if (isFirearm) {
     result.requires_license = true;
     if (fullText.includes("bullpup")) {

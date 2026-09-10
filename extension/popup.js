@@ -116,6 +116,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  // 2c. Aksesuarları tufek-aksesuar kategorisine aktarma
+  document.getElementById("btnMigrateAccessories")?.addEventListener("click", () => {
+    migrateAccessoriesToTufekAksesuar(true);
+  });
+  // Açılışta sessizce mevcut aksesuarları normalize et
+  setTimeout(() => {
+    migrateAccessoriesToTufekAksesuar(false);
+  }, 1000);
+
   // 3. İndirim Alanı Göster/Gizle
   const chkHasDiscount = document.getElementById("chkHasDiscount");
   const discountPercentRow = document.getElementById("discountPercentRow");
@@ -625,27 +634,14 @@ function populateForm(data) {
     titleLower.includes("çifte") ||
     titleLower.includes("cifte"));
 
-  // 0. Öncelikli Kategori (Eğer scraper zaten spesifik bir alt kategori belirlediyse doğrudan kullan)
-  if (data.category && data.category !== "kamp" && data.category !== "tufek" && data.category !== "muhimmat" && data.category !== "bicak") {
+  // 0. Öncelikli Kategori (Aksesuarlar doğrudan Tüfek - Aksesuarlar kategorisine atanır)
+  if (isAccessory) {
+    licenseChk.checked = false;
+    catSelect.value = "tufek-aksesuar";
+  } else if (data.category && data.category !== "kamp" && data.category !== "tufek" && data.category !== "muhimmat" && data.category !== "bicak" && !data.category.startsWith("aksesuar")) {
     ensureCategoryOption(catSelect, data.category, data.category);
     catSelect.value = data.category;
-    licenseChk.checked = data.category.startsWith("tufek") && !data.category.startsWith("aksesuar");
-  } else if (isAccessory) {
-    licenseChk.checked = false;
-    let accCat = "aksesuar-taktik";
-    if (titleLower.includes("şarjör") || titleLower.includes("sarjor") || titleLower.includes("tambur")) {
-      accCat = "aksesuar-sarjor";
-    } else if (titleLower.includes("arpacık") || titleLower.includes("arpacik") || titleLower.includes("gez") || titleLower.includes("nişangah") || titleLower.includes("nisangah")) {
-      accCat = "aksesuar-nisangah";
-    } else if (titleLower.includes("çanta") || titleLower.includes("canta") || titleLower.includes("kılıf") || titleLower.includes("kilif") || titleLower.includes("kayış") || titleLower.includes("kayis") || titleLower.includes("askı") || titleLower.includes("aski")) {
-      accCat = "aksesuar-kilif-canta";
-    } else if (titleLower.includes("şok") || titleLower.includes("sok") || titleLower.includes("bakım") || titleLower.includes("bakim") || titleLower.includes("temizleme") || titleLower.includes("harbi") || titleLower.includes("yağ")) {
-      accCat = "aksesuar-bakim-sok";
-    } else if (titleLower.includes("bıçak") || titleLower.includes("bicak") || titleLower.includes("çakı") || titleLower.includes("caki")) {
-      accCat = "bicak-av";
-    }
-    ensureCategoryOption(catSelect, accCat, accCat);
-    catSelect.value = accCat;
+    licenseChk.checked = data.category.startsWith("tufek") && data.category !== "tufek-aksesuar";
   } else if (isFirearm) {
     licenseChk.checked = true;
     if (fullText.includes("bullpup")) {
@@ -1069,6 +1065,59 @@ function showStatus(msg, type) {
   b.textContent = msg;
 }
 
+async function migrateAccessoriesToTufekAksesuar(interactive = false) {
+  const cfg = await chrome.storage.local.get(["supabaseUrl", "supabaseKey"]);
+  if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+    if (interactive) showStatus("⚠️ Supabase ayarları bulunamadı. Lütfen Ayarlar sekmesinden URL ve Key giriniz.", "warn");
+    return;
+  }
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      apikey: cfg.supabaseKey,
+      Authorization: `Bearer ${cfg.supabaseKey}`,
+      Prefer: "return=representation",
+    };
+
+    // 1. Update any category starting with aksesuar
+    const res1 = await fetch(`${cfg.supabaseUrl}/rest/v1/products?category=like.aksesuar*`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ category: "tufek-aksesuar", requires_license: false }),
+    });
+
+    // 2. Update bicak-av
+    const res2 = await fetch(`${cfg.supabaseUrl}/rest/v1/products?category=eq.bicak-av`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ category: "tufek-aksesuar", requires_license: false }),
+    });
+
+    let count = 0;
+    if (res1.ok) {
+      try {
+        const data1 = await res1.json();
+        if (Array.isArray(data1)) count += data1.length;
+      } catch (e) {}
+    }
+    if (res2.ok) {
+      try {
+        const data2 = await res2.json();
+        if (Array.isArray(data2)) count += data2.length;
+      } catch (e) {}
+    }
+
+    if (interactive) {
+      showStatus(`✅ ${count > 0 ? count + " adet ürün" : "Tüm aksesuarlar"} başarıyla 'Aksesuarlar' (tufek-aksesuar) kategorisine aktarıldı!`, "success");
+    }
+  } catch (err) {
+    console.error("Migrate error:", err);
+    if (interactive) {
+      showStatus("❌ Taşıma hatası: " + err.message, "error");
+    }
+  }
+}
+
 // =========================================================================
 // TOPLU ÜRÜN ÇEKİMİ VE AKILLI RENK VARYANTI GRUPLAMA
 // =========================================================================
@@ -1468,18 +1517,46 @@ async function runBatchScrape() {
                   if (chrome.runtime.lastError || !retryRes?.success) {
                     reject(new Error("Kategori sayfasındaki ürün linkleri okunamadı. Lütfen sayfayı bir kez yenileyip (F5) deneyin."));
                   } else {
-                    resolve(retryRes.links || []);
+                    resolve({ links: retryRes.links || [], paginationPages: retryRes.paginationPages || [] });
                   }
                 });
               }
             );
           } else {
-            resolve(res.links || []);
+            resolve({ links: res.links || [], paginationPages: res.paginationPages || [] });
           }
         });
       });
 
-    const links = await getLinksPromise();
+    const listingData = await getLinksPromise();
+    let links = Array.isArray(listingData.links) ? [...listingData.links] : [];
+    const paginationPages = Array.isArray(listingData.paginationPages) ? listingData.paginationPages : [];
+
+    // İlave Sayfaları da Otomatik Tara (Sayfa 2, Sayfa 3...)
+    const chkAllPages = document.getElementById("chkBatchAllPages")?.checked ?? true;
+    if (chkAllPages && paginationPages.length > 0) {
+      appendBatchLog(`📑 Sayfalama tespit edildi: ${paginationPages.length} ilave sayfa taranıyor...`, "info");
+      for (const pUrl of paginationPages) {
+        if (cancelBatchRequested) break;
+        try {
+          const pageRes = await new Promise((resolve) => {
+            chrome.tabs.sendMessage(tab.id, { action: "FETCH_PAGE_LINKS", url: pUrl }, (r) => {
+              resolve(r?.success ? r.links : []);
+            });
+          });
+          if (Array.isArray(pageRes) && pageRes.length > 0) {
+            let added = 0;
+            pageRes.forEach((l) => {
+              if (!links.includes(l)) {
+                links.push(l);
+                added++;
+              }
+            });
+            appendBatchLog(`  ✓ ${pUrl.split("?")[1] || pUrl} sayfasından +${added} ürün linki eklendi.`, "success");
+          }
+        } catch (e) {}
+      }
+    }
 
     if (!links || links.length === 0) {
       appendBatchLog("⚠️ Sayfada ürün bağlantısı bulunamadı. Lütfen bir kategori veya ürün listesi sayfasında olduğunuzdan emin olun.", "warn");
@@ -1488,7 +1565,7 @@ async function runBatchScrape() {
       return;
     }
 
-    appendBatchLog(`🔍 Sayfada ${links.length} adet ürün bağlantısı tespit edildi.`, "success");
+    appendBatchLog(`🔍 Toplam ${links.length} adet tekil ürün bağlantısı tespit edildi.`, "success");
     updateBatchProgress(10, `0 / ${links.length} ürün okunuyor...`, `0 / ${links.length}`, "0");
 
     // 2. Her ürünün detaylarını sırayla çek
@@ -1547,11 +1624,11 @@ async function runBatchScrape() {
 
     // Eğer kategori manuel seçilmişse uygula, değilse liste linkinden veya ürün detayından otomatik çıkar
     if (batchCategory !== "auto") {
-      const isFirearmCat = batchCategory.startsWith("tufek") && !batchCategory.startsWith("aksesuar");
+      const isFirearmCat = batchCategory.startsWith("tufek") && !batchCategory.startsWith("aksesuar") && batchCategory !== "tufek-aksesuar";
       rawProducts.forEach((p) => {
         p.category = batchCategory;
         if (isFirearmCat) p.requires_license = true;
-        else if (batchCategory.startsWith("aksesuar") || batchCategory === "bicak" || batchCategory.startsWith("bicak-") || batchCategory.startsWith("kamp")) p.requires_license = false;
+        else p.requires_license = false;
       });
       appendBatchLog(`📁 Seçilen kategori uygulandı: ${batchCategory}`, "info");
     } else {
@@ -1566,7 +1643,7 @@ async function runBatchScrape() {
         activeUrl.includes("k-238") ||
         activeUrl.includes("k-239")
       ) {
-        autoDetectedCat = null; // Her ürün kendi özelliklerine göre şarjör, gez, tutamak vb. ayrıştırılsın
+        autoDetectedCat = "tufek-aksesuar";
       }
       else if (activeUrl.includes("cadir-aksesuarlari")) autoDetectedCat = "kamp-cadir-aksesuari";
       else if (activeUrl.includes("cadir-k-") || activeUrl.includes("cadir")) autoDetectedCat = "kamp-cadir";
@@ -1582,9 +1659,9 @@ async function runBatchScrape() {
 
       if (autoDetectedCat) {
         rawProducts.forEach((p) => {
-          if (!p.category || p.category === "kamp" || p.category === "tufek") {
+          if (!p.category || p.category === "kamp" || p.category === "tufek" || p.category.startsWith("aksesuar")) {
             p.category = autoDetectedCat;
-            if (autoDetectedCat.startsWith("tufek") && !autoDetectedCat.startsWith("aksesuar")) {
+            if (autoDetectedCat.startsWith("tufek") && autoDetectedCat !== "tufek-aksesuar") {
               p.requires_license = true;
             } else {
               p.requires_license = false;
@@ -1597,7 +1674,7 @@ async function runBatchScrape() {
         rawProducts.forEach((p) => {
           const titleLower = (p.title || "").toLowerCase();
           const isAccessory =
-            (p.category && (p.category.startsWith("aksesuar") || p.category.startsWith("bicak"))) ||
+            (p.category && (p.category.startsWith("aksesuar") || p.category === "tufek-aksesuar")) ||
             activeUrl.includes("taktik-aksesuar") ||
             activeUrl.includes("k-237") ||
             activeUrl.includes("k-238") ||
@@ -1645,21 +1722,7 @@ async function runBatchScrape() {
 
           if (isAccessory) {
             p.requires_license = false;
-            if (!p.category || p.category === "tufek" || p.category === "kamp" || p.category === "tufek-aksesuar") {
-              if (titleLower.includes("şarjör") || titleLower.includes("sarjor") || titleLower.includes("tambur")) {
-                p.category = "aksesuar-sarjor";
-              } else if (titleLower.includes("arpacık") || titleLower.includes("arpacik") || titleLower.includes("gez") || titleLower.includes("nişangah") || titleLower.includes("nisangah")) {
-                p.category = "aksesuar-nisangah";
-              } else if (titleLower.includes("çanta") || titleLower.includes("canta") || titleLower.includes("kılıf") || titleLower.includes("kilif") || titleLower.includes("kayış") || titleLower.includes("kayis") || titleLower.includes("askı") || titleLower.includes("aski")) {
-                p.category = "aksesuar-kilif-canta";
-              } else if (titleLower.includes("şok") || titleLower.includes("sok") || titleLower.includes("bakım") || titleLower.includes("bakim") || titleLower.includes("temizleme") || titleLower.includes("harbi") || titleLower.includes("yağ")) {
-                p.category = "aksesuar-bakim-sok";
-              } else if (titleLower.includes("bıçak") || titleLower.includes("bicak") || titleLower.includes("çakı") || titleLower.includes("caki")) {
-                p.category = "bicak-av";
-              } else {
-                p.category = "aksesuar-taktik";
-              }
-            }
+            p.category = "tufek-aksesuar";
           }
         });
         appendBatchLog("🤖 Kategori her ürünün kendi detay sayfasından ve başlığından otomatik belirlendi.", "info");

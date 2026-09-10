@@ -188,13 +188,16 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
     return arr.filter((p) => p.category.startsWith("kamp"));
   }
   if (category === "tufek") {
-    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "silah-muhimmat");
+    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar") || p.category === "aksesuar");
+  }
+  if (category === "tufek-aksesuar" || category === "tufek-aksesuarlar") {
+    return arr.filter((p) => p.category === "tufek-aksesuar" || p.category === "tufek-aksesuarlar" || p.category.startsWith("aksesuar") || p.category === "aksesuar" || p.category === "bicak-av");
   }
   if (category === "silah-muhimmat") {
-    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat");
+    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar"));
   }
-  if (category === "bicak" || category === "aksesuar") {
-    return arr.filter((p) => p.category.startsWith("bicak") || p.category.startsWith("aksesuar"));
+  if (category === "bicak") {
+    return arr.filter((p) => p.category === "bicak" || p.category.startsWith("bicak-"));
   }
   return arr.filter((p) => p.category === category);
 }
@@ -210,8 +213,8 @@ export async function getRelatedProducts(
     .filter((p) => {
       if (p.id === currentId) return false;
       if (category.startsWith("kamp") && p.category.startsWith("kamp")) return true;
-      if (category.startsWith("tufek") && p.category.startsWith("tufek")) return true;
-      if ((category.startsWith("bicak") || category.startsWith("aksesuar")) && (p.category.startsWith("bicak") || p.category.startsWith("aksesuar"))) return true;
+      if ((category.startsWith("tufek") || category.startsWith("aksesuar")) && (p.category.startsWith("tufek") || p.category.startsWith("aksesuar"))) return true;
+      if (category.startsWith("bicak") && p.category.startsWith("bicak")) return true;
       return p.category === category;
     })
     .slice(0, limit);

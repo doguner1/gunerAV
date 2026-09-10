@@ -139,13 +139,13 @@ export default function FilterBar({
         {categories.map((cat) => {
           const isSelected =
             cat.id === "tufek"
-              ? selectedCategory === "tufek" || selectedCategory.startsWith("tufek-")
+              ? selectedCategory === "tufek" || selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar"
               : cat.id === "muhimmat"
               ? selectedCategory === "muhimmat" || selectedCategory.startsWith("muhimmat-")
               : cat.id === "kamp"
               ? selectedCategory === "kamp" || selectedCategory.startsWith("kamp-")
               : cat.id === "bicak"
-              ? selectedCategory === "bicak" || selectedCategory === "aksesuar" || selectedCategory.startsWith("bicak-") || selectedCategory.startsWith("aksesuar-")
+              ? selectedCategory === "bicak"
               : selectedCategory === cat.id;
           const label = isTr ? cat.name_tr : cat.name_en;
           return (
@@ -165,13 +165,13 @@ export default function FilterBar({
         })}
       </div>
 
-      {/* 2. Shotgun Sub-Categories Row (Visible ONLY when Av Tüfekleri is active) */}
-      {(selectedCategory === "tufek" || selectedCategory.startsWith("tufek-")) && (
+      {/* 2. Shotguns Sub-Categories Row (Visible ONLY when Av Tüfekleri is active) */}
+      {(selectedCategory === "tufek" || selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar") && (
         <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#b45309] dark:text-[#d4af37] shrink-0 mr-1 flex items-center gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#d4af37] shrink-0 mr-1 flex items-center gap-1">
               <span>🎯</span>
-              <span>{isTr ? "Tüfek Çeşidi:" : "Shotgun Type:"}</span>
+              <span>{isTr ? "Model / Tip:" : "Model / Type:"}</span>
             </span>
 
             <button
@@ -189,7 +189,9 @@ export default function FilterBar({
             {categories
               .find((c) => c.id === "tufek")
               ?.subcategories?.map((sub) => {
-                const isSubSelected = selectedCategory === sub.id || (sub.id === "tufek-aksesuar" && selectedCategory === "tufek-aksesuarlar");
+                const isSubSelected =
+                  selectedCategory === sub.id ||
+                  (sub.id === "tufek-aksesuar" && (selectedCategory === "tufek-aksesuarlar" || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar"));
                 const subLabel = isTr ? sub.name_tr : sub.name_en;
                 return (
                   <button
@@ -289,54 +291,6 @@ export default function FilterBar({
                     className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
                       isSubSelected
                         ? "bg-blue-600 text-white shadow-sm font-black"
-                        : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-                    }`}
-                  >
-                    {subLabel}
-                  </button>
-                );
-              })}
-          </div>
-        </div>
-      )}
-
-      {/* 5. Bıçak & Taktik Aksesuarlar Sub-Categories Row */}
-      {(selectedCategory === "bicak" ||
-        selectedCategory === "aksesuar" ||
-        selectedCategory.startsWith("bicak-") ||
-        selectedCategory.startsWith("aksesuar-")) && (
-        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0 mr-1 flex items-center gap-1">
-              <span>🎯</span>
-              <span>{isTr ? "Aksesuar Türü:" : "Accessory Type:"}</span>
-            </span>
-
-            <button
-              type="button"
-              onClick={() => onSelectCategory("bicak")}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                selectedCategory === "bicak" || selectedCategory === "aksesuar"
-                  ? "bg-amber-600 text-white shadow-sm font-black"
-                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {isTr ? "Tüm Aksesuarlar" : "All Accessories"}
-            </button>
-
-            {categories
-              .find((c) => c.id === "bicak")
-              ?.subcategories?.map((sub) => {
-                const isSubSelected = selectedCategory === sub.id;
-                const subLabel = isTr ? sub.name_tr : sub.name_en;
-                return (
-                  <button
-                    key={sub.id}
-                    type="button"
-                    onClick={() => onSelectCategory(sub.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                      isSubSelected
-                        ? "bg-amber-600 text-white shadow-sm font-black"
                         : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                     }`}
                   >
