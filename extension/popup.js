@@ -1799,6 +1799,10 @@ async function runBatchScrape() {
       else if (activeUrl.includes("cadir-k-") || activeUrl.includes("cadir")) autoDetectedCat = "kamp-cadir";
       else if (activeUrl.includes("uyku-tulumu")) autoDetectedCat = "kamp-uyku-tulumu";
       else if (activeUrl.includes("mat-k-") || activeUrl.includes("mat-")) autoDetectedCat = "kamp-mat";
+      else if (activeUrl.includes("giyim") || activeUrl.includes("pantolon") || activeUrl.includes("mont") || activeUrl.includes("yelek") || activeUrl.includes("bot") || activeUrl.includes("ayakkabi")) autoDetectedCat = "giyim";
+      else if (activeUrl.includes("bicak") || activeUrl.includes("caki") || activeUrl.includes("balta")) autoDetectedCat = "bicak";
+      else if (activeUrl.includes("fisek") || activeUrl.includes("muhimmat")) autoDetectedCat = "muhimmat";
+      else if (activeUrl.includes("kamp") || activeUrl.includes("balik")) autoDetectedCat = "kamp";
       else if (activeUrl.includes("yari-otomatik")) autoDetectedCat = "tufek-yari-otomatik";
       else if (activeUrl.includes("pompali")) autoDetectedCat = "tufek-pompali";
       else if (activeUrl.includes("sarjorlu")) autoDetectedCat = "tufek-sarjorlu";
@@ -1814,7 +1818,7 @@ async function runBatchScrape() {
         });
         appendBatchLog(`🤖 Tedarikçi liste linkinden kategori otomatik algılandı: ${autoDetectedCat}`, "info");
       } else {
-        // Her ürünün başlığından akıllı kategori tayini (Dürbünler ve Aksesuarlar tüfeklerden önce tespit edilir!)
+        // Her ürünün başlığından akıllı kategori tayini (Dürbünler, Aksesuarlar, Giyim ve Kamp tayin edilir)
         rawProducts.forEach((p) => {
           const titleLower = (p.title || "").toLowerCase();
 
@@ -1894,12 +1898,77 @@ async function runBatchScrape() {
               activeUrl.includes("optik")
             );
 
+          const isClothing =
+            !isAccessory && !isOptic && (
+              titleLower.includes("pantolon") ||
+              titleLower.includes("mont") ||
+              titleLower.includes("yelek") ||
+              titleLower.includes("polar") ||
+              titleLower.includes("gömlek") ||
+              titleLower.includes("gomlek") ||
+              titleLower.includes("t-shirt") ||
+              titleLower.includes("tişört") ||
+              titleLower.includes("tisort") ||
+              titleLower.includes("bot") ||
+              titleLower.includes("ayakkabı") ||
+              titleLower.includes("ayakkabi") ||
+              titleLower.includes("çorap") ||
+              titleLower.includes("corap") ||
+              titleLower.includes("eldiven") ||
+              titleLower.includes("şapka") ||
+              titleLower.includes("sapka") ||
+              titleLower.includes("bere") ||
+              titleLower.includes("yağmurluk") ||
+              titleLower.includes("yagmurluk") ||
+              titleLower.includes("termal") ||
+              titleLower.includes("giyim")
+            );
+
+          const isCamping =
+            !isAccessory && !isOptic && !isClothing && (
+              titleLower.includes("uyku tulumu") ||
+              titleLower.includes("tulum") ||
+              titleLower.includes("çadır") ||
+              titleLower.includes("cadir") ||
+              titleLower.includes("mat ") ||
+              titleLower.includes("matı") ||
+              titleLower.includes("hamak") ||
+              titleLower.includes("termos") ||
+              titleLower.includes("ocak") ||
+              titleLower.includes("kamp") ||
+              titleLower.includes("balık") ||
+              titleLower.includes("balik")
+            );
+
+          const isKnife =
+            !isAccessory && !isOptic && !isClothing && !isCamping && (
+              titleLower.includes("bıçak") ||
+              titleLower.includes("bicak") ||
+              titleLower.includes("çakı") ||
+              titleLower.includes("caki") ||
+              titleLower.includes("balta") ||
+              titleLower.includes("pala") ||
+              titleLower.includes("kama")
+            );
+
           if (isOptic) {
             p.requires_license = false;
             p.category = "optik";
           } else if (isAccessory) {
             p.requires_license = false;
             p.category = "tufek-aksesuar";
+          } else if (isClothing) {
+            p.requires_license = false;
+            p.category = "giyim";
+          } else if (isCamping) {
+            p.requires_license = false;
+            if (titleLower.includes("uyku tulumu") || titleLower.includes("tulum")) p.category = "kamp-uyku-tulumu";
+            else if (titleLower.includes("çadır") || titleLower.includes("cadir")) p.category = "kamp-cadir";
+            else if (titleLower.includes("mat")) p.category = "kamp-mat";
+            else p.category = "kamp";
+          } else if (isKnife) {
+            p.requires_license = false;
+            p.category = "bicak";
           }
         });
         appendBatchLog("🤖 Kategori her ürünün başlığından otomatik belirlendi.", "info");
@@ -1949,7 +2018,8 @@ async function runBatchScrape() {
       }
 
       const brandVal = p.brand || (specs && (specs["Marka"] || specs["Brand"])) || "Hunthink";
-      const chosenCat = batchCategory !== "auto" ? batchCategory : (p.category || "optik");
+      const modelVal = p.model || (specs && (specs["Model"] || specs["Ürün Kodu"] || specs["Stok Kodu"])) || "";
+      const chosenCat = batchCategory !== "auto" ? batchCategory : (p.category || "tufek-aksesuar");
       const isFirearm = chosenCat.startsWith("tufek") && chosenCat !== "tufek-aksesuar" && !chosenCat.startsWith("aksesuar");
       const finalRequiresLicense = isFirearm ? true : (batchCategory !== "auto" ? false : (p.requires_license ?? false));
       const priceVal = finalRequiresLicense ? null : parseTurkishPrice(p.price);
