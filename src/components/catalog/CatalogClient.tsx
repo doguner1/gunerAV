@@ -24,23 +24,211 @@ export default function CatalogClient({
   const tCommon = useTranslations("Common");
   const isTr = locale === "tr";
 
+  const SESSION_KEY = "gunerav_catalog_state";
+
+  // Initial read from URL query params
   const categoryParam = searchParams.get("category") || "all";
+  const queryParam = searchParams.get("q") || "";
+  const licenseParam = searchParams.get("license") === "1";
+  const dealsParam = searchParams.get("deals") === "1";
+  const countParam = parseInt(searchParams.get("count") || "20", 10);
+
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [licenseOnly, setLicenseOnly] = useState<boolean>(false);
-  const [dealsOnly, setDealsOnly] = useState<boolean>(false);
-  const [visibleCount, setVisibleCount] = useState<number>(20);
+  const [searchQuery, setSearchQuery] = useState<string>(queryParam);
+  const [licenseOnly, setLicenseOnly] = useState<boolean>(licenseParam);
+  const [dealsOnly, setDealsOnly] = useState<boolean>(dealsParam);
+  const [visibleCount, setVisibleCount] = useState<number>(isNaN(countParam) ? 20 : countParam);
 
-  useEffect(() => {
-    setVisibleCount(20);
-  }, [selectedCategory, searchQuery, licenseOnly, dealsOnly]);
+  const isRestoredRef = useRef(false);
+  const isRestoringScrollRef = useRef(false);
 
-  // Sync state if URL query param changes
+  // Helper to accurately and smoothly restore scroll position without jumping
+  const restoreScrollPos = useCallback((targetY: number) => {
+    if (targetY <= 0) return;
+    isRestoringScrollRef.current = true;
+
+    // Immediate attempt
+    window.scrollTo({ top: targetY, behavior: "instant" });
+
+    // Repeated check across frames to accommodate images & layout settling
+    let attempts = 0;
+    const maxAttempts = 6;
+    const timer = setInterval(() => {
+      attempts++;
+      if (Math.abs(window.scrollY - targetY) < 15 || attempts >= maxAttempts) {
+        clearInterval(timer);
+        setTimeout(() => {
+          isRestoringScrollRef.current = false;
+        }, 120);
+      } else {
+        window.scrollTo({ top: targetY, behavior: "instant" });
+      }
+    }, 40);
+  }, []);
+
+  // 1. Mount effect: Restore from sessionStorage if URL has no parameters, and restore scroll
   useEffect(() => {
-    if (categoryParam) {
-      setSelectedCategory(categoryParam);
+    if (typeof window === "undefined") return;
+
+    const origScrollRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        const hasUrlParams =
+          searchParams.has("category") ||
+          searchParams.has("q") ||
+          searchParams.has("license") ||
+          searchParams.has("deals");
+
+        // If user came to /products without explicit params, restore their active session filter
+        if (!hasUrlParams) {
+          if (saved.category && saved.category !== "all") setSelectedCategory(saved.category);
+          if (saved.q) setSearchQuery(saved.q);
+          if (typeof saved.license === "boolean") setLicenseOnly(saved.license);
+          if (typeof saved.deals === "boolean") setDealsOnly(saved.deals);
+          if (typeof saved.count === "number" && saved.count >= 20) setVisibleCount(saved.count);
+        }
+
+        // Restore scroll position after DOM renders
+        if (typeof saved.scrollY === "number" && saved.scrollY > 0) {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              restoreScrollPos(saved.scrollY);
+            }, 60);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("Session restore error:", e);
     }
-  }, [categoryParam]);
+
+    isRestoredRef.current = true;
+
+    return () => {
+      window.history.scrollRestoration = origScrollRestoration;
+    };
+  }, [restoreScrollPos]);
+
+  // 2. PopState effect: when user clicks browser Back / Forward buttons
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get("category") || "all";
+      const q = params.get("q") || "";
+      const lic = params.get("license") === "1";
+      const deals = params.get("deals") === "1";
+      const count = parseInt(params.get("count") || "20", 10);
+
+      setSelectedCategory(cat);
+      setSearchQuery(q);
+      setLicenseOnly(lic);
+      setDealsOnly(deals);
+      setVisibleCount(isNaN(count) ? 20 : count);
+
+      // Restore scroll if saved
+      try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (typeof saved.scrollY === "number" && saved.scrollY > 0) {
+            restoreScrollPos(saved.scrollY);
+          }
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [restoreScrollPos]);
+
+  // 2b. Sync state if searchParams changes via Next.js router navigation (e.g. Header dropdown links)
+  useEffect(() => {
+    if (!isRestoredRef.current) return;
+    const cat = searchParams.get("category") || "all";
+    const q = searchParams.get("q") || "";
+    const lic = searchParams.get("license") === "1";
+    const deals = searchParams.get("deals") === "1";
+    const count = parseInt(searchParams.get("count") || "20", 10);
+
+    setSelectedCategory((prev) => (prev !== cat ? cat : prev));
+    setSearchQuery((prev) => (prev !== q ? q : prev));
+    setLicenseOnly((prev) => (prev !== lic ? lic : prev));
+    setDealsOnly((prev) => (prev !== deals ? deals : prev));
+    setVisibleCount((prev) => (prev !== count ? (isNaN(count) ? 20 : count) : prev));
+  }, [searchParams]);
+
+  // 3. Scroll tracker: continuously record scroll position in sessionStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let scrollTimeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      if (isRestoringScrollRef.current) return;
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        try {
+          const raw = sessionStorage.getItem(SESSION_KEY);
+          const state = raw ? JSON.parse(raw) : {};
+          state.scrollY = window.scrollY;
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+        } catch (e) {}
+      }, 100);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      clearTimeout(scrollTimeout);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // 4. Sync state to URL & sessionStorage whenever filters change
+  useEffect(() => {
+    if (!isRestoredRef.current) return;
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams();
+
+    if (selectedCategory && selectedCategory !== "all") {
+      params.set("category", selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      params.set("q", searchQuery.trim());
+    }
+    if (licenseOnly) {
+      params.set("license", "1");
+    }
+    if (dealsOnly) {
+      params.set("deals", "1");
+    }
+    if (visibleCount > 20) {
+      params.set("count", visibleCount.toString());
+    }
+
+    const queryString = params.toString();
+    const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}`;
+
+    // Update URL via replaceState so back button returns to this exact filtered view
+    window.history.replaceState(null, "", newUrl);
+
+    // Save to sessionStorage
+    try {
+      const stateToSave = {
+        category: selectedCategory,
+        q: searchQuery,
+        license: licenseOnly,
+        deals: dealsOnly,
+        count: visibleCount,
+        scrollY: window.scrollY,
+      };
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
+    } catch (e) {}
+  }, [selectedCategory, searchQuery, licenseOnly, dealsOnly, visibleCount]);
 
   // Real-time filtering logic
   const filteredProducts = useMemo(() => {
@@ -55,80 +243,124 @@ export default function CatalogClient({
         JSON.stringify(product.specs_tr || {})
       ).toLocaleLowerCase("tr");
 
+      const isAccessory =
+        prodCat === "tufek-aksesuar" ||
+        prodCat === "tufek-aksesuarlar" ||
+        prodCat.startsWith("aksesuar") ||
+        prodCat === "aksesuar" ||
+        fullText.includes("fener lazer aparatı") ||
+        fullText.includes("lazer aparatı") ||
+        fullText.includes("lazer takma aparatı") ||
+        fullText.includes("dönüştürücü ray") ||
+        fullText.includes("montaj rayı") ||
+        fullText.includes("dürbün ayağı") ||
+        fullText.includes("durbun ayagi") ||
+        fullText.includes("tüfek kılıfı") ||
+        fullText.includes("dipçik fişekliği") ||
+        fullText.includes("atış kulaklığı");
+
       const isOptic =
-        prodCat === "optik" ||
-        fullText.includes("dürbün") ||
-        fullText.includes("durbun") ||
-        fullText.includes("scope") ||
-        fullText.includes("red dot") ||
-        fullText.includes("reddot") ||
-        fullText.includes("termal") ||
-        fullText.includes("boresighter") ||
-        fullText.includes("lazer") ||
-        fullText.includes("laser");
+        !isAccessory && (
+          prodCat === "optik" ||
+          fullText.includes("dürbün") ||
+          fullText.includes("durbun") ||
+          fullText.includes("scope") ||
+          fullText.includes("red dot") ||
+          fullText.includes("reddot") ||
+          fullText.includes("red-dot") ||
+          fullText.includes("termal") ||
+          fullText.includes("boresighter") ||
+          fullText.includes("sıfırlama lazeri") ||
+          fullText.includes("sifirlama lazeri")
+        );
 
       if (selectedCategory !== "all") {
         if (selectedCategory === "optik") {
+          if (isAccessory) return false;
           if (!isOptic && prodCat !== "optik") return false;
         } else if (selectedCategory === "tufek") {
-          // Dürbünler tüfek kategorisine kesinlikle sızamaz
-          if (isOptic) return false;
+          // "Tüm Tüfekler" seçildiğinde müşteriler yalnızca gerçek tüfekleri görmeli. Dürbün veya aksesuar asla görünmemeli.
+          if (isOptic || isAccessory || prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar" || prodCat.startsWith("aksesuar") || prodCat === "aksesuar") {
+            return false;
+          }
           const isShotgun =
-            prodCat.startsWith("tufek") ||
-            prodCat === "silah-muhimmat" ||
-            prodCat.startsWith("aksesuar") ||
-            prodCat === "aksesuar";
+            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar") ||
+            prodCat === "tufek" ||
+            prodCat === "silah-muhimmat";
           if (!isShotgun) return false;
         } else if (selectedCategory === "silah-muhimmat") {
-          if (isOptic) return false;
+          if (isOptic || isAccessory) return false;
           const isFirearmOrAmmo =
-            prodCat.startsWith("tufek") ||
+            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar") ||
+            prodCat === "tufek" ||
             prodCat === "muhimmat" ||
-            prodCat === "silah-muhimmat" ||
-            prodCat.startsWith("aksesuar");
+            prodCat === "silah-muhimmat";
           if (!isFirearmOrAmmo) return false;
         } else if (selectedCategory === "bicak") {
-          if (isOptic) return false;
+          if (isOptic || isAccessory) return false;
           if (prodCat !== "bicak") return false;
         } else if (selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar") {
-          if (isOptic) return false;
-          const isAccessory =
+          const isAccessoryFilter =
             selectedCategory === "tufek-aksesuar" ||
             selectedCategory === "tufek-aksesuarlar" ||
             selectedCategory.startsWith("aksesuar") ||
             selectedCategory === "aksesuar";
-          const isDirectMatch = isAccessory
-            ? (prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar" || prodCat.startsWith("aksesuar") || prodCat === "aksesuar" || prodCat === "bicak-av")
-            : prodCat === selectedCategory;
 
-          if (isDirectMatch) {
-            // Direct match
-          } else if (prodCat === "silah-muhimmat" || (isAccessory && (prodCat === "tufek" || prodCat === "bicak"))) {
-            // Backward compatibility matching for legacy Supabase entries
-            const subType = selectedCategory.replace("tufek-", "");
-            const fullText = (
-              (product.name_tr || "") + " " +
-              (product.description_tr || "") + " " +
-              JSON.stringify(product.specs_tr || {})
-            ).toLocaleLowerCase("tr");
-
-            const matchKeywords: Record<string, string[]> = {
-              "bullpup": ["bullpup"],
-              "sarjorlu": ["şarjör", "sarjor", "şarjörlü", "sarjorlu"],
-              "yari-otomatik": ["yarı otomatik", "yari otomatik", "otomatik av tüfeği", "gazlı", "kinetik"],
-              "pompali": ["pompalı", "pompali", "pump"],
-              "tek-kirma": ["tek kırma", "tek kirma", "tekkırma"],
-              "superpoze": ["süperpoze", "superpoze", "poze"],
-              "cifte": ["çifte", "cifte"],
-              "aksesuar": ["aksesuar", "taktik aksesuar", "arpacık", "arpacik", "gepacik", "gez", "kayış", "askı", "dipçik", "kundak", "şarjör borusu", "fener ayağı", "bipod", "çatal ayak", "ray", "picatinny", "choke", "şok"],
-              "aksesuarlar": ["aksesuar", "taktik aksesuar", "arpacık", "arpacik", "gepacik", "gez", "kayış", "askı", "dipçik", "kundak", "şarjör borusu", "fener ayağı", "bipod", "çatal ayak", "ray", "picatinny", "choke", "şok"],
-            };
-
-            const keywords = matchKeywords[subType] || [];
-            const matches = keywords.some((kw) => fullText.includes(kw));
-            if (!matches) return false;
+          if (isAccessoryFilter) {
+            if (isOptic) return false;
+            const isDirectMatch =
+              prodCat === "tufek-aksesuar" ||
+              prodCat === "tufek-aksesuarlar" ||
+              prodCat.startsWith("aksesuar") ||
+              prodCat === "aksesuar" ||
+              prodCat === "bicak-av" ||
+              isAccessory;
+            if (isDirectMatch) {
+              // Direct match
+            } else if (prodCat === "silah-muhimmat" || prodCat === "tufek" || prodCat === "bicak") {
+              const fullText = (
+                (product.name_tr || "") + " " +
+                (product.description_tr || "") + " " +
+                JSON.stringify(product.specs_tr || {})
+              ).toLocaleLowerCase("tr");
+              const keywords = ["aksesuar", "taktik aksesuar", "arpacık", "arpacik", "gepacik", "gez", "kayış", "askı", "dipçik", "kundak", "şarjör borusu", "fener ayağı", "bipod", "çatal ayak", "ray", "picatinny", "choke", "şok", "kulaklık", "aparat"];
+              const matches = keywords.some((kw) => fullText.includes(kw));
+              if (!matches) return false;
+            } else {
+              return false;
+            }
           } else {
-            return false;
+            // Specific shotgun subcategory (tufek-yari-otomatik, tufek-sarjorlu, etc.)
+            if (isOptic || isAccessory) return false;
+            const isDirectMatch = prodCat === selectedCategory;
+
+            if (isDirectMatch) {
+              // Direct match
+            } else if (prodCat === "silah-muhimmat" || prodCat === "tufek") {
+              // Backward compatibility matching for legacy Supabase entries
+              const subType = selectedCategory.replace("tufek-", "");
+              const fullText = (
+                (product.name_tr || "") + " " +
+                (product.description_tr || "") + " " +
+                JSON.stringify(product.specs_tr || {})
+              ).toLocaleLowerCase("tr");
+
+              const matchKeywords: Record<string, string[]> = {
+                "bullpup": ["bullpup"],
+                "sarjorlu": ["şarjör", "sarjor", "şarjörlü", "sarjorlu"],
+                "yari-otomatik": ["yarı otomatik", "yari otomatik", "otomatik av tüfeği", "gazlı", "kinetik"],
+                "pompali": ["pompalı", "pompali", "pump"],
+                "tek-kirma": ["tek kırma", "tek kirma", "tekkırma"],
+                "superpoze": ["süperpoze", "superpoze", "poze"],
+                "cifte": ["çifte", "cifte"],
+              };
+
+              const keywords = matchKeywords[subType] || [];
+              const matches = keywords.some((kw) => fullText.includes(kw));
+              if (!matches) return false;
+            } else {
+              return false;
+            }
           }
         } else if (selectedCategory === "muhimmat") {
           const isAmmo =
@@ -257,7 +489,11 @@ export default function CatalogClient({
 
   const handleSelectCategory = (cat: string) => {
     setSelectedCategory(cat);
+    setVisibleCount(20);
     trackCategoryClick(cat);
+    if (typeof window !== "undefined" && window.scrollY > 280) {
+      window.scrollTo({ top: 220, behavior: "smooth" });
+    }
   };
 
   const visibleProducts = filteredProducts.slice(0, visibleCount);
@@ -289,7 +525,7 @@ export default function CatalogClient({
       {/* Products Grid or Empty State */}
       {filteredProducts.length > 0 ? (
         <>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[400px]">
           {visibleProducts.map((product, idx) => {
             const cat = categories.find((c) => c.id === product.category);
             return (

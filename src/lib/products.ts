@@ -21,62 +21,88 @@ function secureProduct(p: Product): Product {
   const slugLower = slugKey.toLowerCase();
   const nameLower = ((p.name_tr || "") + " " + (p.name_en || "")).toLowerCase();
 
-  const isOptic =
-    nameLower.includes("dürbün") ||
-    nameLower.includes("durbun") ||
-    nameLower.includes("scope") ||
-    nameLower.includes("red dot") ||
-    nameLower.includes("reddot") ||
-    nameLower.includes("red-dot") ||
-    nameLower.includes("termal") ||
-    nameLower.includes("lazer") ||
-    nameLower.includes("laser") ||
-    nameLower.includes("boresighter") ||
-    nameLower.includes("monoküler") ||
-    nameLower.includes("monokuler") ||
-    slugLower.includes("durbun") ||
-    slugLower.includes("optik") ||
-    slugLower.includes("scope") ||
-    slugLower.includes("red-dot") ||
-    slugLower.includes("reddot");
-
   const isGunAccessory =
-    !isOptic && (
-      slugLower.includes("hunthink-taktikal-ray-pedi") ||
-      slugLower.includes("hunthink-kamuflaj-acik-fiseklik") ||
-      slugLower.includes("hunthink-kamuflaj-kapakli-fiseklik") ||
-      slugLower.includes("hunthink-taktikal-catal-ayak") ||
-      slugLower.includes("hunthink-pikatinli-fiseklik") ||
-      slugLower.includes("fiseklik") ||
-      slugLower.includes("ray-pedi") ||
-      nameLower.includes("fişeklik") ||
-      nameLower.includes("fiseklik") ||
-      nameLower.includes("ray pedi") ||
-      nameLower.includes("çatal ayak") ||
-      nameLower.includes("catal ayak") ||
-      nameLower.includes("bipod") ||
-      nameLower.includes("arpacık") ||
-      nameLower.includes("arpacik") ||
-      nameLower.includes("el kundağı") ||
-      nameLower.includes("kundak") ||
-      nameLower.includes("dipçik") ||
-      nameLower.includes("namlu şok") ||
-      nameLower.includes("mobil şok")
-    );
-
-  if (category === "optik" || ((!category || category.startsWith("tufek") || category === "silah-muhimmat") && isOptic)) {
-    category = "optik";
-    requiresLicense = false;
-  } else if (
+    category === "tufek-aksesuar" ||
     category === "tufek-aksesuarlar" ||
     category === "aksesuar" ||
-    category === "bicak-av" ||
     category?.startsWith("aksesuar-") ||
-    (category === "bicak" && isGunAccessory) ||
-    ((category === "tufek" || category === "silah-muhimmat") && isGunAccessory)
-  ) {
+    category === "bicak-av" ||
+    nameLower.includes("aparati") ||
+    nameLower.includes("aparatı") ||
+    nameLower.includes("montaj rayı") ||
+    nameLower.includes("montaj rayi") ||
+    nameLower.includes("dönüştürücü ray") ||
+    nameLower.includes("donusturucu ray") ||
+    nameLower.includes("dürbün ayağı") ||
+    nameLower.includes("durbun ayagi") ||
+    nameLower.includes("kılıf") ||
+    nameLower.includes("kilif") ||
+    nameLower.includes("çanta") ||
+    nameLower.includes("canta") ||
+    nameLower.includes("fişeklik") ||
+    nameLower.includes("fiseklik") ||
+    nameLower.includes("kayış") ||
+    nameLower.includes("kayis") ||
+    nameLower.includes("dipçik") ||
+    nameLower.includes("dipcik") ||
+    nameLower.includes("kundak") ||
+    nameLower.includes("tutamak") ||
+    nameLower.includes("tutamagi") ||
+    nameLower.includes("çatal ayak") ||
+    nameLower.includes("catal ayak") ||
+    nameLower.includes("bipod") ||
+    nameLower.includes("arpacık") ||
+    nameLower.includes("arpacik") ||
+    nameLower.includes("gez ") ||
+    nameLower.includes("gez-") ||
+    nameLower.includes("gez takımı") ||
+    nameLower.includes("kulaklık") ||
+    nameLower.includes("kulaklik") ||
+    nameLower.includes("ray pedi") ||
+    slugLower.includes("fiseklik") ||
+    slugLower.includes("ray-pedi") ||
+    slugLower.includes("catal-ayak") ||
+    slugLower.includes("bipod") ||
+    slugLower.includes("durbun-ayagi") ||
+    slugLower.includes("montaj-rayi") ||
+    slugLower.includes("lazer-aparati");
+
+  const isOptic =
+    !isGunAccessory && (
+      category === "optik" ||
+      nameLower.includes("dürbün") ||
+      nameLower.includes("durbun") ||
+      nameLower.includes("scope") ||
+      nameLower.includes("red dot") ||
+      nameLower.includes("reddot") ||
+      nameLower.includes("red-dot") ||
+      nameLower.includes("termal") ||
+      nameLower.includes("sıfırlama lazeri") ||
+      nameLower.includes("sifirlama lazeri") ||
+      nameLower.includes("boresighter") ||
+      nameLower.includes("monoküler") ||
+      nameLower.includes("monokuler") ||
+      slugLower.includes("durbun") ||
+      slugLower.includes("optik") ||
+      slugLower.includes("scope") ||
+      slugLower.includes("red-dot") ||
+      slugLower.includes("reddot")
+    );
+
+  if (isGunAccessory) {
     category = "tufek-aksesuar";
     requiresLicense = false;
+  } else if (isOptic) {
+    category = "optik";
+    requiresLicense = false;
+  } else if (category === "kamp" || category?.startsWith("kamp-")) {
+    requiresLicense = false;
+  } else if (category === "muhimmat" || category?.startsWith("muhimmat-")) {
+    requiresLicense = false;
+  } else if (category === "bicak" || category?.startsWith("bicak-")) {
+    requiresLicense = false;
+  } else if (category?.startsWith("tufek-") || category === "tufek") {
+    requiresLicense = true;
   }
 
   const staticEntry = staticImagesMap[slugKey];

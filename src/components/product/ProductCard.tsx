@@ -38,6 +38,17 @@ export default function ProductCard({ product, categoryName, priority = false }:
 
   const waLink = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
+  const handleProductNavigate = () => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = sessionStorage.getItem("gunerav_catalog_state");
+        const state = raw ? JSON.parse(raw) : {};
+        state.scrollY = window.scrollY;
+        sessionStorage.setItem("gunerav_catalog_state", JSON.stringify(state));
+      } catch (e) {}
+    }
+  };
+
   return (
     <article className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800/90 bg-white dark:bg-neutral-950 transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 dark:hover:border-neutral-700 shadow-sm hover:shadow-xl">
       {/* Top Media Area */}
@@ -45,7 +56,10 @@ export default function ProductCard({ product, categoryName, priority = false }:
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-white border-b border-neutral-200 dark:border-neutral-800/80">
           <Link
             href={`/products/${slug}`}
-            onClick={() => trackEvent("click_product_card", { item_id: product.id, item_name: name, category: product.category })}
+            onClick={() => {
+              handleProductNavigate();
+              trackEvent("click_product_card", { item_id: product.id, item_name: name, category: product.category });
+            }}
             className="relative block h-full w-full flex items-center justify-center"
           >
             {!isLoaded && (
@@ -102,7 +116,10 @@ export default function ProductCard({ product, categoryName, priority = false }:
         <div className="p-5">
           <Link
             href={`/products/${slug}`}
-            onClick={() => trackEvent("click_product_card", { item_id: product.id, item_name: name, category: product.category, trigger: "title" })}
+            onClick={() => {
+              handleProductNavigate();
+              trackEvent("click_product_card", { item_id: product.id, item_name: name, category: product.category, trigger: "title" });
+            }}
             className="group/title block"
           >
             <h3 className="line-clamp-1 font-heading text-base font-bold text-neutral-950 dark:text-white transition-colors group-hover/title:text-amber-700 dark:group-hover/title:text-[#d4af37]">
@@ -154,7 +171,10 @@ export default function ProductCard({ product, categoryName, priority = false }:
         <div className="grid grid-cols-2 gap-2">
           <Link
             href={`/products/${slug}`}
-            onClick={() => trackEvent("click_product_card_details", { item_id: product.id, item_name: name })}
+            onClick={() => {
+              handleProductNavigate();
+              trackEvent("click_product_card_details", { item_id: product.id, item_name: name });
+            }}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white"
           >
             <span>{t("details")}</span>
