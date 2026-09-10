@@ -213,6 +213,19 @@ export default function AdminClient() {
   // Product Management State
   const [products, setProducts] = useState<Product[]>([]);
   const [editedProducts, setEditedProducts] = useState<Record<string, Partial<Product>>>({});
+  const [deletedProducts, setDeletedProducts] = useState<Set<string>>(new Set());
+
+  const toggleDelete = (id: string) => {
+    setDeletedProducts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
   const [generatedSql, setGeneratedSql] = useState("");
   const [copiedSql, setCopiedSql] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -497,8 +510,9 @@ export default function AdminClient() {
 
   // Generate SQL
   const generateSql = () => {
-    const ids = Object.keys(editedProducts);
-    if (ids.length === 0) {
+    const editIds = Object.keys(editedProducts);
+    const deleteIds = Array.from(deletedProducts);
+    if (editIds.length === 0 && deleteIds.length === 0) {
       setGeneratedSql("-- Henüz hiçbir üründe değişiklik yapmadınız.");
       return;
     }
@@ -506,11 +520,27 @@ export default function AdminClient() {
     let sql = `-- ==========================================================================\n`;
     sql += `-- GÜNER AV - Otomatik Üretilen Supabase Güncelleme SQL Kodu\n`;
     sql += `-- Tarih: ${new Date().toLocaleString("tr-TR")}\n`;
-    sql += `-- Değiştirilen Ürün Sayısı: ${ids.length}\n`;
+    sql += `-- Değiştirilen (Güncelleme): ${editIds.length} | Silinecek: ${deleteIds.length}\n`;
     sql += `-- Talimat: Bu kodu kopyalayıp Supabase SQL Editor'e yapıştırın ve RUN tuşuna basın.\n`;
     sql += `-- ==========================================================================\n\n`;
 
-    ids.forEach((id) => {
+    // 1. Önce silinecek ürünler
+    if (deleteIds.length > 0) {
+      sql += `-- SİLİNECEK ÜRÜNLER (DELETE)\n`;
+      deleteIds.forEach((id) => {
+        const prod = products.find((p) => p.id === id);
+        sql += `-- [${prod?.name_tr || id}] siliniyor\n`;
+        sql += `DELETE FROM public.products WHERE id = '${id}';\n\n`;
+      });
+    }
+
+    // 2. Sonra güncellenecek ürünler
+    if (editIds.length > 0) {
+      sql += `-- GÜNCELLENECEK ÜRÜNLER (UPDATE)\n`;
+    }
+    editIds.forEach((id) => {
+      // Eğer hem güncellenip hem silinmişse, sadece silinsin.
+      if (deletedProducts.has(id)) return;
       const changes = editedProducts[id];
       const prod = products.find((p) => p.id === id);
       const name = prod?.name_tr || id;
@@ -580,7 +610,7 @@ export default function AdminClient() {
         return false;
       }
 
-      if (onlyModified && !editedProducts[p.id]) {
+      if (onlyModified && !editedProducts[p.id] && !deletedProducts.has(p.id)) {
         return false;
       }
 
@@ -619,7 +649,7 @@ export default function AdminClient() {
     };
   }, [events]);
 
-  const modifiedCount = Object.keys(editedProducts).length;
+  const modifiedCount = Object.keys(editedProducts).length + deletedProducts.size;
 
   // =========================================================================
   // 1. LOGIN SCREEN
@@ -819,9 +849,24 @@ export default function AdminClient() {
             {/* SQL Generation CTA Button */}
             <div className="flex items-center gap-3 shrink-0">
               {modifiedCount > 0 && (
-                <span className="text-xs text-[#d4af37] font-bold">
-                  {modifiedCount} ürün güncellendi
-                </span>
+                <>
+                  <span className="text-xs text-[#d4af37] font-bold">
+                    {modifiedCount} işlem
+                  </span>
+                  <button
+                    onClick={() => {
+                      if(window.confirm("Tüm değişiklikleri sıfırlamak istediğinize emin misiniz?")) {
+                        setEditedProducts({});
+                        setDeletedProducts(new Set());
+                        setGeneratedSql("");
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-700 bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700 text-xs font-bold transition-all"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Sıfırla
+                  </button>
+                </>
               )}
               <button
                 onClick={generateSql}
@@ -876,20 +921,27 @@ export default function AdminClient() {
                     <th className="px-4 py-3.5 text-center w-28">Öne Çıkan</th>
                     <th className="px-4 py-3.5 text-center w-32 text-[#d4af37]">Hero Vitrin</th>
                     <th className="px-4 py-3.5 text-center w-28">Ruhsat Gerekir</th>
+                    <th className="px-4 py-3.5 text-center w-16 text-red-500">Sil</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800/80">
                   {filteredProducts.map((p) => {
                     const isModified = Boolean(editedProducts[p.id]);
+                    const isDeleted = deletedProducts.has(p.id);
                     const current = { ...p, ...(editedProducts[p.id] || {}) };
                     const thumbnail = p.images?.[0] || "/images/products/optics-1.webp";
+
+                    let rowClass = "hover:bg-neutral-800/40 transition-colors";
+                    if (isDeleted) {
+                      rowClass = "bg-red-900/20 border-l-4 border-l-red-500 opacity-60";
+                    } else if (isModified) {
+                      rowClass = "bg-[#d4af37]/10 border-l-4 border-l-[#d4af37] transition-colors";
+                    }
 
                     return (
                       <tr
                         key={p.id}
-                        className={`transition-colors ${
-                          isModified ? "bg-[#d4af37]/10 border-l-4 border-l-[#d4af37]" : "hover:bg-neutral-800/40"
-                        }`}
+                        className={rowClass}
                       >
                         {/* Product Title & Thumbnail */}
                         <td className="px-4 py-3">
@@ -921,6 +973,7 @@ export default function AdminClient() {
                           <div className="relative">
                             <input
                               type="number"
+                              disabled={isDeleted}
                               value={current.price ?? ""}
                               placeholder="Fiyat Sorun"
                               onChange={(e) =>
@@ -930,7 +983,7 @@ export default function AdminClient() {
                                   e.target.value === "" ? null : parseFloat(e.target.value) || 0
                                 )
                               }
-                              className="w-full bg-black border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-[#d4af37] outline-none"
+                              className={`w-full bg-black border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-[#d4af37] outline-none ${isDeleted ? 'opacity-50 cursor-not-allowed' : ''}`}
                             />
                           </div>
                         </td>
@@ -942,7 +995,7 @@ export default function AdminClient() {
                               type="number"
                               min="0"
                               max="100"
-                              value={current.discount_percent ?? ""}
+                              value={current.discount_percent ?? ""} disabled={isDeleted}
                               placeholder="Yok"
                               onChange={(e) =>
                                 handleEdit(
@@ -960,7 +1013,7 @@ export default function AdminClient() {
                         <td className="px-4 py-3 text-center">
                           <input
                             type="checkbox"
-                            checked={Boolean(current.in_stock)}
+                            checked={Boolean(current.in_stock)} disabled={isDeleted}
                             onChange={(e) => handleEdit(p.id, "in_stock", e.target.checked)}
                             className="w-4 h-4 accent-emerald-500 cursor-pointer"
                           />
@@ -970,7 +1023,7 @@ export default function AdminClient() {
                         <td className="px-4 py-3 text-center">
                           <input
                             type="checkbox"
-                            checked={Boolean(current.featured)}
+                            checked={Boolean(current.featured)} disabled={isDeleted}
                             onChange={(e) => handleEdit(p.id, "featured", e.target.checked)}
                             className="w-4 h-4 accent-[#d4af37] cursor-pointer"
                           />
@@ -980,7 +1033,7 @@ export default function AdminClient() {
                         <td className="px-4 py-3 text-center">
                           <input
                             type="checkbox"
-                            checked={Boolean(current.is_hero_spotlight)}
+                            checked={Boolean(current.is_hero_spotlight)} disabled={isDeleted}
                             onChange={(e) => handleEdit(p.id, "is_hero_spotlight", e.target.checked)}
                             className="w-4 h-4 accent-amber-400 cursor-pointer"
                           />
@@ -990,10 +1043,19 @@ export default function AdminClient() {
                         <td className="px-4 py-3 text-center">
                           <input
                             type="checkbox"
-                            checked={Boolean(current.requires_license)}
+                            checked={Boolean(current.requires_license)} disabled={isDeleted}
                             onChange={(e) => handleEdit(p.id, "requires_license", e.target.checked)}
-                            className="w-4 h-4 accent-red-500 cursor-pointer"
+                            className="w-4 h-4 accent-red-500 cursor-pointer disabled:opacity-50"
                           />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => toggleDelete(p.id)}
+                            title={isDeleted ? "Silmeyi İptal Et" : "Ürünü Sil"}
+                            className={`p-2 rounded-lg transition-colors ${isDeleted ? 'bg-red-500 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-red-500/20 hover:text-red-500'}`}
+                          >
+                            {isDeleted ? <RefreshCw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+                          </button>
                         </td>
                       </tr>
                     );

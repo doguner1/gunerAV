@@ -497,12 +497,21 @@ function populateForm(data) {
 
   // Specs
   const specs = data.specs_tr || data.specs || {};
-  delete specs["Stok Kodu"];
-  delete specs["stok kodu"];
-  delete specs["Ürün Kodu"];
-  delete specs["SKU"];
-  delete specs["sku"];
-  delete specs["Kategori"];
+  const excludeSupplierKeys = [
+    "Stok Kodu", "stok kodu",
+    "Ürün Kodu", "ürün kodu",
+    "Ürün No", "ürün no", "Ürün No:", "Ürün Numarası",
+    "Stok Durumu", "stok durumu",
+    "Barkod", "barkod", "Barkodlar", "Barkodlar:",
+    "SKU", "sku",
+    "Kategori",
+    "Id_Urun",
+    "Favorilerime Ekle",
+    "Miktar"
+  ];
+  for (const ek of excludeSupplierKeys) {
+    delete specs[ek];
+  }
   document.getElementById("fldSpecsJson").value = JSON.stringify(specs, null, 2);
 
   // Açıklama Yönetimi: Tedarikçi açıklaması vs. Güner AV standart resmi güvence açıklaması
@@ -709,6 +718,29 @@ function populateForm(data) {
     catSelect.value = "bicak";
     licenseChk.checked = false;
   } else if (
+    fullText.includes("uyku tulumu") ||
+    fullText.includes("tulum") ||
+    fullText.includes("çadır") ||
+    fullText.includes("cadir") ||
+    fullText.includes("kamp") ||
+    fullText.includes("termos") ||
+    fullText.includes("matara") ||
+    fullText.includes("şişme yatak") ||
+    fullText.includes("kamp mat") ||
+    fullText.includes("sandalye") ||
+    fullText.includes("kamp masa") ||
+    fullText.includes("kamp ocak") ||
+    fullText.includes("olta") ||
+    fullText.includes("balık") ||
+    fullText.includes("balik") ||
+    fullText.includes("kamış") ||
+    fullText.includes("kamis") ||
+    fullText.includes("misina") ||
+    fullText.includes("fener")
+  ) {
+    catSelect.value = "kamp";
+    licenseChk.checked = false;
+  } else if (
     fullText.includes("giyim") ||
     fullText.includes("mont") ||
     fullText.includes("pantolon") ||
@@ -720,23 +752,6 @@ function populateForm(data) {
     fullText.includes("eldiven")
   ) {
     catSelect.value = "giyim";
-    licenseChk.checked = false;
-  } else if (
-    fullText.includes("olta") ||
-    fullText.includes("balık") ||
-    fullText.includes("balik") ||
-    fullText.includes("kamış") ||
-    fullText.includes("kamis") ||
-    fullText.includes("misina") ||
-    fullText.includes("iğne") ||
-    fullText.includes("yem") ||
-    fullText.includes("çadır") ||
-    fullText.includes("kamp") ||
-    fullText.includes("fener") ||
-    fullText.includes("termos") ||
-    fullText.includes("tulum")
-  ) {
-    catSelect.value = "kamp";
     licenseChk.checked = false;
   } else {
     catSelect.value = "kamp";

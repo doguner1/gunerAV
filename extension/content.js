@@ -237,8 +237,8 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // 5. Model Tespiti (Model / SKU)
   // =========================================================================
   if (!result.model) {
-    // Check title for common model patterns (e.g. MOD-505, Ranger 8, CSR-12, BLP, CFX Pro)
-    const titleModelMatch = result.title.match(/(MOD[-\s]?\d+|Ranger\s*\d+|Neo\s*\d+|Renova|\b\d{3,4}\s*cm\b|[A-Z]{2,}-\d+|\bBLP\b|\bCSR-\d+\b)/i);
+    // Check title for common model patterns (e.g. H421, MOD-505, Ranger 8, CSR-12, BLP, CFX Pro)
+    const titleModelMatch = result.title.match(/\b([A-Z]{1,4}[-\s]?\d{2,4}[A-Z]?|MOD[-\s]?\d+|Ranger\s*\d+|Neo\s*\d+|Renova|[A-Z]{2,}-\d+|\bBLP\b|\bCSR-\d+\b)\b/i);
     if (titleModelMatch) {
       result.model = titleModelMatch[1].trim();
     }
@@ -604,9 +604,11 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     }
 
     const descList = [];
-    rawLines.forEach((line) => {
+    rawLines.forEach((rawLine) => {
+      // Baştaki madde işaretlerini temizle ama negatif sayıları (örn. -15/-20 derece) koru:
+      const line = rawLine.replace(/^([•*—]\s*|-\s+)/, "").trim();
       const lower = line.toLowerCase();
-      if (lower === "özellikler" || lower === "özellikleri" || lower === "ozellikler") {
+      if (lower === "özellikler" || lower === "özellikleri" || lower === "ozellikler" || lower === "genel bakış") {
         descList.push("Özellikler:");
         return;
       }
@@ -614,42 +616,217 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
 
       descList.push(line);
 
+      // 1. İki nokta (colon) içeren format: "Özellik: Değer"
       if (line.includes(":")) {
         const parts = line.split(":");
         const k = parts[0].trim();
         const v = parts.slice(1).join(":").trim();
-        if (k.length > 1 && k.length < 35 && v.length > 0 && v.length < 100) {
-          if (!k.toLowerCase().includes("stok") && !k.toLowerCase().includes("sku") && !k.toLowerCase().includes("ürün kodu") && !k.toLowerCase().includes("kdv") && !k.toLowerCase().includes("fiyat") && !k.toLowerCase().includes("adet")) {
+        if (k.length > 1 && k.length < 50 && v.length > 0 && v.length < 200) {
+          const kl = k.toLowerCase();
+          if (
+            !kl.includes("stok") &&
+            !kl.includes("sku") &&
+            !kl.includes("ürün kodu") &&
+            !kl.includes("ürün no") &&
+            !kl.includes("barkod") &&
+            !kl.includes("kdv") &&
+            !kl.includes("fiyat") &&
+            !kl.includes("adet")
+          ) {
             specs[k] = v;
+            return;
           }
         }
-      } else {
-        // İki nokta (colon) içermeyen satırlar (Yaban Av / IdeaSoft av fişeği özellikleri)
-        if (/^(\d+)\s*(gram|gr)$/i.test(line)) {
-          specs["Gramaj"] = line;
-        } else if (/^(\d+)\s*(kalibre|cal)$/i.test(line)) {
-          specs["Kalibre"] = line;
-        } else if (/tapa/i.test(line) && line.length < 35) {
-          specs["Tapa Tipi"] = line;
-        } else if (/kovan\s*uzunlu[ğg]u/i.test(line)) {
-          specs["Kovan Uzunluğu"] = line.replace(/kovan\s*uzunlu[ğg]u\s*[:\s]*/i, "");
-        } else if (/paket(?:te)?/i.test(line) || /^\d+\s*adet$/i.test(line)) {
-          specs["Paket İçeriği"] = line.replace(/paket(?:te)?\s*[:\s]*/i, "");
-        } else if (/saçma\s*(?:no|numaras[ıi])/i.test(line)) {
-          specs["Saçma No"] = line.replace(/saçma\s*(?:no|numaras[ıi])\s*[:\s]*/i, "");
-        } else if (/h[ıi]z/i.test(line) && /\d+\s*m\/s/i.test(line)) {
-          specs["Namlu Çıkış Hızı"] = line;
-        } else if (/bas[ıi]nç/i.test(line) && /\d+\s*bar/i.test(line)) {
-          specs["Basınç"] = line;
-        } else if (lower.includes("misina") && !specs["Misina"]) {
-          specs["Misina"] = line;
-        } else if ((lower.includes("kamış") || lower.includes("karbon") || lower.includes("fiberglas")) && !specs["Kamış Yapısı"]) {
-          specs["Kamış Yapısı"] = line;
-        } else if (lower.includes("kurulu") && !specs["Kurulum"]) {
-          specs["Kurulum"] = line;
-        } else if ((lower.includes("kaldır") || lower.includes("kiloluk") || lower.includes("kapasite")) && !specs["Taşıma Kapasitesi"]) {
-          specs["Taşıma Kapasitesi"] = line.replace(/[\(\)]/g, "").trim();
+      }
+
+      // 2. Tire (dash) içeren format: "Özellik - Değer" (örn: Kumaş - 190T Polyester)
+      if (line.includes(" - ") && !line.startsWith("-")) {
+        const parts = line.split(" - ");
+        const k = parts[0].trim();
+        const v = parts.slice(1).join(" - ").trim();
+        if (k.length > 2 && k.length < 35 && v.length > 1 && v.length < 120) {
+          const kl = k.toLowerCase();
+          if (!kl.includes("taksit") && !kl.includes("havale") && !kl.includes("fiyat") && !kl.includes("stok")) {
+            specs[k] = v;
+            return;
+          }
         }
+      }
+
+      // 3. Kamp, Outdoor, Av ve Doğa Akıllı Semantik Çıkarıcılar (Colon içermeyen liste maddeleri)
+
+      // A. Sıcaklık / Derece (Uyku Tulumu vb.) - Yıkama hariç!
+      if (/derece/i.test(line) && !lower.includes("yıka") && !lower.includes("suda") && !specs["Sıcaklık Derecesi"]) {
+        const m = line.match(/(-?\d+(?:\s*[\/\-]\s*-?\d+)?)\s*(?:°|derece)/i);
+        if (m) {
+          specs["Sıcaklık Derecesi"] = m[1].replace(/\s+/g, "") + " °C";
+        } else {
+          specs["Sıcaklık Derecesi"] = line;
+        }
+      }
+
+      // B. Su Geçirmezlik & Su Sütunu
+      if (/su\s*geçirmez|waterproof/i.test(line) && !specs["Su Geçirmezlik"]) {
+        const mm = line.match(/(\d{3,5}\s*mm)/i);
+        specs["Su Geçirmezlik"] = mm ? `${mm[1]} Su Sütunu` : "Su Geçirmez";
+      }
+
+      // C. İç Malzeme / Astar / Polar
+      if (/polar|polarlı/i.test(line) && !specs["İç Malzeme / Astar"]) {
+        specs["İç Malzeme / Astar"] = "Polar Astar";
+      }
+
+      // D. Dolgu Malzemesi (Elyaf, Kaz Tüyü vb.)
+      if ((/elyaf/i.test(line) || /dolgu/i.test(line) || /kaz\s*tüy/i.test(line)) && !specs["Dolgu Malzemesi"]) {
+        const gr = line.match(/(\d+)\s*gr/i);
+        const isM2 = /m2|m²/i.test(line);
+        if (gr) {
+          specs["Dolgu Malzemesi"] = `${gr[1]} gr${isM2 ? "/m²" : ""} Elyaf`;
+        } else {
+          specs["Dolgu Malzemesi"] = line.replace(/kullan[ıi]lm[ıi][şs]t[ıi]r\.?/i, "").trim();
+        }
+      }
+
+      // E. Kapalı Ölçüler (Uyku tulumu, çadır, kamp sandalyesi)
+      if (/kapal[ıi]\s*ölçü|kapal[ıi]\s*ebat/i.test(line) && !specs["Kapalı Ölçüler"]) {
+        let clean = line
+          .replace(/^kapal[ıi]\s*ölçü(?:ler)?[iı]?\s*[:\s]*/i, "")
+          .replace(/civar[ıi]nda\s*gelmektedir\.?/i, "")
+          .replace(/gelmektedir\.?/i, "")
+          .trim();
+        clean = clean.replace(/\ben\b/gi, "En").replace(/\bboy\b/gi, "Boy").replace(/\bkapüşonlu\b/gi, "Kapüşonlu");
+        specs["Kapalı Ölçüler"] = clean;
+      }
+
+      // F. Açık Ölçüler
+      if (/aç[ıi]k\s*ölçü|aç[ıi]k\s*ebat/i.test(line) && !specs["Açık Ölçüler"]) {
+        let clean = line
+          .replace(/^aç[ıi]k\s*ölçü(?:ler)?[iı]?\s*[:\s]*/i, "")
+          .replace(/civar[ıi]nda\s*gelmektedir\.?/i, "")
+          .replace(/gelmektedir\.?/i, "")
+          .trim();
+        clean = clean.replace(/\ben\b/gi, "En").replace(/\bboy\b/gi, "Boy");
+        specs["Açık Ölçüler"] = clean;
+      }
+
+      // G. Genel Ebatlar / Boyut
+      if (!specs["Ebatlar"] && !specs["Kapalı Ölçüler"] && /(\d{2,4}\s*(?:x|×|\*)\s*\d{2,4}(?:\s*(?:x|×|\*)\s*\d{2,4})?\s*(?:cm|mm|m)\b)/i.test(line)) {
+        const em = line.match(/(\d{2,4}\s*(?:x|×|\*)\s*\d{2,4}(?:\s*(?:x|×|\*)\s*\d{2,4})?\s*(?:cm|mm|m)\b)/i);
+        if (em) specs["Ebatlar"] = em[1];
+      }
+
+      // H. Battaniye / Çok Amaçlı Kullanım
+      if (/battaniye/i.test(line) && !specs["Kullanım Şekli"]) {
+        specs["Kullanım Şekli"] = "Tamamen açılarak battaniye olabilir";
+      }
+
+      // I. Taşıma Kolaylığı / Tutma Sapı / Taşıma Çantası
+      if ((/tutma\s*sap/i.test(line) || /taşıma\s*çanta/i.test(line)) && !specs["Taşıma"]) {
+        specs["Taşıma"] = /tutma\s*sap/i.test(line) ? "Tutma Saplı Kolay Taşıma" : "Taşıma Çantalı";
+      }
+
+      // J. Yıkama & Bakım
+      if (/y[ıi]kan/i.test(line) || /y[ıi]kama/i.test(line)) {
+        const deg = line.match(/(\d+\s*(?:°|derece))/i);
+        specs["Yıkama & Bakım"] = deg ? `${deg[1]} Ilık Suda Yıkanabilir` : "30°C Yıkanabilir";
+      }
+      if (/ütü/i.test(line)) {
+        if (specs["Yıkama & Bakım"]) {
+          if (!specs["Yıkama & Bakım"].includes("Ütü")) specs["Yıkama & Bakım"] += " (Ütülenmez)";
+        } else {
+          specs["Yıkama & Bakım"] = "Ütü Yapılmaz";
+        }
+      }
+
+      // K. Menşei / Üretim Yeri
+      if (/made\s*in|men[şs]e[iı]|üretim\s*yeri|türk\s*malı/i.test(line) && !specs["Menşei"]) {
+        const origin = line.replace(/made\s*in\s*[:\s]*/i, "").replace(/men[şs]e[iı]\s*[:\s]*/i, "").trim();
+        specs["Menşei"] = origin || "Türkiye";
+      }
+
+      // L. Kişi Kapasitesi (Çadır)
+      if (/(\d+(?:\s*-\s*\d+)?)\s*ki[şs]ilik/i.test(line) && !specs["Kişi Kapasitesi"]) {
+        const km = line.match(/(\d+(?:\s*-\s*\d+)?)\s*ki[şs]ilik/i);
+        if (km) specs["Kişi Kapasitesi"] = `${km[1]} Kişilik`;
+      }
+
+      // M. Taşıma Kapasitesi (Sandalye, Masa)
+      if (/(\d{2,3})\s*(?:kg|kilo)(?:luk)?\s*(?:taşıma|kapasite|kaldır)/i.test(line) && !specs["Taşıma Kapasitesi"]) {
+        const capm = line.match(/(\d{2,3})\s*(?:kg|kilo)/i);
+        if (capm) specs["Taşıma Kapasitesi"] = `${capm[1]} kg`;
+      }
+
+      // N. Termos Hacim / Sıcak / Soğuk Tutma
+      if (/(\d+(?:[\.,]\d+)?)\s*(?:lt|litre|l|ml)\b/i.test(line) && !specs["Hacim / Kapasite"]) {
+        const hm = line.match(/(\d+(?:[\.,]\d+)?\s*(?:lt|litre|l|ml))\b/i);
+        if (hm) specs["Hacim / Kapasite"] = hm[1];
+      }
+      if (/(\d+)\s*saat(?:\s*boyunca)?\s*s[ıi]cak/i.test(line) && !specs["Sıcak Tutma Süresi"]) {
+        const sm = line.match(/(\d+)\s*saat/i);
+        if (sm) specs["Sıcak Tutma Süresi"] = `${sm[1]} Saat`;
+      }
+      if (/(\d+)\s*saat(?:\s*boyunca)?\s*so[ğg]uk/i.test(line) && !specs["Soğuk Tutma Süresi"]) {
+        const sm = line.match(/(\d+)\s*saat/i);
+        if (sm) specs["Soğuk Tutma Süresi"] = `${sm[1]} Saat`;
+      }
+
+      // O. Kumaş / İskelet Malzemesi
+      if (/600d|oxford|polyester|ripstop/i.test(line) && !specs["Kumaş Tipi"]) {
+        const km = line.match(/(600d\s*(?:oxford)?|oxford|ripstop|\d{3}t\s*polyester|polyester)/i);
+        if (km) specs["Kumaş Tipi"] = km[1].toUpperCase();
+      }
+      if (/(fiberglas|alüminyum|çelik\s*profil|çelik\s*boru)\s*(?:pol|iskelet|boru|profil)?/i.test(line) && !specs["İskelet Malzemesi"]) {
+        const im = line.match(/(fiberglas|alüminyum|çelik\s*profil|çelik\s*boru)/i);
+        if (im) specs["İskelet Malzemesi"] = im[1];
+      }
+
+      // P. Işık Gücü / Lümen / Güç
+      if (/(\d+)\s*(?:lümen|lumen|lm)\b/i.test(line) && !specs["Işık Gücü"]) {
+        const lm = line.match(/(\d+)\s*(?:lümen|lumen|lm)/i);
+        if (lm) specs["Işık Gücü"] = `${lm[1]} Lümen`;
+      }
+      if (/(\d+(?:[\.,]\d+)?)\s*(?:watt|w|kw)\b/i.test(line) && !specs["Güç"]) {
+        const wm = line.match(/(\d+(?:[\.,]\d+)?\s*(?:watt|w|kw))\b/i);
+        if (wm) specs["Güç"] = wm[1];
+      }
+
+      // Q. Çelik Cinsi & Bıçak Özellikleri
+      if (/(440[a-c]?|d2|n690|vg-?10|12c27|aus-?8|1095|karbon\s*çelik|paslanmaz\s*çelik|damascus)/i.test(line) && !specs["Çelik Cinsi"]) {
+        const cm = line.match(/(440[a-c]?|d2|n690|vg-?10|12c27|aus-?8|1095|karbon\s*çelik|paslanmaz\s*çelik|damascus)/i);
+        if (cm) specs["Çelik Cinsi"] = cm[1].toUpperCase();
+      }
+      if (/namlu\s*(?:boyu|uzunluğu)?\s*[:\s]*(\d+(?:[\.,]\d+)?\s*cm)/i.test(line) && !specs["Namlu Boyu"]) {
+        const nbm = line.match(/namlu\s*(?:boyu|uzunluğu)?\s*[:\s]*(\d+(?:[\.,]\d+)?\s*cm)/i);
+        if (nbm) specs["Namlu Boyu"] = nbm[1];
+      }
+      if (/toplam\s*(?:boy|uzunluk)\s*[:\s]*(\d+(?:[\.,]\d+)?\s*cm)/i.test(line) && !specs["Toplam Boy"]) {
+        const tbm = line.match(/toplam\s*(?:boy|uzunluk)\s*[:\s]*(\d+(?:[\.,]\d+)?\s*cm)/i);
+        if (tbm) specs["Toplam Boy"] = tbm[1];
+      }
+
+      // R. Av Fişeği & Mühimmat Özellikleri
+      if (/^(\d+)\s*(gram|gr)$/i.test(line) && !specs["Gramaj"]) {
+        specs["Gramaj"] = line;
+      } else if (/^(\d+)\s*(kalibre|cal)$/i.test(line) && !specs["Kalibre"]) {
+        specs["Kalibre"] = line;
+      } else if (/tapa/i.test(line) && line.length < 35 && !specs["Tapa Tipi"]) {
+        specs["Tapa Tipi"] = line;
+      } else if (/kovan\s*uzunlu[ğg]u/i.test(line) && !specs["Kovan Uzunluğu"]) {
+        specs["Kovan Uzunluğu"] = line.replace(/kovan\s*uzunlu[ğg]u\s*[:\s]*/i, "");
+      } else if (/paket(?:te)?/i.test(line) || (/^\d+\s*adet$/i.test(line) && !specs["Paket İçeriği"])) {
+        specs["Paket İçeriği"] = line.replace(/paket(?:te)?\s*[:\s]*/i, "");
+      } else if (/saçma\s*(?:no|numaras[ıi])/i.test(line) && !specs["Saçma No"]) {
+        specs["Saçma No"] = line.replace(/saçma\s*(?:no|numaras[ıi])\s*[:\s]*/i, "");
+      } else if (/h[ıi]z/i.test(line) && /\d+\s*m\/s/i.test(line) && !specs["Namlu Çıkış Hızı"]) {
+        specs["Namlu Çıkış Hızı"] = line;
+      } else if (/bas[ıi]nç/i.test(line) && /\d+\s*bar/i.test(line) && !specs["Basınç"]) {
+        specs["Basınç"] = line;
+      } else if (lower.includes("misina") && !specs["Misina"]) {
+        specs["Misina"] = line;
+      } else if ((lower.includes("kamış") || lower.includes("karbon") || lower.includes("fiberglas")) && !specs["Kamış Yapısı"]) {
+        specs["Kamış Yapısı"] = line;
+      } else if (lower.includes("kurulu") && !specs["Kurulum"]) {
+        specs["Kurulum"] = line;
       }
     });
 
@@ -674,7 +851,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // Fallback: Eğer açıklama metni hala boş veya çok kısaysa, teknik tablodan zengin açıklama oluştur
   if (!result.description || result.description.length < 20) {
     const validSpecs = Object.entries(specs).filter(
-      ([k]) => !["Marka", "Model", "Kategori", "Stok Kodu", "Ürün Kodu", "SKU", "sku"].includes(k)
+      ([k]) => !["Marka", "Model", "Kategori", "Stok Kodu", "Ürün Kodu", "SKU", "sku", "Ürün No", "Stok Durumu"].includes(k)
     );
     if (validSpecs.length > 0) {
       const descLines = ["Teknik Detaylar:"];
@@ -687,7 +864,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
 
   // D. Başlıktan ekstra özellikler
   const lengthMatch = result.title.match(/(\d{2,4}\s*cm)/i);
-  if (lengthMatch && !specs["Kamış Boyu"] && !specs["Uzunluk"]) {
+  if (lengthMatch && !specs["Kamış Boyu"] && !specs["Uzunluk"] && !specs["Ebatlar"]) {
     specs["Uzunluk"] = lengthMatch[1];
   }
 
@@ -696,17 +873,27 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     specs["Tipi"] = "Bullpup";
   }
 
-  // KULLANICI TALEBİ: "stok kodunu almasın" -> Stok Kodu ve SKU kesinlikle çıkarılır
-  delete specs["Stok Kodu"];
-  delete specs["stok kodu"];
-  delete specs["Ürün Kodu"];
-  delete specs["SKU"];
-  delete specs["sku"];
-  delete specs["Kategori"];
+  // KULLANICI TALEBİ: "stok kodunu almasın" -> Dahili tedarikçi ve depo kodları temizlenir
+  const excludeSupplierKeys = [
+    "Stok Kodu", "stok kodu",
+    "Ürün Kodu", "ürün kodu",
+    "Ürün No", "ürün no", "Ürün No:", "Ürün Numarası",
+    "Stok Durumu", "stok durumu",
+    "Barkod", "barkod", "Barkodlar", "Barkodlar:",
+    "SKU", "sku",
+    "Kategori",
+    "Id_Urun",
+    "Favorilerime Ekle",
+    "Miktar"
+  ];
+  for (const ek of excludeSupplierKeys) {
+    delete specs[ek];
+  }
+
   // Fiyat bilgisi specs'lerden kesinlikle çıkarılır (yasal gereklilik)
   Object.keys(specs).forEach(k => {
     const kl = k.toLowerCase();
-    if (kl.includes("kdv") || kl.includes("net fiyat") || kl.includes("fiyat") && kl.includes("adet")) {
+    if (kl.includes("kdv") || kl.includes("net fiyat") || (kl.includes("fiyat") && kl.includes("adet"))) {
       delete specs[k];
     }
   });
@@ -812,6 +999,62 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       } else {
         result.category = "muhimmat";
       }
+    } else if (
+      fullText.includes("uyku tulumu") ||
+      fullText.includes("tulum") ||
+      fullText.includes("çadır") ||
+      fullText.includes("cadir") ||
+      fullText.includes("kamp") ||
+      fullText.includes("termos") ||
+      fullText.includes("matara") ||
+      fullText.includes("şişme yatak") ||
+      fullText.includes("kamp mat") ||
+      fullText.includes("sandalye") ||
+      fullText.includes("kamp masa") ||
+      fullText.includes("kamp ocak") ||
+      fullText.includes("olta") ||
+      fullText.includes("balık") ||
+      fullText.includes("balik") ||
+      fullText.includes("kamış") ||
+      fullText.includes("kamis") ||
+      fullText.includes("misina") ||
+      fullText.includes("fener")
+    ) {
+      result.category = "kamp";
+      result.requires_license = false;
+    } else if (
+      fullText.includes("bıçak") ||
+      fullText.includes("bicak") ||
+      fullText.includes("çakı") ||
+      fullText.includes("caki") ||
+      fullText.includes("balta") ||
+      fullText.includes("kılıf") ||
+      fullText.includes("multitool")
+    ) {
+      result.category = "bicak";
+      result.requires_license = false;
+    } else if (
+      fullText.includes("dürbün") ||
+      fullText.includes("durbun") ||
+      fullText.includes("scope") ||
+      fullText.includes("optik") ||
+      fullText.includes("red dot") ||
+      fullText.includes("reddot") ||
+      fullText.includes("termal")
+    ) {
+      result.category = "optik";
+      result.requires_license = false;
+    } else if (
+      fullText.includes("giyim") ||
+      fullText.includes("mont") ||
+      fullText.includes("pantolon") ||
+      fullText.includes("yelek") ||
+      fullText.includes("bot") ||
+      fullText.includes("çizme") ||
+      fullText.includes("yağmurluk")
+    ) {
+      result.category = "giyim";
+      result.requires_license = false;
     }
   }
 
