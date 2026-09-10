@@ -21,32 +21,61 @@ function secureProduct(p: Product): Product {
   const slugLower = slugKey.toLowerCase();
   const nameLower = ((p.name_tr || "") + " " + (p.name_en || "")).toLowerCase();
 
-  const isGunAccessory =
-    slugLower.includes("hunthink-taktikal-ray-pedi") ||
-    slugLower.includes("hunthink-kamuflaj-acik-fiseklik") ||
-    slugLower.includes("hunthink-kamuflaj-kapakli-fiseklik") ||
-    slugLower.includes("hunthink-taktikal-catal-ayak") ||
-    slugLower.includes("hunthink-pikatinli-fiseklik") ||
-    slugLower.includes("fiseklik") ||
-    slugLower.includes("ray-pedi") ||
-    nameLower.includes("fişeklik") ||
-    nameLower.includes("fiseklik") ||
-    nameLower.includes("ray pedi") ||
-    nameLower.includes("çatal ayak") ||
-    nameLower.includes("catal ayak") ||
-    nameLower.includes("bipod");
+  const isOptic =
+    nameLower.includes("dürbün") ||
+    nameLower.includes("durbun") ||
+    nameLower.includes("scope") ||
+    nameLower.includes("red dot") ||
+    nameLower.includes("reddot") ||
+    nameLower.includes("red-dot") ||
+    nameLower.includes("termal") ||
+    nameLower.includes("lazer") ||
+    nameLower.includes("laser") ||
+    nameLower.includes("boresighter") ||
+    nameLower.includes("monoküler") ||
+    nameLower.includes("monokuler") ||
+    slugLower.includes("durbun") ||
+    slugLower.includes("optik") ||
+    slugLower.includes("scope") ||
+    slugLower.includes("red-dot") ||
+    slugLower.includes("reddot");
 
-  if (
+  const isGunAccessory =
+    !isOptic && (
+      slugLower.includes("hunthink-taktikal-ray-pedi") ||
+      slugLower.includes("hunthink-kamuflaj-acik-fiseklik") ||
+      slugLower.includes("hunthink-kamuflaj-kapakli-fiseklik") ||
+      slugLower.includes("hunthink-taktikal-catal-ayak") ||
+      slugLower.includes("hunthink-pikatinli-fiseklik") ||
+      slugLower.includes("fiseklik") ||
+      slugLower.includes("ray-pedi") ||
+      nameLower.includes("fişeklik") ||
+      nameLower.includes("fiseklik") ||
+      nameLower.includes("ray pedi") ||
+      nameLower.includes("çatal ayak") ||
+      nameLower.includes("catal ayak") ||
+      nameLower.includes("bipod") ||
+      nameLower.includes("arpacık") ||
+      nameLower.includes("arpacik") ||
+      nameLower.includes("el kundağı") ||
+      nameLower.includes("kundak") ||
+      nameLower.includes("dipçik") ||
+      nameLower.includes("namlu şok") ||
+      nameLower.includes("mobil şok")
+    );
+
+  if (category === "optik" || ((!category || category.startsWith("tufek") || category === "silah-muhimmat") && isOptic)) {
+    category = "optik";
+    requiresLicense = false;
+  } else if (
     category === "tufek-aksesuarlar" ||
     category === "aksesuar" ||
     category === "bicak-av" ||
     category?.startsWith("aksesuar-") ||
-    (category === "bicak" && isGunAccessory)
+    (category === "bicak" && isGunAccessory) ||
+    ((category === "tufek" || category === "silah-muhimmat") && isGunAccessory)
   ) {
     category = "tufek-aksesuar";
-  }
-
-  if (category === "tufek-aksesuar") {
     requiresLicense = false;
   }
 
@@ -224,14 +253,17 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
   if (category === "kamp") {
     return arr.filter((p) => p.category.startsWith("kamp"));
   }
+  if (category === "optik") {
+    return arr.filter((p) => p.category === "optik");
+  }
   if (category === "tufek") {
-    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar") || p.category === "aksesuar");
+    return arr.filter((p) => (p.category.startsWith("tufek") || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar") || p.category === "aksesuar") && p.category !== "optik");
   }
   if (category === "tufek-aksesuar" || category === "tufek-aksesuarlar") {
-    return arr.filter((p) => p.category === "tufek-aksesuar" || p.category === "tufek-aksesuarlar" || p.category.startsWith("aksesuar") || p.category === "aksesuar" || p.category === "bicak-av");
+    return arr.filter((p) => (p.category === "tufek-aksesuar" || p.category === "tufek-aksesuarlar" || p.category.startsWith("aksesuar") || p.category === "aksesuar" || p.category === "bicak-av") && p.category !== "optik");
   }
   if (category === "silah-muhimmat") {
-    return arr.filter((p) => p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar"));
+    return arr.filter((p) => (p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar")) && p.category !== "optik");
   }
   if (category === "bicak") {
     return arr.filter((p) => p.category === "bicak");

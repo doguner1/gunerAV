@@ -120,9 +120,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btnMigrateAccessories")?.addEventListener("click", () => {
     migrateAccessoriesToTufekAksesuar(true);
   });
-  // Açılışta sessizce mevcut aksesuarları normalize et
+
+  // 2d. Dürbünleri optik kategorisine aktarma
+  document.getElementById("btnMigrateOptics")?.addEventListener("click", () => {
+    migrateOpticsToOptik(true);
+  });
+
+  // Açılışta sessizce mevcut aksesuarları ve yanlış kategorilenmiş dürbünleri normalize et
   setTimeout(() => {
     migrateAccessoriesToTufekAksesuar(false);
+    migrateOpticsToOptik(false);
   }, 1000);
 
   // 3. İndirim Alanı Göster/Gizle
@@ -573,75 +580,107 @@ function populateForm(data) {
   };
 
   const titleLower = (data.title || "").toLowerCase();
+
+  const isOptic =
+    fullText.includes("durbun") ||
+    fullText.includes("optik") ||
+    fullText.includes("scope") ||
+    fullText.includes("red dot") ||
+    fullText.includes("reddot") ||
+    fullText.includes("red-dot") ||
+    fullText.includes("termal") ||
+    fullText.includes("gece görüş") ||
+    fullText.includes("gece gorus") ||
+    fullText.includes("lazer") ||
+    fullText.includes("laser") ||
+    fullText.includes("boresighter") ||
+    fullText.includes("monoküler") ||
+    fullText.includes("monokuler") ||
+    titleLower.includes("dürbün") ||
+    titleLower.includes("durbun") ||
+    titleLower.includes("scope") ||
+    titleLower.includes("red dot") ||
+    titleLower.includes("reddot") ||
+    titleLower.includes("termal") ||
+    titleLower.includes("lazer") ||
+    titleLower.includes("laser");
+
   const isAccessory =
-    (data.category && (data.category.startsWith("aksesuar") || data.category === "bicak" || data.category.startsWith("bicak-"))) ||
-    fullText.includes("av-taktik-aksesuar") ||
-    fullText.includes("taktik-aksesuar") ||
-    fullText.includes("k-237") ||
-    fullText.includes("k-238") ||
-    fullText.includes("k-239") ||
-    titleLower.includes("şarjör") ||
-    titleLower.includes("sarjor") ||
-    titleLower.includes("tambur") ||
-    titleLower.includes("arpacık") ||
-    titleLower.includes("arpacik") ||
-    titleLower.includes("gez ") ||
-    titleLower.includes("gez-") ||
-    titleLower.includes("gez takımı") ||
-    titleLower.includes("nişangah") ||
-    titleLower.includes("nisangah") ||
-    titleLower.includes("tutamak") ||
-    titleLower.includes("tutamağı") ||
-    titleLower.includes("tutamagi") ||
-    titleLower.includes("foregrip") ||
-    titleLower.includes("grip") ||
-    titleLower.includes("kayışlık") ||
-    titleLower.includes("kayislik") ||
-    titleLower.includes("askı kayışı") ||
-    titleLower.includes("aski kayisi") ||
-    titleLower.includes("namlu kelepçesi") ||
-    titleLower.includes("kelepçe") ||
-    titleLower.includes("kelepce") ||
-    titleLower.includes("mobil şok") ||
-    titleLower.includes("şok tüp") ||
-    titleLower.includes("şok takımı") ||
-    titleLower.includes("şok ") ||
-    titleLower.includes("sok ") ||
-    titleLower.includes("çanta") ||
-    titleLower.includes("canta") ||
-    titleLower.includes("kılıf") ||
-    titleLower.includes("kilif") ||
-    titleLower.includes("dipçik") ||
-    titleLower.includes("dipcik") ||
-    titleLower.includes("kundak") ||
-    titleLower.includes("bipod") ||
-    titleLower.includes("çatal ayak") ||
-    titleLower.includes("temizleme seti") ||
-    titleLower.includes("bakım seti") ||
-    titleLower.includes("harbi") ||
-    titleLower.includes("picatinny") ||
-    titleLower.includes("ray adaptör") ||
-    titleLower.includes("ray pedi") ||
-    titleLower.includes("ray kapak") ||
-    titleLower.includes("fişeklik") ||
-    titleLower.includes("fiseklik") ||
-    titleLower.includes("pikatin");
+    !isOptic && (
+      (data.category && (data.category.startsWith("aksesuar") || data.category === "bicak" || data.category.startsWith("bicak-"))) ||
+      fullText.includes("av-taktik-aksesuar") ||
+      fullText.includes("taktik-aksesuar") ||
+      fullText.includes("k-237") ||
+      fullText.includes("k-238") ||
+      fullText.includes("k-239") ||
+      titleLower.includes("şarjör") ||
+      titleLower.includes("sarjor") ||
+      titleLower.includes("tambur") ||
+      titleLower.includes("arpacık") ||
+      titleLower.includes("arpacik") ||
+      titleLower.includes("gez ") ||
+      titleLower.includes("gez-") ||
+      titleLower.includes("gez takımı") ||
+      titleLower.includes("nişangah") ||
+      titleLower.includes("nisangah") ||
+      titleLower.includes("tutamak") ||
+      titleLower.includes("tutamağı") ||
+      titleLower.includes("tutamagi") ||
+      titleLower.includes("foregrip") ||
+      titleLower.includes("grip") ||
+      titleLower.includes("kayışlık") ||
+      titleLower.includes("kayislik") ||
+      titleLower.includes("askı kayışı") ||
+      titleLower.includes("aski kayisi") ||
+      titleLower.includes("namlu kelepçesi") ||
+      titleLower.includes("kelepçe") ||
+      titleLower.includes("kelepce") ||
+      titleLower.includes("mobil şok") ||
+      titleLower.includes("şok tüp") ||
+      titleLower.includes("şok takımı") ||
+      titleLower.includes("şok ") ||
+      titleLower.includes("sok ") ||
+      titleLower.includes("çanta") ||
+      titleLower.includes("canta") ||
+      titleLower.includes("kılıf") ||
+      titleLower.includes("kilif") ||
+      titleLower.includes("dipçik") ||
+      titleLower.includes("dipcik") ||
+      titleLower.includes("kundak") ||
+      titleLower.includes("bipod") ||
+      titleLower.includes("çatal ayak") ||
+      titleLower.includes("temizleme seti") ||
+      titleLower.includes("bakım seti") ||
+      titleLower.includes("harbi") ||
+      titleLower.includes("picatinny") ||
+      titleLower.includes("ray adaptör") ||
+      titleLower.includes("ray pedi") ||
+      titleLower.includes("ray kapak") ||
+      titleLower.includes("fişeklik") ||
+      titleLower.includes("fiseklik") ||
+      titleLower.includes("pikatin")
+    );
 
   const isFirearm =
-    !isAccessory &&
-    (titleLower.includes("tüfek") ||
-    titleLower.includes("tufek") ||
-    titleLower.includes("tabanca") ||
-    titleLower.includes("av tüfeği") ||
-    titleLower.includes("av tufegi") ||
-    titleLower.includes("pompalı") ||
-    titleLower.includes("pompali") ||
-    titleLower.includes("poze") ||
-    titleLower.includes("çifte") ||
-    titleLower.includes("cifte"));
+    !isOptic &&
+    !isAccessory && (
+      titleLower.includes("tüfek") ||
+      titleLower.includes("tufek") ||
+      titleLower.includes("tabanca") ||
+      titleLower.includes("av tüfeği") ||
+      titleLower.includes("av tufegi") ||
+      titleLower.includes("pompalı") ||
+      titleLower.includes("pompali") ||
+      titleLower.includes("poze") ||
+      titleLower.includes("çifte") ||
+      titleLower.includes("cifte")
+    );
 
-  // 0. Öncelikli Kategori (Aksesuarlar doğrudan Tüfek - Aksesuarlar kategorisine atanır)
-  if (isAccessory) {
+  // 0. Öncelikli Kategori (Optik ve Aksesuarlar tüfeklerden önce yakalanır)
+  if (isOptic) {
+    licenseChk.checked = false;
+    catSelect.value = "optik";
+  } else if (isAccessory) {
     licenseChk.checked = false;
     catSelect.value = "tufek-aksesuar";
   } else if (data.category && data.category !== "kamp" && data.category !== "tufek" && data.category !== "muhimmat" && data.category !== "bicak" && !data.category.startsWith("aksesuar")) {
@@ -771,23 +810,27 @@ function populateForm(data) {
     catSelect.value = "tufek-yari-otomatik";
     licenseChk.checked = true;
   } else if (
-    fullText.includes("tüfek") ||
-    fullText.includes("shotgun") ||
-    fullText.includes("yivsiz") ||
-    fullText.includes("av tüfeği")
-  ) {
-    catSelect.value = "tufek-yari-otomatik";
-    licenseChk.checked = true;
-  } else if (
     fullText.includes("dürbün") ||
     fullText.includes("scope") ||
     fullText.includes("optik") ||
     fullText.includes("termal") ||
     fullText.includes("red dot") ||
-    fullText.includes("reddot")
+    fullText.includes("reddot") ||
+    fullText.includes("lazer") ||
+    fullText.includes("laser")
   ) {
     catSelect.value = "optik";
     licenseChk.checked = false;
+  } else if (
+    !isOptic && !isAccessory && (
+      fullText.includes("tüfek") ||
+      fullText.includes("shotgun") ||
+      fullText.includes("yivsiz") ||
+      fullText.includes("av tüfeği")
+    )
+  ) {
+    catSelect.value = "tufek-yari-otomatik";
+    licenseChk.checked = true;
   } else if (
     fullText.includes("bıçak") ||
     fullText.includes("bicak") ||
@@ -1125,6 +1168,79 @@ async function migrateAccessoriesToTufekAksesuar(interactive = false) {
   }
 }
 
+async function migrateOpticsToOptik(interactive = false) {
+  const cfg = await chrome.storage.local.get(["supabaseUrl", "supabaseKey"]);
+  if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+    if (interactive) showStatus("⚠️ Supabase ayarları bulunamadı. Lütfen Ayarlar sekmesinden URL ve Key giriniz.", "warn");
+    return;
+  }
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      apikey: cfg.supabaseKey,
+      Authorization: `Bearer ${cfg.supabaseKey}`,
+      Prefer: "return=representation",
+    };
+
+    // Tüm ürünleri çek ve adında dürbün / durbun / scope / red dot / lazer geçen ama kategorisi tufek olanları tespit et
+    const res = await fetch(`${cfg.supabaseUrl}/rest/v1/products?select=id,name_tr,category,requires_license`, {
+      headers: {
+        apikey: cfg.supabaseKey,
+        Authorization: `Bearer ${cfg.supabaseKey}`,
+      },
+    });
+
+    if (!res.ok) return;
+    const products = await res.json();
+    if (!Array.isArray(products)) return;
+
+    const opticsToFix = products.filter((p) => {
+      const name = (p.name_tr || "").toLowerCase();
+      const id = (p.id || "").toLowerCase();
+      const isOpticName =
+        name.includes("dürbün") ||
+        name.includes("durbun") ||
+        name.includes("scope") ||
+        name.includes("red dot") ||
+        name.includes("reddot") ||
+        name.includes("termal") ||
+        name.includes("boresighter") ||
+        name.includes("lazer") ||
+        name.includes("laser") ||
+        name.includes("monoküler") ||
+        name.includes("monokuler") ||
+        id.includes("durbun") ||
+        id.includes("optik");
+
+      return isOpticName && (p.category !== "optik" || p.requires_license === true);
+    });
+
+    if (opticsToFix.length === 0) {
+      if (interactive) showStatus("✅ Yanlış kategorilenmiş dürbün ürünü bulunamadı (Hepsi güncel).", "success");
+      return;
+    }
+
+    let updatedCount = 0;
+    for (const prod of opticsToFix) {
+      const patchRes = await fetch(`${cfg.supabaseUrl}/rest/v1/products?id=eq.${encodeURIComponent(prod.id)}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ category: "optik", requires_license: false }),
+      });
+      if (patchRes.ok) updatedCount++;
+    }
+
+    if (interactive) {
+      showStatus(`✅ Toplam ${updatedCount} adet dürbün ürünü 'Optik & Dürbün' kategorisine taşındı ve ruhsat kaldırıldı!`, "success");
+    }
+  } catch (err) {
+    console.error("Migrate optics error:", err);
+    if (interactive) {
+      showStatus("❌ Dürbün taşıma hatası: " + err.message, "error");
+    }
+  }
+}
+
 // =========================================================================
 // TOPLU ÜRÜN ÇEKİMİ VE AKILLI RENK VARYANTI GRUPLAMA
 // =========================================================================
@@ -1364,8 +1480,12 @@ function groupProductsByVariant(rawProducts, options = {}) {
 
       // Ana başlık: Tüfek ise Marka + Baz Model + Kalibre + Tüfek, aksesuar ise Marka + Model
       const isShotgun =
-        (primaryItem.category && primaryItem.category.startsWith("tufek") && !primaryItem.category.startsWith("tufek-aksesuar")) ||
-        (primaryItem.requires_license && !primaryItem.category?.startsWith("aksesuar"));
+        primaryItem.category &&
+        primaryItem.category.startsWith("tufek") &&
+        primaryItem.category !== "tufek-aksesuar" &&
+        !primaryItem.category.startsWith("aksesuar") &&
+        primaryItem.category !== "optik" &&
+        primaryItem.requires_license === true;
       const typeSuffix = isShotgun ? "Yarı Otomatik Av Tüfeği" : "";
       const kalibre = primaryItem.specs?.["Kalibre"] || primaryItem.specs?.["kalibre"] || (isShotgun ? "12 Kalibre" : "");
       
@@ -1629,20 +1749,31 @@ async function runBatchScrape() {
     const useSupplierDesc = document.getElementById("chkBatchUseSupplierDesc")?.checked ?? false;
     const batchCategory = document.getElementById("fldBatchCategory")?.value || "auto";
 
-    // Eğer kategori manuel seçilmişse uygula, değilse liste linkinden veya ürün detayından otomatik çıkar
+    // Eğer kategori manuel seçilmişse istisnasız uygula, değilse liste linkinden veya ürün başlığından otomatik çıkar
     if (batchCategory !== "auto") {
-      const isFirearmCat = batchCategory.startsWith("tufek") && !batchCategory.startsWith("aksesuar") && batchCategory !== "tufek-aksesuar";
+      const isFirearmCat =
+        batchCategory.startsWith("tufek") &&
+        !batchCategory.startsWith("aksesuar") &&
+        batchCategory !== "tufek-aksesuar";
+
       rawProducts.forEach((p) => {
         p.category = batchCategory;
-        if (isFirearmCat) p.requires_license = true;
-        else p.requires_license = false;
+        p.requires_license = isFirearmCat;
       });
-      appendBatchLog(`📁 Seçilen kategori uygulandı: ${batchCategory}`, "info");
+      appendBatchLog(`🎯 Kullanıcı Seçimi: TÜM ÜRÜNLER istisnasız '${batchCategory}' kategorisine atanıyor. (Ruhsat: ${isFirearmCat ? "Gerektirir" : "Gerekmez"})`, "success");
     } else {
       // Liste linki veya geçerli sekme URL'sinden otomatik kategori tespiti
       const activeUrl = (document.getElementById("fldBatchUrl")?.value || tab?.url || targetTab?.url || "").toLowerCase();
       let autoDetectedCat = null;
       if (
+        activeUrl.includes("durbun") ||
+        activeUrl.includes("optik") ||
+        activeUrl.includes("scope") ||
+        activeUrl.includes("red-dot")
+      ) {
+        autoDetectedCat = "optik";
+      }
+      else if (
         activeUrl.includes("av-taktik-aksesuar") ||
         activeUrl.includes("taktik-aksesuarlari") ||
         activeUrl.includes("av-aksesuarlari") ||
@@ -1666,73 +1797,87 @@ async function runBatchScrape() {
 
       if (autoDetectedCat) {
         rawProducts.forEach((p) => {
-          if (!p.category || p.category === "kamp" || p.category === "tufek" || p.category.startsWith("aksesuar")) {
-            p.category = autoDetectedCat;
-            if (autoDetectedCat.startsWith("tufek") && autoDetectedCat !== "tufek-aksesuar") {
-              p.requires_license = true;
-            } else {
-              p.requires_license = false;
-            }
-          }
+          p.category = autoDetectedCat;
+          p.requires_license = autoDetectedCat.startsWith("tufek") && autoDetectedCat !== "tufek-aksesuar";
         });
         appendBatchLog(`🤖 Tedarikçi liste linkinden kategori otomatik algılandı: ${autoDetectedCat}`, "info");
       } else {
-        // Taktik aksesuarları veya karma listeler: Her ürünün başlığından akıllı kategori tayini
+        // Her ürünün başlığından akıllı kategori tayini (Dürbünler ve Aksesuarlar tüfeklerden önce tespit edilir!)
         rawProducts.forEach((p) => {
           const titleLower = (p.title || "").toLowerCase();
-          const isAccessory =
-            (p.category && (p.category.startsWith("aksesuar") || p.category === "tufek-aksesuar")) ||
-            activeUrl.includes("taktik-aksesuar") ||
-            activeUrl.includes("k-237") ||
-            activeUrl.includes("k-238") ||
-            activeUrl.includes("k-239") ||
-            titleLower.includes("şarjör") ||
-            titleLower.includes("sarjor") ||
-            titleLower.includes("tambur") ||
-            titleLower.includes("arpacık") ||
-            titleLower.includes("arpacik") ||
-            titleLower.includes("gez ") ||
-            titleLower.includes("gez-") ||
-            titleLower.includes("gez takımı") ||
-            titleLower.includes("nişangah") ||
-            titleLower.includes("nisangah") ||
-            titleLower.includes("tutamak") ||
-            titleLower.includes("tutamağı") ||
-            titleLower.includes("tutamagi") ||
-            titleLower.includes("foregrip") ||
-            titleLower.includes("grip") ||
-            titleLower.includes("kayışlık") ||
-            titleLower.includes("kayislik") ||
-            titleLower.includes("askı kayışı") ||
-            titleLower.includes("aski kayisi") ||
-            titleLower.includes("namlu kelepçesi") ||
-            titleLower.includes("kelepçe") ||
-            titleLower.includes("kelepce") ||
-            titleLower.includes("mobil şok") ||
-            titleLower.includes("şok tüp") ||
-            titleLower.includes("şok takımı") ||
-            titleLower.includes("şok ") ||
-            titleLower.includes("sok ") ||
-            titleLower.includes("çanta") ||
-            titleLower.includes("canta") ||
-            titleLower.includes("kılıf") ||
-            titleLower.includes("kilif") ||
-            titleLower.includes("dipçik") ||
-            titleLower.includes("dipcik") ||
-            titleLower.includes("kundak") ||
-            titleLower.includes("bipod") ||
-            titleLower.includes("çatal ayak") ||
-            titleLower.includes("temizleme seti") ||
-            titleLower.includes("bakım seti") ||
-            titleLower.includes("harbi") ||
-            titleLower.includes("picatinny");
+          const isOptic =
+            titleLower.includes("dürbün") ||
+            titleLower.includes("durbun") ||
+            titleLower.includes("scope") ||
+            titleLower.includes("red dot") ||
+            titleLower.includes("reddot") ||
+            titleLower.includes("red-dot") ||
+            titleLower.includes("termal") ||
+            titleLower.includes("gece görüş") ||
+            titleLower.includes("gece gorus") ||
+            titleLower.includes("lazer") ||
+            titleLower.includes("laser") ||
+            titleLower.includes("boresighter") ||
+            titleLower.includes("monoküler") ||
+            titleLower.includes("monokuler") ||
+            activeUrl.includes("durbun") ||
+            activeUrl.includes("optik");
 
-          if (isAccessory) {
+          const isAccessory =
+            !isOptic && (
+              (p.category && (p.category.startsWith("aksesuar") || p.category === "tufek-aksesuar")) ||
+              activeUrl.includes("taktik-aksesuar") ||
+              titleLower.includes("şarjör") ||
+              titleLower.includes("sarjor") ||
+              titleLower.includes("tambur") ||
+              titleLower.includes("arpacık") ||
+              titleLower.includes("arpacik") ||
+              titleLower.includes("gez ") ||
+              titleLower.includes("gez-") ||
+              titleLower.includes("gez takımı") ||
+              titleLower.includes("nişangah") ||
+              titleLower.includes("nisangah") ||
+              titleLower.includes("tutamak") ||
+              titleLower.includes("tutamağı") ||
+              titleLower.includes("tutamagi") ||
+              titleLower.includes("foregrip") ||
+              titleLower.includes("grip") ||
+              titleLower.includes("kayışlık") ||
+              titleLower.includes("kayislik") ||
+              titleLower.includes("askı kayışı") ||
+              titleLower.includes("aski kayisi") ||
+              titleLower.includes("namlu kelepçesi") ||
+              titleLower.includes("kelepçe") ||
+              titleLower.includes("kelepce") ||
+              titleLower.includes("mobil şok") ||
+              titleLower.includes("şok tüp") ||
+              titleLower.includes("şok takımı") ||
+              titleLower.includes("şok ") ||
+              titleLower.includes("sok ") ||
+              titleLower.includes("çanta") ||
+              titleLower.includes("canta") ||
+              titleLower.includes("kılıf") ||
+              titleLower.includes("kilif") ||
+              titleLower.includes("dipçik") ||
+              titleLower.includes("dipcik") ||
+              titleLower.includes("kundak") ||
+              titleLower.includes("bipod") ||
+              titleLower.includes("çatal ayak") ||
+              titleLower.includes("temizleme seti") ||
+              titleLower.includes("bakım seti") ||
+              titleLower.includes("harbi") ||
+              titleLower.includes("picatinny")
+            );
+
+          if (isOptic) {
+            p.requires_license = false;
+            p.category = "optik";
+          } else if (isAccessory) {
             p.requires_license = false;
             p.category = "tufek-aksesuar";
           }
         });
-        appendBatchLog("🤖 Kategori her ürünün kendi detay sayfasından ve başlığından otomatik belirlendi.", "info");
+        appendBatchLog("🤖 Kategori her ürünün başlığından otomatik belirlendi.", "info");
       }
     }
 
@@ -1779,15 +1924,17 @@ async function runBatchScrape() {
       }
 
       const brandVal = p.brand || (specs && (specs["Marka"] || specs["Brand"])) || "Hunthink";
-      const modelVal = p.model || (specs && (specs["Ürün Kodu"] || specs["Model"] || specs["Stok Kodu"])) || "";
-      const priceVal = (p.requires_license === true) ? null : parseTurkishPrice(p.price);
+      const chosenCat = batchCategory !== "auto" ? batchCategory : (p.category || "optik");
+      const isFirearm = chosenCat.startsWith("tufek") && chosenCat !== "tufek-aksesuar" && !chosenCat.startsWith("aksesuar");
+      const finalRequiresLicense = isFirearm ? true : (batchCategory !== "auto" ? false : (p.requires_license ?? false));
+      const priceVal = finalRequiresLicense ? null : parseTurkishPrice(p.price);
       const inStock = p.in_stock !== false;
 
       const payload = {
         id: slug,
         slug_tr: slug,
         slug_en: slug + "-en",
-        category: p.category || "aksesuar-taktik",
+        category: chosenCat,
         brand: brandVal,
         model: modelVal,
         name_tr: nameTr,
@@ -1799,7 +1946,7 @@ async function runBatchScrape() {
         variants: variants,
         featured: true,
         is_hero_spotlight: false,
-        requires_license: p.requires_license ?? false,
+        requires_license: finalRequiresLicense,
         in_stock: inStock,
         specs_tr: specs,
         specs_en: specs,

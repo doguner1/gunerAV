@@ -47,8 +47,32 @@ export default function CatalogClient({
     return initialProducts.filter((product) => {
       // Category filter
       const prodCat = product.category || "";
+      const fullText = (
+        (product.name_tr || "") + " " +
+        (product.name_en || "") + " " +
+        (product.description_tr || "") + " " +
+        (product.slug_tr || "") + " " +
+        JSON.stringify(product.specs_tr || {})
+      ).toLocaleLowerCase("tr");
+
+      const isOptic =
+        prodCat === "optik" ||
+        fullText.includes("dürbün") ||
+        fullText.includes("durbun") ||
+        fullText.includes("scope") ||
+        fullText.includes("red dot") ||
+        fullText.includes("reddot") ||
+        fullText.includes("termal") ||
+        fullText.includes("boresighter") ||
+        fullText.includes("lazer") ||
+        fullText.includes("laser");
+
       if (selectedCategory !== "all") {
-        if (selectedCategory === "tufek") {
+        if (selectedCategory === "optik") {
+          if (!isOptic && prodCat !== "optik") return false;
+        } else if (selectedCategory === "tufek") {
+          // Dürbünler tüfek kategorisine kesinlikle sızamaz
+          if (isOptic) return false;
           const isShotgun =
             prodCat.startsWith("tufek") ||
             prodCat === "silah-muhimmat" ||
@@ -56,6 +80,7 @@ export default function CatalogClient({
             prodCat === "aksesuar";
           if (!isShotgun) return false;
         } else if (selectedCategory === "silah-muhimmat") {
+          if (isOptic) return false;
           const isFirearmOrAmmo =
             prodCat.startsWith("tufek") ||
             prodCat === "muhimmat" ||
@@ -63,8 +88,10 @@ export default function CatalogClient({
             prodCat.startsWith("aksesuar");
           if (!isFirearmOrAmmo) return false;
         } else if (selectedCategory === "bicak") {
+          if (isOptic) return false;
           if (prodCat !== "bicak") return false;
         } else if (selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar") {
+          if (isOptic) return false;
           const isAccessory =
             selectedCategory === "tufek-aksesuar" ||
             selectedCategory === "tufek-aksesuarlar" ||

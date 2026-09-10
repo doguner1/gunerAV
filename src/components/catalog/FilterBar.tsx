@@ -3,6 +3,7 @@
 import { Category } from "@/types/product";
 import { Search, X, ShieldAlert, Tag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { STORE_INFO } from "@/lib/store";
 
 interface FilterBarProps {
   categories: Category[];
@@ -96,18 +97,20 @@ export default function FilterBar({
           </button>
 
           {/* Deals Only Toggle */}
-          <button
-            type="button"
-            onClick={onToggleDeals}
-            className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all ${
-              dealsOnly
-                ? "border-amber-400 bg-amber-100 dark:bg-[#d4af37]/20 text-amber-900 dark:text-[#d4af37]"
-                : "border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/60 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            <Tag className="h-3.5 w-3.5" />
-            <span>{t("showOnlyDeals")}</span>
-          </button>
+          {!STORE_INFO.hidePrices && (
+            <button
+              type="button"
+              onClick={onToggleDeals}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all ${
+                dealsOnly
+                  ? "border-amber-400 bg-amber-100 dark:bg-[#d4af37]/20 text-amber-900 dark:text-[#d4af37]"
+                  : "border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/60 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              <Tag className="h-3.5 w-3.5" />
+              <span>{t("showOnlyDeals")}</span>
+            </button>
+          )}
 
           {hasActiveFilters && (
             <button

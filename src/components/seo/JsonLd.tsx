@@ -80,7 +80,7 @@ export function ProductJsonLd({
       "@type": "Brand",
       "name": "Güner AV",
     },
-    ...(!product.requires_license && product.price
+    ...(!product.requires_license && product.price && !STORE_INFO.hidePrices
       ? {
           "offers": {
             "@type": "Offer",

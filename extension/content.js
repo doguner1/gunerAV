@@ -1070,77 +1070,109 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   ).toLowerCase();
 
   const titleLower = (result.title || "").toLowerCase();
-  const isFirearm =
-    titleLower.includes("tüfek") ||
-    titleLower.includes("tufek") ||
-    titleLower.includes("tabanca") ||
-    titleLower.includes("av tüfeği") ||
-    titleLower.includes("av tufegi") ||
-    titleLower.includes("pompalı") ||
-    titleLower.includes("pompali") ||
-    titleLower.includes("poze") ||
-    titleLower.includes("çifte") ||
-    titleLower.includes("cifte");
+
+  const isOptic =
+    currentUrl.includes("durbun") ||
+    currentUrl.includes("optik") ||
+    currentUrl.includes("scope") ||
+    currentUrl.includes("red-dot") ||
+    currentUrl.includes("reddot") ||
+    titleLower.includes("dürbün") ||
+    titleLower.includes("durbun") ||
+    titleLower.includes("scope") ||
+    titleLower.includes("red dot") ||
+    titleLower.includes("reddot") ||
+    titleLower.includes("red-dot") ||
+    titleLower.includes("termal") ||
+    titleLower.includes("gece görüş") ||
+    titleLower.includes("gece gorus") ||
+    titleLower.includes("lazer") ||
+    titleLower.includes("laser") ||
+    titleLower.includes("boresighter") ||
+    titleLower.includes("monoküler") ||
+    titleLower.includes("monokuler") ||
+    titleLower.includes("dürbün ayağı") ||
+    titleLower.includes("durbun ayagi");
 
   const isAccessory =
-    currentUrl.includes("av-taktik-aksesuar") ||
-    currentUrl.includes("taktik-aksesuarlari") ||
-    currentUrl.includes("av-aksesuarlari") ||
-    currentUrl.includes("k-237") ||
-    currentUrl.includes("k-238") ||
-    currentUrl.includes("k-239") ||
-    (result.category && /taktik aksesuar|av aksesuar|aksesuarlar/i.test(result.category)) ||
-    titleLower.includes("şarjör") ||
-    titleLower.includes("sarjor") ||
-    titleLower.includes("tambur") ||
-    titleLower.includes("arpacık") ||
-    titleLower.includes("arpacik") ||
-    titleLower.includes("gez ") ||
-    titleLower.includes("gez-") ||
-    titleLower.includes("gez takımı") ||
-    titleLower.includes("nişangah") ||
-    titleLower.includes("nisangah") ||
-    titleLower.includes("tutamak") ||
-    titleLower.includes("tutamağı") ||
-    titleLower.includes("tutamagi") ||
-    titleLower.includes("foregrip") ||
-    titleLower.includes("grip") ||
-    titleLower.includes("kayışlık") ||
-    titleLower.includes("kayislik") ||
-    titleLower.includes("askı kayışı") ||
-    titleLower.includes("aski kayisi") ||
-    titleLower.includes("namlu kelepçesi") ||
-    titleLower.includes("kelepçe") ||
-    titleLower.includes("kelepce") ||
-    titleLower.includes("mobil şok") ||
-    titleLower.includes("şok tüp") ||
-    titleLower.includes("şok takımı") ||
-    titleLower.includes("şok ") ||
-    titleLower.includes("sok ") ||
-    titleLower.includes("çanta") ||
-    titleLower.includes("canta") ||
-    titleLower.includes("kılıf") ||
-    titleLower.includes("kilif") ||
-    titleLower.includes("dipçik") ||
-    titleLower.includes("dipcik") ||
-    titleLower.includes("el kundağı") ||
-    titleLower.includes("kundak") ||
-    titleLower.includes("bipod") ||
-    titleLower.includes("çatal ayak") ||
-    titleLower.includes("catal ayak") ||
-    titleLower.includes("temizleme seti") ||
-    titleLower.includes("bakım seti") ||
-    titleLower.includes("bakım yağı") ||
-    titleLower.includes("harbi") ||
-    titleLower.includes("picatinny") ||
-    titleLower.includes("ray adaptör") ||
-    titleLower.includes("ray pedi") ||
-    titleLower.includes("ray kapak") ||
-    titleLower.includes("fişeklik") ||
-    titleLower.includes("fiseklik") ||
-    titleLower.includes("pikatin");
+    !isOptic && (
+      currentUrl.includes("av-taktik-aksesuar") ||
+      currentUrl.includes("taktik-aksesuarlari") ||
+      currentUrl.includes("av-aksesuarlari") ||
+      currentUrl.includes("k-237") ||
+      currentUrl.includes("k-238") ||
+      currentUrl.includes("k-239") ||
+      (result.category && /taktik aksesuar|av aksesuar|aksesuarlar/i.test(result.category)) ||
+      titleLower.includes("şarjör") ||
+      titleLower.includes("sarjor") ||
+      titleLower.includes("tambur") ||
+      titleLower.includes("arpacık") ||
+      titleLower.includes("arpacik") ||
+      titleLower.includes("gez ") ||
+      titleLower.includes("gez-") ||
+      titleLower.includes("gez takımı") ||
+      titleLower.includes("nişangah") ||
+      titleLower.includes("nisangah") ||
+      titleLower.includes("tutamak") ||
+      titleLower.includes("tutamağı") ||
+      titleLower.includes("tutamagi") ||
+      titleLower.includes("foregrip") ||
+      titleLower.includes("grip") ||
+      titleLower.includes("kayışlık") ||
+      titleLower.includes("kayislik") ||
+      titleLower.includes("askı kayışı") ||
+      titleLower.includes("aski kayisi") ||
+      titleLower.includes("namlu kelepçesi") ||
+      titleLower.includes("kelepçe") ||
+      titleLower.includes("kelepce") ||
+      titleLower.includes("mobil şok") ||
+      titleLower.includes("şok tüp") ||
+      titleLower.includes("şok takımı") ||
+      titleLower.includes("şok ") ||
+      titleLower.includes("sok ") ||
+      titleLower.includes("çanta") ||
+      titleLower.includes("canta") ||
+      titleLower.includes("kılıf") ||
+      titleLower.includes("kilif") ||
+      titleLower.includes("dipçik") ||
+      titleLower.includes("dipcik") ||
+      titleLower.includes("el kundağı") ||
+      titleLower.includes("kundak") ||
+      titleLower.includes("bipod") ||
+      titleLower.includes("çatal ayak") ||
+      titleLower.includes("catal ayak") ||
+      titleLower.includes("temizleme seti") ||
+      titleLower.includes("bakım seti") ||
+      titleLower.includes("bakım yağı") ||
+      titleLower.includes("harbi") ||
+      titleLower.includes("picatinny") ||
+      titleLower.includes("ray adaptör") ||
+      titleLower.includes("ray pedi") ||
+      titleLower.includes("ray kapak") ||
+      titleLower.includes("fişeklik") ||
+      titleLower.includes("fiseklik") ||
+      titleLower.includes("pikatin")
+    );
 
-  if (isAccessory) {
+  const isFirearm =
+    !isOptic &&
+    !isAccessory && (
+      titleLower.includes("tüfek") ||
+      titleLower.includes("tufek") ||
+      titleLower.includes("tabanca") ||
+      titleLower.includes("av tüfeği") ||
+      titleLower.includes("av tufegi") ||
+      titleLower.includes("pompalı") ||
+      titleLower.includes("pompali") ||
+      titleLower.includes("poze") ||
+      titleLower.includes("çifte") ||
+      titleLower.includes("cifte")
+    );
+
+  if (isOptic) {
+    result.requires_license = false;
+    result.category = "optik";
+  } else if (isAccessory) {
     result.requires_license = false;
     result.category = "tufek-aksesuar";
   } else if (isFirearm) {
