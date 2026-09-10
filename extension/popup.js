@@ -1081,6 +1081,35 @@ function populateForm(data) {
     licenseChk.checked = false;
   }
 
+  // Tedarikçi (Supplier ID) Otomatik Tespiti
+  const selSupplier = document.getElementById("fldSupplierId");
+  const inpSupplierCustom = document.getElementById("fldSupplierIdCustom");
+  if (selSupplier) {
+    let supId = data.supplier_id;
+    if (!supId) {
+      const uLow = (data.url || (typeof window !== "undefined" ? window.location?.href : "") || "").toLowerCase();
+      const nLow = ((data.title || "") + " " + (data.brand || "")).toLowerCase();
+      if (uLow.includes("arslansilah") || nLow.includes("castello")) {
+        supId = 1;
+      } else if (uLow.includes("ozlerav")) {
+        supId = 2;
+      } else {
+        supId = 2;
+      }
+    }
+    const supStr = String(supId);
+    if (["1", "2", "3", "4", "5"].includes(supStr)) {
+      selSupplier.value = supStr;
+      if (inpSupplierCustom) inpSupplierCustom.style.display = "none";
+    } else {
+      selSupplier.value = "custom";
+      if (inpSupplierCustom) {
+        inpSupplierCustom.style.display = "block";
+        inpSupplierCustom.value = supStr;
+      }
+    }
+  }
+
   updateImagesPreview();
 }
 
@@ -1091,6 +1120,8 @@ async function saveFormDraft() {
     price: document.getElementById("fldPrice")?.value || "",
     brand: document.getElementById("fldBrand")?.value || "",
     model: document.getElementById("fldModel")?.value || "",
+    supplierId: document.getElementById("fldSupplierId")?.value || "2",
+    supplierIdCustom: document.getElementById("fldSupplierIdCustom")?.value || "",
     images: document.getElementById("fldImages")?.value || "",
     variantsJson: document.getElementById("fldVariantsJson")?.value || "",
     featured: document.getElementById("chkFeatured")?.checked ?? true,
@@ -1115,6 +1146,14 @@ function restoreFormDraft(draft) {
   if (draft.price) document.getElementById("fldPrice").value = draft.price;
   if (draft.brand) document.getElementById("fldBrand").value = draft.brand;
   if (draft.model) document.getElementById("fldModel").value = draft.model;
+  if (draft.supplierId && document.getElementById("fldSupplierId")) {
+    document.getElementById("fldSupplierId").value = draft.supplierId;
+    const inpCustom = document.getElementById("fldSupplierIdCustom");
+    if (inpCustom) {
+      inpCustom.style.display = draft.supplierId === "custom" ? "block" : "none";
+      if (draft.supplierIdCustom) inpCustom.value = draft.supplierIdCustom;
+    }
+  }
   if (draft.images) document.getElementById("fldImages").value = draft.images;
 
   if (typeof draft.useScrapedDescription === "boolean" && document.getElementById("chkUseScrapedDescription")) {
@@ -1163,6 +1202,11 @@ async function resetForm() {
   document.getElementById("fldBrand").value = "";
   document.getElementById("fldModel").value = "";
   document.getElementById("fldPrice").value = "";
+  if (document.getElementById("fldSupplierId")) document.getElementById("fldSupplierId").value = "2";
+  if (document.getElementById("fldSupplierIdCustom")) {
+    document.getElementById("fldSupplierIdCustom").value = "";
+    document.getElementById("fldSupplierIdCustom").style.display = "none";
+  }
   document.getElementById("fldImages").value = "";
   document.getElementById("fldSpecsJson").value = "";
   document.getElementById("fldCategory").value = "kamp";
@@ -1944,6 +1988,15 @@ async function runBatchScrape() {
     const groupVariants = document.getElementById("chkBatchGroupVariants")?.checked ?? true;
     const useSupplierDesc = document.getElementById("chkBatchUseSupplierDesc")?.checked ?? false;
     const batchCategory = document.getElementById("fldBatchCategory")?.value || "auto";
+    const batchSupplierVal = document.getElementById("fldBatchSupplierId")?.value || "auto";
+    const batchSupplierCustom = document.getElementById("fldBatchSupplierIdCustom")?.value || "";
+
+    if (batchSupplierVal !== "auto") {
+      const dispSup = batchSupplierVal === "custom" ? (batchSupplierCustom || "Özel") : batchSupplierVal;
+      appendBatchLog(`🏢 Tedarikçi Seçimi: TÜM ÜRÜNLER tedarikçi ID ${dispSup} olarak atanacak.`, "info");
+    } else {
+      appendBatchLog("✨ Tedarikçi Seçimi: Otomatik Algılama devrede (Castello / Arslan Silah = 1, Özler Av = 2).", "info");
+    }
 
     // Eğer kategori manuel seçilmişse istisnasız uygula, değilse liste linkinden veya ürün başlığından otomatik çıkar
     if (batchCategory !== "auto") {
@@ -2282,6 +2335,30 @@ async function runBatchScrape() {
       const priceVal = finalRequiresLicense ? null : parseTurkishPrice(p.price);
       const inStock = p.in_stock !== false;
 
+      // Supplier ID Hesaplama (Seçilen tedarikçi veya otomatik Castello/Arslan Silah = 1, Özler Av = 2)
+      let finalSupplierId = 2;
+      if (batchSupplierVal === "custom") {
+        const parsed = parseInt(batchSupplierCustom, 10);
+        finalSupplierId = isNaN(parsed) ? 2 : parsed;
+      } else if (batchSupplierVal !== "auto") {
+        finalSupplierId = parseInt(batchSupplierVal, 10) || 2;
+      } else {
+        // Otomatik algıla
+        if (p.supplier_id) {
+          finalSupplierId = p.supplier_id;
+        } else {
+          const uLow = (p.url || "").toLowerCase();
+          const nLow = ((nameTr || "") + " " + (brandVal || "")).toLowerCase();
+          if (uLow.includes("arslansilah") || nLow.includes("castello")) {
+            finalSupplierId = 1;
+          } else if (uLow.includes("ozlerav")) {
+            finalSupplierId = 2;
+          } else {
+            finalSupplierId = 2;
+          }
+        }
+      }
+
       const payload = {
         id: slug,
         slug_tr: slug,
@@ -2302,6 +2379,7 @@ async function runBatchScrape() {
         in_stock: inStock,
         specs_tr: specs,
         specs_en: specs,
+        supplier_id: finalSupplierId,
       };
 
       try {
