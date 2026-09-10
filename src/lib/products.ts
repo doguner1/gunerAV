@@ -99,6 +99,9 @@ function secureProduct(p: Product): Product {
     category?.startsWith("bicak") ||
     category?.startsWith("giyim") ||
     category === "tufek-bakim" ||
+    category === "havali-kurusiki" ||
+    category?.startsWith("havali") ||
+    category?.startsWith("kurusiki") ||
     isGunMaintenance ||
     isGunAccessory;
 
@@ -143,6 +146,8 @@ function secureProduct(p: Product): Product {
   } else if (category === "bicak" || category?.startsWith("bicak-")) {
     requiresLicense = false;
   } else if (category === "tufek-bakim") {
+    requiresLicense = false;
+  } else if (category === "havali-kurusiki" || category?.startsWith("havali") || category?.startsWith("kurusiki")) {
     requiresLicense = false;
   } else if (category?.startsWith("tufek-") || category === "tufek") {
     requiresLicense = true;
@@ -333,7 +338,9 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
         p.category !== "tufek-aksesuarlar" &&
         p.category !== "tufek-bakim" &&
         p.category !== "optik" &&
-        !p.category.startsWith("aksesuar")
+        !p.category.startsWith("aksesuar") &&
+        !p.category.startsWith("havali") &&
+        !p.category.startsWith("kurusiki")
     );
   }
   if (category === "tufek-aksesuar" || category === "tufek-aksesuarlar") {
@@ -341,6 +348,12 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
   }
   if (category === "tufek-bakim") {
     return arr.filter((p) => p.category === "tufek-bakim");
+  }
+  if (category === "havali-kurusiki") {
+    return arr.filter((p) => p.category === "havali-kurusiki" || p.category.startsWith("havali") || p.category.startsWith("kurusiki"));
+  }
+  if (category.startsWith("havali-") || category.startsWith("kurusiki-")) {
+    return arr.filter((p) => p.category === category);
   }
   if (category === "silah-muhimmat") {
     return arr.filter(
@@ -350,7 +363,9 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
         p.category !== "tufek-aksesuarlar" &&
         p.category !== "tufek-bakim" &&
         p.category !== "optik" &&
-        !p.category.startsWith("aksesuar")
+        !p.category.startsWith("aksesuar") &&
+        !p.category.startsWith("havali") &&
+        !p.category.startsWith("kurusiki")
     );
   }
   if (category === "bicak") {

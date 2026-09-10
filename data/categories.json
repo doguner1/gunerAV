@@ -66,6 +66,48 @@
     ]
   },
   {
+    "id": "havali-kurusiki",
+    "slug": "havali-kurusiki",
+    "name_tr": "Havalı & Kurusıkı",
+    "name_en": "Airguns & Blank Firers",
+    "description_tr": "PCP ve CO2 havalı tabancalar, havalı tüfekler, kurusıkı ses tabancaları, pellet ve mühimmatlar.",
+    "description_en": "PCP and CO2 air pistols, air rifles, blank firing pistols, pellets, and accessories.",
+    "icon": "Target",
+    "image": "/images/categories/firearms.webp",
+    "subcategories": [
+      {
+        "id": "havali-tabanca",
+        "slug": "havali-tabanca",
+        "name_tr": "Havalı Tabanca",
+        "name_en": "Air Pistols"
+      },
+      {
+        "id": "havali-tufek",
+        "slug": "havali-tufek",
+        "name_tr": "Havalı Tüfek",
+        "name_en": "Air Rifles"
+      },
+      {
+        "id": "kurusiki-tabanca",
+        "slug": "kurusiki-tabanca",
+        "name_tr": "Kurusıkı Tabanca",
+        "name_en": "Blank Pistols"
+      },
+      {
+        "id": "havali-muhimmat",
+        "slug": "havali-muhimmat",
+        "name_tr": "Saçma, Pellet & CO2",
+        "name_en": "Pellets & CO2"
+      },
+      {
+        "id": "havali-aksesuar",
+        "slug": "havali-aksesuar",
+        "name_tr": "Aksesuarlar",
+        "name_en": "Accessories"
+      }
+    ]
+  },
+  {
     "id": "kamp",
     "slug": "kamp",
     "name_tr": "Balık ve Kamp Ekipmanları",

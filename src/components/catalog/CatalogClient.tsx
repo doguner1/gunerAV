@@ -253,7 +253,10 @@ export default function CatalogClient({
         prodCat.startsWith("muhimmat") ||
         prodCat.startsWith("bicak") ||
         prodCat.startsWith("giyim") ||
-        prodCat === "tufek-bakim";
+        prodCat === "tufek-bakim" ||
+        prodCat === "havali-kurusiki" ||
+        prodCat.startsWith("havali") ||
+        prodCat.startsWith("kurusiki");
 
       const isAccessory =
         prodCat === "tufek-aksesuar" ||
@@ -295,17 +298,35 @@ export default function CatalogClient({
           if (isAccessory || isOtherCategory) return false;
           if (!isOptic && prodCat !== "optik") return false;
         } else if (selectedCategory === "tufek") {
-          // "Tüm Tüfekler" seçildiğinde müşteriler yalnızca gerçek tüfekleri görmeli. Dürbün, aksesuar veya bakım malzemeleri asla görünmemeli.
-          if (isOptic || isAccessory || prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar" || prodCat === "tufek-bakim" || prodCat.startsWith("aksesuar") || prodCat === "aksesuar") {
+          // "Tüm Tüfekler" seçildiğinde müşteriler yalnızca gerçek tüfekleri görmeli. Dürbün, aksesuar, bakım malzemeleri veya havalı/kurusıkı asla görünmemeli.
+          if (
+            isOptic ||
+            isAccessory ||
+            prodCat === "tufek-aksesuar" ||
+            prodCat === "tufek-aksesuarlar" ||
+            prodCat === "tufek-bakim" ||
+            prodCat.startsWith("aksesuar") ||
+            prodCat === "aksesuar" ||
+            prodCat.startsWith("havali") ||
+            prodCat.startsWith("kurusiki")
+          ) {
             return false;
           }
           const isShotgun =
-            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim") ||
+            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim" && !prodCat.startsWith("havali")) ||
             prodCat === "tufek" ||
             prodCat === "silah-muhimmat";
           if (!isShotgun) return false;
         } else if (selectedCategory === "tufek-bakim") {
           if (prodCat !== "tufek-bakim") return false;
+        } else if (selectedCategory === "havali-kurusiki") {
+          const isAirgun =
+            prodCat === "havali-kurusiki" ||
+            prodCat.startsWith("havali") ||
+            prodCat.startsWith("kurusiki");
+          if (!isAirgun) return false;
+        } else if (selectedCategory.startsWith("havali-") || selectedCategory.startsWith("kurusiki-")) {
+          if (prodCat !== selectedCategory) return false;
         } else if (selectedCategory === "silah-muhimmat") {
           if (isOptic || isAccessory || prodCat === "tufek-bakim") return false;
           const isFirearmOrAmmo =

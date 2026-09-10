@@ -1171,7 +1171,31 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     fullText.includes("temizleme-bakim") ||
     fullText.includes("silah-bakim");
 
+  const isAirgun =
+    titleLower.includes("havalı tabanca") ||
+    titleLower.includes("havali tabanca") ||
+    titleLower.includes("havalı tüfek") ||
+    titleLower.includes("havali tufek") ||
+    titleLower.includes("havalı tufek") ||
+    titleLower.includes("havali tüfek") ||
+    titleLower.includes("kurusıkı") ||
+    titleLower.includes("kurusiki") ||
+    titleLower.includes("ses tabancası") ||
+    titleLower.includes("ses tabancasi") ||
+    titleLower.includes("airgun") ||
+    titleLower.includes("air pistol") ||
+    titleLower.includes("air rifle") ||
+    titleLower.includes("co2 tüp") ||
+    titleLower.includes("co2 tup") ||
+    titleLower.includes("havalı saçma") ||
+    titleLower.includes("havali sacma") ||
+    titleLower.includes("pellet") ||
+    fullText.includes("havali-tabanca") ||
+    fullText.includes("havali-tufek") ||
+    fullText.includes("kurusiki-tabanca");
+
   const isFirearm =
+    !isAirgun &&
     !isOptic &&
     !isAccessory &&
     !isBakim && (
@@ -1187,7 +1211,22 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       titleLower.includes("cifte")
     );
 
-  if (isOptic) {
+  if (isAirgun) {
+    result.requires_license = false;
+    if ((titleLower.includes("tabanca") || titleLower.includes("pistol")) && !titleLower.includes("tüfek") && !titleLower.includes("tufek")) {
+      if (titleLower.includes("kurusıkı") || titleLower.includes("kurusiki") || titleLower.includes("ses tabanca")) {
+        result.category = "kurusiki-tabanca";
+      } else {
+        result.category = "havali-tabanca";
+      }
+    } else if (titleLower.includes("tüfek") || titleLower.includes("tufek") || titleLower.includes("rifle")) {
+      result.category = "havali-tufek";
+    } else if (titleLower.includes("pellet") || titleLower.includes("saçma") || titleLower.includes("sacma") || titleLower.includes("co2")) {
+      result.category = "havali-muhimmat";
+    } else {
+      result.category = "havali-kurusiki";
+    }
+  } else if (isOptic) {
     result.requires_license = false;
     result.category = "optik";
   } else if (isBakim) {

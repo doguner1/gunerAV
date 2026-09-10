@@ -142,7 +142,9 @@ export default function FilterBar({
         {categories.map((cat) => {
           const isSelected =
             cat.id === "tufek"
-              ? selectedCategory === "tufek" || selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar"
+              ? (selectedCategory === "tufek" || selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar") && !selectedCategory.startsWith("havali")
+              : cat.id === "havali-kurusiki"
+              ? selectedCategory === "havali-kurusiki" || selectedCategory.startsWith("havali") || selectedCategory.startsWith("kurusiki")
               : cat.id === "muhimmat"
               ? selectedCategory === "muhimmat" || selectedCategory.startsWith("muhimmat-")
               : cat.id === "kamp"
@@ -294,6 +296,51 @@ export default function FilterBar({
                     className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
                       isSubSelected
                         ? "bg-blue-600 text-white shadow-sm font-black"
+                        : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                    }`}
+                  >
+                    {subLabel}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* 5. Havalı & Kurusıkı Sub-Categories Row */}
+      {(selectedCategory === "havali-kurusiki" || selectedCategory.startsWith("havali") || selectedCategory.startsWith("kurusiki")) && (
+        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0 mr-1 flex items-center gap-1">
+              <span>🎯</span>
+              <span>{isTr ? "Silah / Mühimmat:" : "Type / Ammo:"}</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => onSelectCategory("havali-kurusiki")}
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                selectedCategory === "havali-kurusiki"
+                  ? "bg-amber-600 text-white shadow-sm font-black"
+                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {isTr ? "Tümü" : "All"}
+            </button>
+
+            {categories
+              .find((c) => c.id === "havali-kurusiki")
+              ?.subcategories?.map((sub) => {
+                const isSubSelected = selectedCategory === sub.id;
+                const subLabel = isTr ? sub.name_tr : sub.name_en;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => onSelectCategory(sub.id)}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                      isSubSelected
+                        ? "bg-amber-600 text-white shadow-sm font-black"
                         : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                     }`}
                   >

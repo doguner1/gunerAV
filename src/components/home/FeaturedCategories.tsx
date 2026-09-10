@@ -44,7 +44,8 @@ export default function FeaturedCategories({ products = [] }: { products?: Produ
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => {
             const count = products.filter((p: Product) => {
-              if (category.id === "tufek") return p.category.startsWith("tufek") || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar");
+              if (category.id === "tufek") return (p.category.startsWith("tufek") || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar")) && !p.category.startsWith("havali") && !p.category.startsWith("kurusiki");
+              if (category.id === "havali-kurusiki") return p.category === "havali-kurusiki" || p.category.startsWith("havali") || p.category.startsWith("kurusiki");
               if (category.id === "muhimmat") return p.category === "muhimmat" || p.category.startsWith("muhimmat-");
               if (category.id === "bicak") return p.category === "bicak" || p.category.startsWith("bicak-");
               if (category.id === "kamp") return p.category.startsWith("kamp");
@@ -52,11 +53,13 @@ export default function FeaturedCategories({ products = [] }: { products?: Produ
             }).length;
             const name = isTr ? category.name_tr : category.name_en;
             const desc = isTr ? category.description_tr : category.description_en;
-            const isLicenseReq = (category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-")) && category.id !== "tufek-aksesuar" && category.id !== "tufek-bakim";
+            const isLicenseReq = (category.id === "tufek" || category.id === "silah-muhimmat" || category.id.startsWith("tufek-")) && category.id !== "tufek-aksesuar" && category.id !== "tufek-bakim" && !category.id.startsWith("havali");
 
             // Category specific tag
             const badgeTag = isLicenseReq
               ? (isTr ? "RUHSATLI" : "LICENSED")
+              : category.id === "havali-kurusiki"
+              ? (isTr ? "18+ RUHSATSIZ" : "AIR & BLANK")
               : category.id === "muhimmat" || category.id.startsWith("muhimmat-")
               ? (isTr ? "AV FİŞEKLERİ" : "SHOTGUN AMMO")
               : category.id === "kamp"
