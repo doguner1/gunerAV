@@ -50,6 +50,12 @@
         "slug": "tufek-cifte",
         "name_tr": "Çifte",
         "name_en": "Side-by-Side"
+      },
+      {
+        "id": "tufek-aksesuar",
+        "slug": "tufek-aksesuar",
+        "name_tr": "Aksesuarlar",
+        "name_en": "Accessories"
       }
     ]
   },
@@ -107,7 +113,45 @@
     "description_tr": "Dövme çelik av bıçakları, çok amaçlı çakılar, silah bakım yağları ve deri kılıflar.",
     "description_en": "Forged hunting knives, multi-tools, gun maintenance kits, and leather holsters.",
     "icon": "Layers",
-    "image": "/images/categories/knives.webp"
+    "image": "/images/categories/knives.webp",
+    "subcategories": [
+      {
+        "id": "aksesuar-sarjor",
+        "slug": "aksesuar-sarjor",
+        "name_tr": "Yedek Şarjör",
+        "name_en": "Spare Magazines"
+      },
+      {
+        "id": "aksesuar-taktik",
+        "slug": "aksesuar-taktik",
+        "name_tr": "Taktik Tutamak & Parça",
+        "name_en": "Tactical Grips & Parts"
+      },
+      {
+        "id": "aksesuar-nisangah",
+        "slug": "aksesuar-nisangah",
+        "name_tr": "Gez & Arpacık",
+        "name_en": "Sights & Mounts"
+      },
+      {
+        "id": "aksesuar-kilif-canta",
+        "slug": "aksesuar-kilif-canta",
+        "name_tr": "Çanta, Kılıf & Askı Kayışı",
+        "name_en": "Cases, Bags & Slings"
+      },
+      {
+        "id": "aksesuar-bakim-sok",
+        "slug": "aksesuar-bakim-sok",
+        "name_tr": "Mobil Şok & Bakım",
+        "name_en": "Chokes & Maintenance"
+      },
+      {
+        "id": "bicak-av",
+        "slug": "bicak-av",
+        "name_tr": "Av Bıçağı & Çakı",
+        "name_en": "Hunting Knives & Multi-tools"
+      }
+    ]
   },
   {
     "id": "giyim",

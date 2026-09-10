@@ -194,7 +194,7 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
     return arr.filter((p) => p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat");
   }
   if (category === "bicak" || category === "aksesuar") {
-    return arr.filter((p) => p.category === "bicak" || p.category === "aksesuar");
+    return arr.filter((p) => p.category.startsWith("bicak") || p.category.startsWith("aksesuar"));
   }
   return arr.filter((p) => p.category === category);
 }
@@ -211,13 +211,14 @@ export async function getRelatedProducts(
       if (p.id === currentId) return false;
       if (category.startsWith("kamp") && p.category.startsWith("kamp")) return true;
       if (category.startsWith("tufek") && p.category.startsWith("tufek")) return true;
-      if ((category === "bicak" || category === "aksesuar") && (p.category === "bicak" || p.category === "aksesuar")) return true;
+      if ((category.startsWith("bicak") || category.startsWith("aksesuar")) && (p.category.startsWith("bicak") || p.category.startsWith("aksesuar"))) return true;
       return p.category === category;
     })
     .slice(0, limit);
 }
 
 export function getCategoryById(id: string): Category | undefined {
+  if (id === "tufek-aksesuarlar") id = "tufek-aksesuar";
   if (id === "aksesuar") return categories.find((c) => c.id === "bicak");
   if (id === "silah-muhimmat") return categories.find((c) => c.id === "tufek") || categories[0];
   const main = categories.find((c) => c.id === id);
@@ -242,6 +243,7 @@ export function getCategoryById(id: string): Category | undefined {
 }
 
 export function getCategoryBySlug(slug: string): Category | undefined {
+  if (slug === "tufek-aksesuarlar") slug = "tufek-aksesuar";
   if (slug === "aksesuar") return categories.find((c) => c.id === "bicak");
   if (slug === "silah-muhimmat") return categories.find((c) => c.id === "tufek") || categories[0];
   const main = categories.find((c) => c.slug === slug || c.id === slug);

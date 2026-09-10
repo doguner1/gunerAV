@@ -96,6 +96,30 @@ function extractListingLinks(doc = (typeof document !== "undefined" ? document :
   return Array.from(foundUrls);
 }
 
+function parseTurkishPrice(rawStr) {
+  if (!rawStr) return null;
+  let s = String(rawStr).replace(/[^\d,\.]/g, "").trim();
+  if (!s) return null;
+  if (s.includes(".") && s.includes(",")) {
+    if (s.indexOf(".") < s.indexOf(",")) {
+      s = s.replace(/\./g, "").replace(",", ".");
+    } else {
+      s = s.replace(/,/g, "");
+    }
+  } else if (s.includes(",")) {
+    s = s.replace(",", ".");
+  } else if (s.includes(".")) {
+    const parts = s.split(".");
+    if (parts.length === 2 && parts[1].length === 3) {
+      s = parts[0] + parts[1];
+    } else if (parts.length > 2) {
+      s = parts.join("");
+    }
+  }
+  const num = parseFloat(s);
+  return isNaN(num) ? null : Math.round(num);
+}
+
 function extractProductData(doc = (typeof document !== "undefined" ? document : null), pageUrl = "") {
   if (!doc) return {};
   const currentUrl = pageUrl || (typeof window !== "undefined" && window.location ? window.location.href : "");
@@ -105,6 +129,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     model: "",
     category: "",
     price: null,
+    in_stock: true,
     images: [],
     specs: {},
     description: "",
@@ -154,10 +179,10 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // 2. Ürün Başlığı (Title)
   // =========================================================================
   if (!result.title) {
-    const h1 = doc.querySelector("h1");
+    const titleEl = doc.querySelector("h1, h5.font-weight-bold, .col-12 h5.font-weight-bold, h5, .urunadi");
     const ogTitle = doc.querySelector('meta[property="og:title"]');
-    if (h1 && h1.textContent.trim()) {
-      result.title = h1.textContent.trim();
+    if (titleEl && titleEl.textContent.trim()) {
+      result.title = titleEl.textContent.trim();
     } else if (ogTitle && ogTitle.content) {
       result.title = ogTitle.content.trim();
     } else {
@@ -192,11 +217,12 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     }
   }
 
-  // Bilinen Av & Silah Markaları Listesi ve Başlıktan Marka Çıkarımı
+  // Bilinen Av, Silah ve Taktik Aksesuar Markaları Listesi ve Başlıktan Marka Çıkarımı
   const KNOWN_BRANDS = [
+    "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
     "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
     "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
-    "Kral Arms", "Kral", "Retay", "Huğlu", "Huglu", "Akdaş", "Akdas",
+    "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
     "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
     "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex"
   ];
@@ -272,6 +298,9 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // =========================================================================
   if (!result.price) {
     const priceSelectors = [
+      "#kdvdahilnetfiyat",
+      ".kdvdahilnetfiyat",
+      "[id*='kdvdahilnetfiyat' i]",
       ".price",
       ".product-price",
       "[itemprop='price']",
@@ -286,28 +315,54 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       "[class*='fiyat' i]",
     ];
 
-    let foundPriceEl = null;
     for (const sel of priceSelectors) {
       const el = doc.querySelector(sel);
       if (el && el.textContent.trim()) {
-        foundPriceEl = el;
-        break;
+        const parsed = parseTurkishPrice(el.textContent);
+        if (parsed !== null && parsed > 0) {
+          result.price = parsed;
+          break;
+        }
       }
     }
 
-    if (!foundPriceEl) {
-      foundPriceEl = Array.from(doc.querySelectorAll("span, div")).find((el) =>
+    if (!result.price) {
+      const candEls = Array.from(doc.querySelectorAll("span, div, td")).filter((el) =>
         /(\d+[\.,]\d{2}|\d+)\s*(TL|₺)/i.test(el.textContent) &&
         el.children.length === 0 &&
         !el.textContent.toLowerCase().includes("havale") &&
         !el.textContent.toLowerCase().includes("taksit")
       );
+      for (const cand of candEls) {
+        const parsed = parseTurkishPrice(cand.textContent);
+        if (parsed !== null && parsed > 0) {
+          result.price = parsed;
+          break;
+        }
+      }
     }
+  }
 
-    if (foundPriceEl) {
-      const rawPrice = foundPriceEl.textContent.replace(/[^\d,\.]/g, "").replace(",", ".");
-      const num = parseFloat(rawPrice);
-      if (!isNaN(num)) result.price = Math.round(num);
+  // =========================================================================
+  // 6b. Stok Durumu (in_stock)
+  // =========================================================================
+  result.in_stock = true;
+  const stockEl = doc.querySelector(".stokdurumu, [class*='stokdurumu'], [id*='stok' i], .stock-status, .availability");
+  if (stockEl) {
+    const sText = stockEl.textContent.toLowerCase();
+    if (sText.includes("tükendi") || sText.includes("tukendi") || sText.includes("stokta yok") || sText.includes("kalmadı")) {
+      result.in_stock = false;
+    } else if (sText.includes("stokta var")) {
+      result.in_stock = true;
+    }
+  } else {
+    const allTds = Array.from(doc.querySelectorAll("td, th, span, div.pt-1"));
+    const tukendiEl = allTds.find((el) => {
+      const t = el.textContent.trim().toLowerCase();
+      return t === "tükendi" || t === "tukendi" || t === "stokta yok" || t === "tükendi.";
+    });
+    if (tukendiEl) {
+      result.in_stock = false;
     }
   }
 
@@ -828,6 +883,28 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       } else if (lower.includes("kurulu") && !specs["Kurulum"]) {
         specs["Kurulum"] = line;
       }
+
+      // S. Şarjör, Taktik Aksesuar ve Silah Parçaları Özellikleri
+      if ((/kapasite/i.test(line) || /\b\d+\s*adet\b/i.test(line) || /\b\d+\s*fişek\b/i.test(line)) && !specs["Kapasite"]) {
+        const capMatch = line.match(/(?:kapasite(?:si)?\s*[:\s]*)?(\d+)\s*(?:adet|fişek)?/i);
+        if (capMatch) specs["Kapasite"] = `${capMatch[1]} Adet / Fişek`;
+      }
+      if (/uyumlu|uygun/i.test(line) && !specs["Uyumlu Modeller / Platform"]) {
+        specs["Uyumlu Modeller / Platform"] = line.replace(/^(?:not|uyarı)\s*[:\s]*/i, "").trim();
+      }
+      if (/(?:yay\s*boşaltma|patentli)/i.test(line) && !specs["Mekanizma"]) {
+        specs["Mekanizma"] = line;
+      }
+      if (/ağırlık|agirlik/i.test(line) && !specs["Ağırlık"]) {
+        const wMatch = line.match(/(\d+(?:[\.,]\d+)?\s*(?:kg|gr|gram))/i);
+        if (wMatch) specs["Ağırlık"] = wMatch[1];
+      }
+      if (/ölçüler|ebat/i.test(line) && !specs["Ölçüler"]) {
+        specs["Ölçüler"] = line.replace(/^(?:ölçüler|ebat(?:lar)?)\s*[:\s]*/i, "").trim();
+      }
+      if (/montaj|bağlantı|picatinny|ray/i.test(line) && !specs["Bağlantı Tipi"]) {
+        specs["Bağlantı Tipi"] = line;
+      }
     });
 
     if (descList.length > 0) {
@@ -868,9 +945,39 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     specs["Uzunluk"] = lengthMatch[1];
   }
 
+  const capInTitle = result.title.match(/\b(5|8|10|12|15|20|25)['’`]?l[ıiuü]\b/i);
+  if (capInTitle && !specs["Kapasite"]) {
+    specs["Kapasite"] = `${capInTitle[1]} Fişek / Adet`;
+  }
+
+  const calInTitle = result.title.match(/\b(12|16|20|28|36)\s*(?:kalibre|cal|ga)\b/i);
+  if (calInTitle && !specs["Kalibre"]) {
+    specs["Kalibre"] = `${calInTitle[1]} Kalibre`;
+  }
+
+  const colorInTitle = result.title.match(/\b(yeşil|kırmızı|sarı|siyah|haki|kamuflaj)\b/i);
+  if (colorInTitle && !specs["Renk"]) {
+    specs["Renk"] = colorInTitle[1].charAt(0).toUpperCase() + colorInTitle[1].slice(1);
+  }
+
+  if (/fosforlu/i.test(result.title) && !specs["Nişangah Tipi"]) {
+    specs["Nişangah Tipi"] = "Fosforlu Nişangah / Arpacık";
+  }
+
   if (currentUrl.includes("/bullpup/") || result.title.toLowerCase().includes("bullpup")) {
     if (!result.category) result.category = "Tüfek - Bullpup";
     specs["Tipi"] = "Bullpup";
+  }
+
+  // Model ve Markayı dahili kodlardan (Ürün Kodu vb.) henüz silinmeden yakala
+  if (!result.model) {
+    const rawCode = specs["Ürün Kodu"] || specs["Stok Kodu"] || specs["Model"] || specs["ürün kodu"];
+    if (rawCode && !/^yb_|^stk_|^prd_|^art_/i.test(rawCode)) {
+      result.model = String(rawCode).trim();
+    }
+  }
+  if (!result.brand) {
+    result.brand = specs["Marka"] || specs["Brand"] || "";
   }
 
   // KULLANICI TALEBİ: "stok kodunu almasın" -> Dahili tedarikçi ve depo kodları temizlenir
@@ -905,7 +1012,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
 
   result.specs = specs;
 
-  // Marka / Model tekrar kontrolü
+  // Marka / Model son kontrolü
   if (!result.brand && (specs["Marka"] || specs["Brand"])) {
     result.brand = specs["Marka"] || specs["Brand"];
   }
@@ -936,7 +1043,75 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     titleLower.includes("çifte") ||
     titleLower.includes("cifte");
 
-  if (isFirearm) {
+  const isAccessory =
+    currentUrl.includes("av-taktik-aksesuar") ||
+    currentUrl.includes("taktik-aksesuarlari") ||
+    currentUrl.includes("av-aksesuarlari") ||
+    currentUrl.includes("k-237") ||
+    currentUrl.includes("k-238") ||
+    currentUrl.includes("k-239") ||
+    (result.category && /taktik aksesuar|av aksesuar|aksesuarlar/i.test(result.category)) ||
+    titleLower.includes("şarjör") ||
+    titleLower.includes("sarjor") ||
+    titleLower.includes("tambur") ||
+    titleLower.includes("arpacık") ||
+    titleLower.includes("arpacik") ||
+    titleLower.includes("gez ") ||
+    titleLower.includes("gez-") ||
+    titleLower.includes("gez takımı") ||
+    titleLower.includes("nişangah") ||
+    titleLower.includes("nisangah") ||
+    titleLower.includes("tutamak") ||
+    titleLower.includes("tutamağı") ||
+    titleLower.includes("tutamagi") ||
+    titleLower.includes("foregrip") ||
+    titleLower.includes("grip") ||
+    titleLower.includes("kayışlık") ||
+    titleLower.includes("kayislik") ||
+    titleLower.includes("askı kayışı") ||
+    titleLower.includes("aski kayisi") ||
+    titleLower.includes("namlu kelepçesi") ||
+    titleLower.includes("kelepçe") ||
+    titleLower.includes("kelepce") ||
+    titleLower.includes("mobil şok") ||
+    titleLower.includes("şok tüp") ||
+    titleLower.includes("şok takımı") ||
+    titleLower.includes("şok ") ||
+    titleLower.includes("sok ") ||
+    titleLower.includes("çanta") ||
+    titleLower.includes("canta") ||
+    titleLower.includes("kılıf") ||
+    titleLower.includes("kilif") ||
+    titleLower.includes("dipçik") ||
+    titleLower.includes("dipcik") ||
+    titleLower.includes("el kundağı") ||
+    titleLower.includes("kundak") ||
+    titleLower.includes("bipod") ||
+    titleLower.includes("çatal ayak") ||
+    titleLower.includes("catal ayak") ||
+    titleLower.includes("temizleme seti") ||
+    titleLower.includes("bakım seti") ||
+    titleLower.includes("bakım yağı") ||
+    titleLower.includes("harbi") ||
+    titleLower.includes("picatinny") ||
+    titleLower.includes("ray adaptör");
+
+  if (isAccessory) {
+    result.requires_license = false;
+    if (titleLower.includes("şarjör") || titleLower.includes("sarjor") || titleLower.includes("tambur")) {
+      result.category = "aksesuar-sarjor";
+    } else if (titleLower.includes("arpacık") || titleLower.includes("arpacik") || titleLower.includes("gez") || titleLower.includes("nişangah") || titleLower.includes("nisangah")) {
+      result.category = "aksesuar-nisangah";
+    } else if (titleLower.includes("tutamak") || titleLower.includes("tutamağı") || titleLower.includes("tutamagi") || titleLower.includes("foregrip") || titleLower.includes("kelepçe") || titleLower.includes("kelepce") || titleLower.includes("bipod") || titleLower.includes("picatinny") || titleLower.includes("kundak") || titleLower.includes("dipçik")) {
+      result.category = "aksesuar-taktik";
+    } else if (titleLower.includes("çanta") || titleLower.includes("canta") || titleLower.includes("kılıf") || titleLower.includes("kilif") || titleLower.includes("kayış") || titleLower.includes("kayis") || titleLower.includes("askı") || titleLower.includes("aski")) {
+      result.category = "aksesuar-kilif-canta";
+    } else if (titleLower.includes("şok") || titleLower.includes("sok") || titleLower.includes("bakım") || titleLower.includes("bakim") || titleLower.includes("temizleme") || titleLower.includes("harbi") || titleLower.includes("yağ") || titleLower.includes("yag")) {
+      result.category = "aksesuar-bakim-sok";
+    } else {
+      result.category = "bicak";
+    }
+  } else if (isFirearm) {
     result.requires_license = true;
     if (fullText.includes("bullpup")) {
       result.category = "tufek-bullpup";

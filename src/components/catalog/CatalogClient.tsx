@@ -60,11 +60,18 @@ export default function CatalogClient({
             prodCat === "silah-muhimmat";
           if (!isFirearmOrAmmo) return false;
         } else if (selectedCategory === "bicak" || selectedCategory === "aksesuar") {
-          if (prodCat !== "bicak" && prodCat !== "aksesuar") return false;
+          if (!prodCat.startsWith("bicak") && !prodCat.startsWith("aksesuar")) return false;
+        } else if (selectedCategory.startsWith("bicak-") || selectedCategory.startsWith("aksesuar-")) {
+          if (prodCat !== selectedCategory) return false;
         } else if (selectedCategory.startsWith("tufek-")) {
-          if (prodCat === selectedCategory) {
+          const isAccessory = selectedCategory === "tufek-aksesuar" || selectedCategory === "tufek-aksesuarlar";
+          const isDirectMatch = isAccessory
+            ? (prodCat === "tufek-aksesuar" || prodCat === "tufek-aksesuarlar")
+            : prodCat === selectedCategory;
+
+          if (isDirectMatch) {
             // Direct match
-          } else if (prodCat === "silah-muhimmat") {
+          } else if (prodCat === "silah-muhimmat" || (isAccessory && (prodCat === "tufek" || prodCat === "bicak" || prodCat === "aksesuar"))) {
             // Backward compatibility matching for legacy Supabase entries
             const subType = selectedCategory.replace("tufek-", "");
             const fullText = (
@@ -81,6 +88,8 @@ export default function CatalogClient({
               "tek-kirma": ["tek kırma", "tek kirma", "tekkırma"],
               "superpoze": ["süperpoze", "superpoze", "poze"],
               "cifte": ["çifte", "cifte"],
+              "aksesuar": ["aksesuar", "taktik aksesuar", "arpacık", "arpacik", "gepacik", "gez", "kayış", "askı", "dipçik", "kundak", "şarjör borusu", "fener ayağı", "bipod", "çatal ayak", "ray", "picatinny", "choke", "şok"],
+              "aksesuarlar": ["aksesuar", "taktik aksesuar", "arpacık", "arpacik", "gepacik", "gez", "kayış", "askı", "dipçik", "kundak", "şarjör borusu", "fener ayağı", "bipod", "çatal ayak", "ray", "picatinny", "choke", "şok"],
             };
 
             const keywords = matchKeywords[subType] || [];
