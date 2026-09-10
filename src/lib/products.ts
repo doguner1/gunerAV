@@ -27,45 +27,47 @@ function secureProduct(p: Product): Product {
     category === "aksesuar" ||
     category?.startsWith("aksesuar-") ||
     category === "bicak-av" ||
-    nameLower.includes("aparati") ||
-    nameLower.includes("aparatı") ||
-    nameLower.includes("montaj rayı") ||
-    nameLower.includes("montaj rayi") ||
-    nameLower.includes("dönüştürücü ray") ||
-    nameLower.includes("donusturucu ray") ||
-    nameLower.includes("dürbün ayağı") ||
-    nameLower.includes("durbun ayagi") ||
-    nameLower.includes("kılıf") ||
-    nameLower.includes("kilif") ||
-    nameLower.includes("çanta") ||
-    nameLower.includes("canta") ||
-    nameLower.includes("fişeklik") ||
-    nameLower.includes("fiseklik") ||
-    nameLower.includes("kayış") ||
-    nameLower.includes("kayis") ||
-    nameLower.includes("dipçik") ||
-    nameLower.includes("dipcik") ||
-    nameLower.includes("kundak") ||
-    nameLower.includes("tutamak") ||
-    nameLower.includes("tutamagi") ||
-    nameLower.includes("çatal ayak") ||
-    nameLower.includes("catal ayak") ||
-    nameLower.includes("bipod") ||
-    nameLower.includes("arpacık") ||
-    nameLower.includes("arpacik") ||
-    nameLower.includes("gez ") ||
-    nameLower.includes("gez-") ||
-    nameLower.includes("gez takımı") ||
-    nameLower.includes("kulaklık") ||
-    nameLower.includes("kulaklik") ||
-    nameLower.includes("ray pedi") ||
-    slugLower.includes("fiseklik") ||
-    slugLower.includes("ray-pedi") ||
-    slugLower.includes("catal-ayak") ||
-    slugLower.includes("bipod") ||
-    slugLower.includes("durbun-ayagi") ||
-    slugLower.includes("montaj-rayi") ||
-    slugLower.includes("lazer-aparati");
+    ((!category || category === "tufek" || category === "silah-muhimmat") && (
+      nameLower.includes("aparati") ||
+      nameLower.includes("aparatı") ||
+      nameLower.includes("montaj rayı") ||
+      nameLower.includes("montaj rayi") ||
+      nameLower.includes("dönüştürücü ray") ||
+      nameLower.includes("donusturucu ray") ||
+      nameLower.includes("dürbün ayağı") ||
+      nameLower.includes("durbun ayagi") ||
+      nameLower.includes("tüfek kılıfı") ||
+      nameLower.includes("tufek kilifi") ||
+      nameLower.includes("tabanca kılıfı") ||
+      nameLower.includes("tabanca çantası") ||
+      nameLower.includes("fişeklik") ||
+      nameLower.includes("fiseklik") ||
+      nameLower.includes("tüfek kayışı") ||
+      nameLower.includes("tufek kayisi") ||
+      nameLower.includes("dipçik") ||
+      nameLower.includes("dipcik") ||
+      nameLower.includes("kundak") ||
+      nameLower.includes("tutamak") ||
+      nameLower.includes("tutamagi") ||
+      nameLower.includes("çatal ayak") ||
+      nameLower.includes("catal ayak") ||
+      nameLower.includes("bipod") ||
+      nameLower.includes("arpacık") ||
+      nameLower.includes("arpacik") ||
+      nameLower.includes("gez ") ||
+      nameLower.includes("gez-") ||
+      nameLower.includes("gez takımı") ||
+      nameLower.includes("atış kulaklığı") ||
+      nameLower.includes("kulaklık") ||
+      nameLower.includes("ray pedi") ||
+      slugLower.includes("fiseklik") ||
+      slugLower.includes("ray-pedi") ||
+      slugLower.includes("catal-ayak") ||
+      slugLower.includes("bipod") ||
+      slugLower.includes("durbun-ayagi") ||
+      slugLower.includes("montaj-rayi") ||
+      slugLower.includes("lazer-aparati")
+    ));
 
   const isOtherNonOptic =
     category?.startsWith("kamp") ||
