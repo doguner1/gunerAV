@@ -31,8 +31,9 @@ export async function recordAnalyticsEvent(
   const eventName = body.event || "unknown";
   const p = body.params || {};
 
-  // Tek doğruluk kaynağı: sunucu tarafı User-Agent
-  const deviceType = detectDeviceType(userAgent);
+  // Tek doğruluk kaynağı: sunucu tarafı User-Agent (+ dar kapsamlı iPad Pro donanım ipucu)
+  const isIpadProHint = Boolean(body.is_ipad_pro_hint ?? p.is_ipad_pro_hint);
+  const deviceType = detectDeviceType(userAgent, isIpadProHint);
   const entryId = `evt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const durationSec = typeof p.duration_seconds === "number" ? Math.round(p.duration_seconds) : null;
 

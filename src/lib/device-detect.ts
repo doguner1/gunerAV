@@ -7,8 +7,14 @@
  *
  * Bu fonksiyon yalnızca sunucu tarafı route'larında (API routes) kullanılır.
  */
-export function detectDeviceType(userAgent: string): "mobile" | "tablet" | "desktop" {
-  if (!userAgent || userAgent === "unknown") return "desktop";
+export function detectDeviceType(
+  userAgent: string,
+  is_ipad_pro_hint?: boolean
+): "mobile" | "tablet" | "desktop" {
+  if (!userAgent || userAgent === "unknown") {
+    if (is_ipad_pro_hint) return "tablet";
+    return "desktop";
+  }
 
   const ua = userAgent.toLowerCase();
 
@@ -21,9 +27,7 @@ export function detectDeviceType(userAgent: string): "mobile" | "tablet" | "desk
     /android(?!.*mobile)/.test(ua) ||        // Android tablet: "android" var ama "mobile" yok
     /\btablet\b/.test(ua) ||
     /kindle|silk/.test(ua) ||
-    /playbook/.test(ua) ||
-    /\bbb\b/.test(ua) ||                     // BlackBerry tablet
-    (/macintosh/.test(ua) && /touch/.test(ua)) // iPad Pro - macOS UA + touch
+    /playbook/.test(ua)
   ) {
     return "tablet";
   }
@@ -42,6 +46,11 @@ export function detectDeviceType(userAgent: string): "mobile" | "tablet" | "desk
     return "mobile";
   }
 
-  // 3. Diğer her şey masaüstü
+  // 3. iPad Pro hibrit kontrolü (macOS UA + touch points > 1)
+  if (is_ipad_pro_hint && /macintosh/.test(ua)) {
+    return "tablet";
+  }
+
+  // 4. Diğer her şey masaüstü
   return "desktop";
 }

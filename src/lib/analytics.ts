@@ -65,6 +65,11 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
   const visitorId = getVisitorId();
   const sessionId = getSessionId();
 
+  const isProbablyIpadPro =
+    typeof navigator !== "undefined" &&
+    /macintosh/i.test(navigator.userAgent) &&
+    navigator.maxTouchPoints > 1;
+
   const eventPayload = {
     event: eventName,
     visitor_id: visitorId,
@@ -73,6 +78,7 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     path: window.location.pathname,
     timestamp,
+    is_ipad_pro_hint: isProbablyIpadPro,
     ...params,
   };
 
@@ -102,7 +108,7 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
   // 4. Send background event to neutral server API endpoint (/api/collect to bypass iOS ad-blockers)
   try {
     const endpoint = "/api/collect";
-    const bodyStr = JSON.stringify({ event: eventName, params: eventPayload });
+    const bodyStr = JSON.stringify({ event: eventName, is_ipad_pro_hint: isProbablyIpadPro, params: eventPayload });
 
     // iOS Safari detection (easyPrivacy and iOS ad-blockers block "analytics", and sendBeacon is flaky on iOS)
     const isIosOrSafari =

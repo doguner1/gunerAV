@@ -242,10 +242,10 @@ export async function GET(req: NextRequest) {
       uniqueVisitorsSet.add(visitorId);
     }
 
-    // Devices: UA based detection
+    // Devices: UA based detection (+ iPad Pro hint)
     const dev =
       ev.user_agent && ev.user_agent !== "unknown"
-        ? detectDeviceType(ev.user_agent)
+        ? detectDeviceType(ev.user_agent, Boolean(ev.params?.is_ipad_pro_hint))
         : (ev.device_type || "desktop").toLowerCase();
 
     if (dev === "mobile") mobileCount++;

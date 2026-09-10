@@ -25,6 +25,10 @@ export async function sendPresenceHeartbeat(info: PresenceInfo): Promise<void> {
 
   const visitorId = getOrCreateVisitorId();
   const deviceType = info.deviceType || detectClientDevice();
+  const isProbablyIpadPro =
+    typeof navigator !== "undefined" &&
+    /macintosh/i.test(navigator.userAgent) &&
+    navigator.maxTouchPoints > 1;
 
   try {
     await fetch("/api/heartbeat", {
@@ -37,6 +41,7 @@ export async function sendPresenceHeartbeat(info: PresenceInfo): Promise<void> {
         path: info.path || window.location.pathname || "/",
         device_type: deviceType,
         product_name: info.productName || null,
+        is_ipad_pro_hint: isProbablyIpadPro,
       }),
       keepalive: true,
     });

@@ -80,7 +80,10 @@ export function clearRateLimit(ip: string): void {
  * Format: expiresAt.randomBytes.signature
  */
 export function createSessionToken(): string {
-  const secret = process.env.ANALYTICS_SECRET || "gunerav_default_secret_key";
+  const secret = process.env.ANALYTICS_SECRET;
+  if (!secret) {
+    throw new Error("[server-auth] ANALYTICS_SECRET ortam değişkeni tanımlanmamış, session token oluşturulamaz.");
+  }
   const expiresAt = Date.now() + SESSION_DURATION_MS;
   const nonce = crypto.randomBytes(16).toString("hex");
   const payload = `${expiresAt}.${nonce}`;
@@ -93,7 +96,8 @@ export function createSessionToken(): string {
  */
 export function verifySessionToken(token: string): boolean {
   if (!token) return false;
-  const secret = process.env.ANALYTICS_SECRET || "gunerav_default_secret_key";
+  const secret = process.env.ANALYTICS_SECRET;
+  if (!secret) return false;
   const parts = token.split(".");
   if (parts.length !== 3) return false;
 
@@ -119,7 +123,6 @@ export function verifySessionToken(token: string): boolean {
  * 1. gunerav_admin_token HTTP cookie
  * 2. x-admin-key header (direct password or token)
  * 3. Authorization: Bearer <token>
- * 4. ?key= query parameter (legacy fallback)
  */
 export function isAdminAuthorized(req: NextRequest): boolean {
   // 1. Session Cookie
@@ -143,13 +146,6 @@ export function isAdminAuthorized(req: NextRequest): boolean {
     if (verifySessionToken(bearer) || verifyPassword(bearer)) {
       return true;
     }
-  }
-
-  // 4. Query param fallback (?key=...)
-  const { searchParams } = new URL(req.url);
-  const queryKey = searchParams.get("key");
-  if (queryKey && (verifyPassword(queryKey) || verifySessionToken(queryKey))) {
-    return true;
   }
 
   return false;

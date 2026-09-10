@@ -6,15 +6,23 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const nextConfig = {
   poweredByHeader: false,
   images: {
-    formats: ['image/avif', 'image/webp'],
+    formats: ['image/webp'], // 'image/avif' KALDIRILDI - GHSA-2xp9-vwfh-vxw4 RCE açığı kapatıldı
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: '**.supabase.co',
       },
       {
-        protocol: 'http',
-        hostname: '**',
+        protocol: 'https',
+        hostname: 'www.ozlerav.com.tr',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ozlerav.com.tr',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
       },
     ],
   },

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
     }
 
-    const { visitor_id, path, device_type, product_name, productName } = body;
+    const { visitor_id, path, device_type, product_name, productName, is_ipad_pro_hint } = body;
 
     if (!visitor_id || typeof visitor_id !== "string") {
       return NextResponse.json({ ok: false, error: "Missing visitor_id" }, { status: 400 });
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userAgent = req.headers.get("user-agent") || "";
-    const deviceType = detectDeviceType(userAgent);
+    const deviceType = detectDeviceType(userAgent, Boolean(is_ipad_pro_hint));
     const finalProductName = product_name || productName || null;
 
     const success = await recordActiveVisitor({

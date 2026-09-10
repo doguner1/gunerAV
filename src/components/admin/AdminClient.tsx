@@ -386,10 +386,9 @@ export default function AdminClient() {
     let isMounted = true;
     const fetchActive = async () => {
       try {
-        const key = password || sessionStorage.getItem("gunerav_admin_auth") || "";
-        const res = await fetch("/api/admin/active-visitors", {
-          headers: key ? { "x-admin-key": key } : {},
-        });
+        const headers: Record<string, string> = {};
+        if (password) headers["x-admin-key"] = password;
+        const res = await fetch("/api/admin/active-visitors", { headers });
         const data = await res.json();
         if (isMounted && data.success) {
           setActiveCount(data.count ?? 0);
@@ -406,17 +405,24 @@ export default function AdminClient() {
     };
   }, [isAuthenticated, activeTab, password]);
 
-  // Restore admin session if already logged in within the browser session
+  // Restore admin session if already logged in within the browser session via HttpOnly cookie
   useEffect(() => {
-    try {
-      const savedAuth = sessionStorage.getItem("gunerav_admin_auth");
-      if (savedAuth) {
-        setPassword(savedAuth);
-        setIsAuthenticated(true);
-        fetchProducts(savedAuth);
-        fetchAnalytics(savedAuth, "all");
-      }
-    } catch {}
+    let isMounted = true;
+    const checkSession = async () => {
+      try {
+        const res = await fetch("/api/admin/auth");
+        const data = await res.json();
+        if (isMounted && data.authenticated) {
+          setIsAuthenticated(true);
+          fetchProducts();
+          fetchAnalytics(undefined, "all");
+        }
+      } catch {}
+    };
+    checkSession();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // 1. Login Handler
@@ -433,11 +439,10 @@ export default function AdminClient() {
       const data = await res.json();
       if (data.success) {
         setIsAuthenticated(true);
-        try {
-          sessionStorage.setItem("gunerav_admin_auth", password);
-        } catch {}
-        fetchProducts(password);
-        fetchAnalytics(password, "all");
+        const currentPassword = password;
+        setPassword(""); // Şifreyi hemen bellekten temizle
+        fetchProducts(currentPassword);
+        fetchAnalytics(currentPassword, "all");
       } else {
         setError(data.error || "Hatalı şifre. Lütfen Vercel'deki ANALYTICS_SECRET değerinizi giriniz.");
       }
@@ -448,11 +453,12 @@ export default function AdminClient() {
   };
 
   // 2. Fetch Products
-  const fetchProducts = async (authKey: string) => {
+  const fetchProducts = async (authKey?: string) => {
     try {
-      const res = await fetch("/api/admin/products", {
-        headers: { "x-admin-key": authKey },
-      });
+      const headers: Record<string, string> = {};
+      const key = authKey || password;
+      if (key) headers["x-admin-key"] = key;
+      const res = await fetch("/api/admin/products", { headers });
       const data = await res.json();
       if (data.success && Array.isArray(data.products)) {
         setProducts(data.products);
@@ -469,9 +475,9 @@ export default function AdminClient() {
     setLoadingEvents(true);
     try {
       const key = authKey || password;
-      const res = await fetch(`/api/admin/dashboard?range=${range}`, {
-        headers: key ? { "x-admin-key": key } : {},
-      });
+      const headers: Record<string, string> = {};
+      if (key) headers["x-admin-key"] = key;
+      const res = await fetch(`/api/admin/dashboard?range=${range}`, { headers });
       const data = await res.json();
       if (data.success) {
         setDashboardData(data);
@@ -480,7 +486,7 @@ export default function AdminClient() {
         }
       } else {
         // Fallback
-        const legacyRes = await fetch(`/api/analytics?key=${encodeURIComponent(key)}`);
+        const legacyRes = await fetch("/api/analytics", { headers });
         const legacyData = await legacyRes.json();
         if (legacyData.authenticated && Array.isArray(legacyData.events)) {
           setEvents(legacyData.events);
@@ -509,9 +515,6 @@ export default function AdminClient() {
     setEditedProducts({});
     setEvents([]);
     setDashboardData(null);
-    try {
-      sessionStorage.removeItem("gunerav_admin_auth");
-    } catch {}
   };
 
   // Export Analytics as Excel/Sheets-compatible CSV (UTF-8 BOM)
@@ -837,7 +840,7 @@ export default function AdminClient() {
               <span>Maksimum Güvenlik Garantisi</span>
             </div>
             <p className="text-neutral-400 text-[10.5px] leading-relaxed">
-              Şifreniz tarayıcı önbelleğine (cache), localStorage veya çerezlere ASLA kaydedilmez. Oturum yalnızca bu sayfada RAM belleğinde çalışır.
+              Şifreniz asla saklanmaz. Oturumunuz şifrelenmiş, güvenli ve yalnızca sunucu tarafından okunabilen HttpOnly çerez ile korunur.
             </p>
           </div>
         </div>
