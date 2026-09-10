@@ -32,11 +32,10 @@ export async function generateStaticParams() {
   return params;
 }
 
-export async function generateMetadata({
-  params: { locale, slug },
-}: {
-  params: { locale: string; slug: string };
+export async function generateMetadata({ params }: {
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
+  const { locale, slug } = await params;
   const product = await fetchProductBySlug(slug, locale);
   if (!product) return {};
 
@@ -78,11 +77,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductDetailPage({
-  params: { locale, slug },
-}: {
-  params: { locale: string; slug: string };
+export default async function ProductDetailPage({ params }: {
+  params: Promise<{ locale: string; slug: string }>;
 }) {
+  const { locale, slug } = await params;
   setRequestLocale(locale);
   const product = await fetchProductBySlug(slug, locale);
 

@@ -11,11 +11,10 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string };
+export async function generateMetadata({ params }: {
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+  const { locale } = await params;
   const isTr = locale === "tr";
 
   const title = isTr
@@ -46,11 +45,10 @@ export async function generateMetadata({
 
 export const revalidate = 30;
 
-export default async function ProductsPage({
-  params: { locale },
-}: {
-  params: { locale: string };
+export default async function ProductsPage({ params }: {
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "CatalogPage" });
   const tCommon = await getTranslations({ locale, namespace: "Common" });

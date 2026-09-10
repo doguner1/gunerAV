@@ -9,6 +9,7 @@ export const STORE_INFO = {
   name: process.env.NEXT_PUBLIC_STORE_NAME || "Malatya Av Güner Av Bayii",
   nameShort: "Güner AV",
   category: "Av Malzemeleri Dükkanı",
+  hidePrices: process.env.NEXT_PUBLIC_HIDE_PRICES !== "false", // Tüm ürünlerin fiyatını gizler (varsayılan: true)
   phone: formattedPhone,
   phoneDisplay: formattedPhone,
   phoneIntl: process.env.NEXT_PUBLIC_STORE_PHONE_INTL || "+905458768799",

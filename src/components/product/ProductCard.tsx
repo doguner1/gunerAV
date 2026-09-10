@@ -80,7 +80,7 @@ export default function ProductCard({ product, categoryName, priority = false }:
             ) : null}
 
             {/* Discount Badge - High Contrast, Punchy & Clear */}
-            {!product.requires_license && product.discount_percent ? (
+            {!product.requires_license && product.discount_percent && !STORE_INFO.hidePrices ? (
               <span className="rounded-md bg-gradient-to-r from-amber-400 via-[#d4af37] to-amber-500 text-neutral-950 font-black px-2.5 py-1 text-[10px] uppercase tracking-wider shadow-md border border-amber-300">
                 %{product.discount_percent} {tCommon("discount")}
               </span>
@@ -125,6 +125,10 @@ export default function ProductCard({ product, categoryName, priority = false }:
           <div className="text-right">
             {product.requires_license ? (
               <span className="text-xs font-bold text-amber-700 dark:text-[#d4af37]">
+                {t("askPrice")}
+              </span>
+            ) : STORE_INFO.hidePrices ? (
+              <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
                 {t("askPrice")}
               </span>
             ) : product.price ? (

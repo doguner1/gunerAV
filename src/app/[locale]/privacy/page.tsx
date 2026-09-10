@@ -7,11 +7,10 @@ export function generateStaticParams() {
   return [{ locale: "tr" }, { locale: "en" }];
 }
 
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string };
+export async function generateMetadata({ params }: {
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+  const { locale } = await params;
   const isTr = locale === "tr";
   return {
     title: isTr
@@ -40,11 +39,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function PrivacyPage({
-  params: { locale },
-}: {
-  params: { locale: string };
+export default async function PrivacyPage({ params }: {
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Privacy" });
 

@@ -15,16 +15,41 @@ function secureProduct(p: Product): Product {
   if (!p) return p;
 
   let category = p.category;
+  let requiresLicense = p.requires_license;
+
+  const slugKey = p.slug_tr || p.slug_en || p.id || "";
+  const slugLower = slugKey.toLowerCase();
+  const nameLower = ((p.name_tr || "") + " " + (p.name_en || "")).toLowerCase();
+
+  const isGunAccessory =
+    slugLower.includes("hunthink-taktikal-ray-pedi") ||
+    slugLower.includes("hunthink-kamuflaj-acik-fiseklik") ||
+    slugLower.includes("hunthink-kamuflaj-kapakli-fiseklik") ||
+    slugLower.includes("hunthink-taktikal-catal-ayak") ||
+    slugLower.includes("hunthink-pikatinli-fiseklik") ||
+    slugLower.includes("fiseklik") ||
+    slugLower.includes("ray-pedi") ||
+    nameLower.includes("fişeklik") ||
+    nameLower.includes("fiseklik") ||
+    nameLower.includes("ray pedi") ||
+    nameLower.includes("çatal ayak") ||
+    nameLower.includes("catal ayak") ||
+    nameLower.includes("bipod");
+
   if (
     category === "tufek-aksesuarlar" ||
     category === "aksesuar" ||
     category === "bicak-av" ||
-    category?.startsWith("aksesuar-")
+    category?.startsWith("aksesuar-") ||
+    (category === "bicak" && isGunAccessory)
   ) {
     category = "tufek-aksesuar";
   }
 
-  const slugKey = p.slug_tr || p.slug_en || p.id;
+  if (category === "tufek-aksesuar") {
+    requiresLicense = false;
+  }
+
   const staticEntry = staticImagesMap[slugKey];
   if (staticEntry) {
     if (Array.isArray(staticEntry.images) && staticEntry.images.length > 0) {
@@ -92,6 +117,7 @@ function secureProduct(p: Product): Product {
   return {
     ...p,
     category,
+    requires_license: requiresLicense,
     images: baseImages,
     variants: cleanedVariants,
     specs_tr: cleanSpecsTr,

@@ -146,7 +146,7 @@ export default function ProductOverview({
 
           {/* Price section */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 p-4 shadow-sm">
-            {!product.requires_license && product.price ? (
+            {!product.requires_license && product.price && !STORE_INFO.hidePrices ? (
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   {tCommon("msrpTitle")}

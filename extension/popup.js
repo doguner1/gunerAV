@@ -619,7 +619,13 @@ function populateForm(data) {
     titleLower.includes("temizleme seti") ||
     titleLower.includes("bakım seti") ||
     titleLower.includes("harbi") ||
-    titleLower.includes("picatinny");
+    titleLower.includes("picatinny") ||
+    titleLower.includes("ray adaptör") ||
+    titleLower.includes("ray pedi") ||
+    titleLower.includes("ray kapak") ||
+    titleLower.includes("fişeklik") ||
+    titleLower.includes("fiseklik") ||
+    titleLower.includes("pikatin");
 
   const isFirearm =
     !isAccessory &&
@@ -790,7 +796,8 @@ function populateForm(data) {
     fullText.includes("knife") ||
     fullText.includes("pala") ||
     fullText.includes("balta") ||
-    fullText.includes("kılıf")
+    fullText.includes("bıçak kılıf") ||
+    fullText.includes("bicak kilif")
   ) {
     catSelect.value = "bicak";
     licenseChk.checked = false;

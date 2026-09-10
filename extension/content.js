@@ -1133,7 +1133,12 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     titleLower.includes("bakım yağı") ||
     titleLower.includes("harbi") ||
     titleLower.includes("picatinny") ||
-    titleLower.includes("ray adaptör");
+    titleLower.includes("ray adaptör") ||
+    titleLower.includes("ray pedi") ||
+    titleLower.includes("ray kapak") ||
+    titleLower.includes("fişeklik") ||
+    titleLower.includes("fiseklik") ||
+    titleLower.includes("pikatin");
 
   if (isAccessory) {
     result.requires_license = false;
@@ -1256,7 +1261,8 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       fullText.includes("çakı") ||
       fullText.includes("caki") ||
       fullText.includes("balta") ||
-      fullText.includes("kılıf") ||
+      fullText.includes("bıçak kılıf") ||
+      fullText.includes("bicak kilif") ||
       fullText.includes("multitool")
     ) {
       result.category = "bicak";
