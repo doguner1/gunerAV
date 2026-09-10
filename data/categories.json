@@ -94,16 +94,10 @@
         "name_en": "Blank Pistols"
       },
       {
-        "id": "havali-muhimmat",
-        "slug": "havali-muhimmat",
-        "name_tr": "Saçma, Pellet & CO2",
-        "name_en": "Pellets & CO2"
-      },
-      {
         "id": "havali-aksesuar",
         "slug": "havali-aksesuar",
-        "name_tr": "Aksesuarlar",
-        "name_en": "Accessories"
+        "name_tr": "Aksesuar & Malzeme",
+        "name_en": "Accessories & Supplies"
       }
     ]
   },

@@ -325,6 +325,8 @@ export default function CatalogClient({
             prodCat.startsWith("havali") ||
             prodCat.startsWith("kurusiki");
           if (!isAirgun) return false;
+        } else if (selectedCategory === "havali-aksesuar") {
+          if (prodCat !== "havali-aksesuar" && prodCat !== "havali-muhimmat") return false;
         } else if (selectedCategory.startsWith("havali-") || selectedCategory.startsWith("kurusiki-")) {
           if (prodCat !== selectedCategory) return false;
         } else if (selectedCategory === "silah-muhimmat") {
