@@ -14,6 +14,16 @@ try {
 function secureProduct(p: Product): Product {
   if (!p) return p;
 
+  let category = p.category;
+  if (
+    category === "tufek-aksesuarlar" ||
+    category === "aksesuar" ||
+    category === "bicak-av" ||
+    category?.startsWith("aksesuar-")
+  ) {
+    category = "tufek-aksesuar";
+  }
+
   const slugKey = p.slug_tr || p.slug_en || p.id;
   const staticEntry = staticImagesMap[slugKey];
   if (staticEntry) {
@@ -81,6 +91,7 @@ function secureProduct(p: Product): Product {
 
   return {
     ...p,
+    category,
     images: baseImages,
     variants: cleanedVariants,
     specs_tr: cleanSpecsTr,
@@ -197,7 +208,7 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
     return arr.filter((p) => p.category.startsWith("tufek") || p.category === "muhimmat" || p.category === "silah-muhimmat" || p.category.startsWith("aksesuar"));
   }
   if (category === "bicak") {
-    return arr.filter((p) => p.category === "bicak" || p.category.startsWith("bicak-"));
+    return arr.filter((p) => p.category === "bicak");
   }
   return arr.filter((p) => p.category === category);
 }

@@ -63,7 +63,7 @@ export default function CatalogClient({
             prodCat.startsWith("aksesuar");
           if (!isFirearmOrAmmo) return false;
         } else if (selectedCategory === "bicak") {
-          if (prodCat !== "bicak" && !prodCat.startsWith("bicak-")) return false;
+          if (prodCat !== "bicak") return false;
         } else if (selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar") {
           const isAccessory =
             selectedCategory === "tufek-aksesuar" ||

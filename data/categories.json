@@ -108,10 +108,10 @@
   {
     "id": "bicak",
     "slug": "bicak",
-    "name_tr": "Bıçak & Aksesuar",
-    "name_en": "Knives & Accessories",
-    "description_tr": "Dövme çelik av bıçakları, çok amaçlı çakılar, silah bakım yağları ve deri kılıflar.",
-    "description_en": "Forged hunting knives, multi-tools, gun maintenance kits, and leather holsters.",
+    "name_tr": "Bıçak & Çakı",
+    "name_en": "Knives & Multi-tools",
+    "description_tr": "Dövme çelik av bıçakları, taktik çakılar ve kılıflar.",
+    "description_en": "Forged hunting knives, tactical folding knives, and sheaths.",
     "icon": "Layers",
     "image": "/images/categories/knives.webp"
   },

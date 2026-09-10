@@ -13,6 +13,7 @@ import {
   trackWhatsAppClick,
   trackPhoneClick,
 } from "@/lib/analytics";
+import { sendPresenceHeartbeat } from "@/lib/presence";
 import { usePageEngagementTracker } from "@/hooks/usePageEngagementTracker";
 import ProductGallery from "@/components/product/ProductGallery";
 import LicenseNotice from "@/components/product/LicenseNotice";
@@ -60,7 +61,7 @@ export default function ProductOverview({
     slug: productSlug,
   });
 
-  // Track product view on page load
+  // Track product view & update live visitor presence with current product
   useEffect(() => {
     trackProductView({
       id: product.id,
@@ -68,6 +69,10 @@ export default function ProductOverview({
       category: categoryName || product.category,
       price: product.price,
       slug: productSlug,
+    });
+    sendPresenceHeartbeat({
+      path: window.location.pathname,
+      productName: name,
     });
   }, [product.id, name, categoryName, productSlug]);
 

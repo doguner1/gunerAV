@@ -91,6 +91,20 @@ export async function GET(req: NextRequest) {
       }
     })();
 
+    // 2.b Fire-and-forget: Auto-migrate any old accessory categories in Supabase to tufek-aksesuar
+    (async () => {
+      try {
+        await supabase
+          .from("products")
+          .update({ category: "tufek-aksesuar", requires_license: false })
+          .like("category", "aksesuar%");
+        await supabase
+          .from("products")
+          .update({ category: "tufek-aksesuar", requires_license: false })
+          .eq("category", "bicak-av");
+      } catch (e) {}
+    })();
+
     // 2.b Analytics Events Query
     try {
       let query = supabase
@@ -140,13 +154,15 @@ export async function GET(req: NextRequest) {
   // 2. Supabase Diagnostic Info
   const hasUrl = Boolean(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL);
   const hasServiceKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const hasAnonKey = Boolean(process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY);
   const missingEnv: string[] = [];
   if (!hasUrl) missingEnv.push("SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL");
-  if (!hasServiceKey) missingEnv.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!hasServiceKey && !hasAnonKey) missingEnv.push("SUPABASE_SERVICE_ROLE_KEY veya NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
   const supabaseStatus = {
     connected: Boolean(supabase),
-    isConfigured: hasUrl && hasServiceKey,
+    isConfigured: hasUrl && (hasServiceKey || hasAnonKey),
+    isServiceRole: hasServiceKey,
     missingEnv,
     tableRowCount: rawRows.length,
     storageType: dataSource,
