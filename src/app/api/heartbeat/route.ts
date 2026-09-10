@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { detectDeviceType } from "@/lib/device-detect";
+import { recordActiveVisitor } from "@/lib/active-visitors-store";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Missing visitor_id" }, { status: 400 });
     }
 
-    // Rate Limiting: Max 5 heartbeats per 10 seconds per IP:visitor_id
-    const rateCheck = checkRateLimit("heartbeat", clientIp, visitor_id, 5, 10);
+    // Rate Limiting: Max 10 heartbeats per 10 seconds per IP:visitor_id
+    const rateCheck = checkRateLimit("heartbeat", clientIp, visitor_id, 10, 10);
     if (!rateCheck.success) {
       return NextResponse.json(
         { ok: false, error: "Too many heartbeats" },
@@ -41,37 +41,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = getSupabaseAdminClient();
-    if (!supabase) {
-      return NextResponse.json({ ok: false, error: "Database unavailable" }, { status: 503 });
-    }
-
-    const now = new Date().toISOString();
+    const userAgent = req.headers.get("user-agent") || "";
+    const serverDevice = detectDeviceType(userAgent);
     const finalDeviceType =
-      typeof device_type === "string" && device_type.length > 0
-        ? device_type.slice(0, 50)
-        : detectDeviceType(req.headers.get("user-agent") || "");
+      serverDevice !== "desktop"
+        ? serverDevice
+        : (typeof device_type === "string" && device_type.length > 0 ? device_type : "desktop");
 
     const finalProductName = product_name || productName || null;
 
-    const { error } = await supabase.from("active_visitors").upsert(
-      {
-        visitor_id: visitor_id.slice(0, 128),
-        path: typeof path === "string" ? path.slice(0, 500) : "/",
-        device_type: finalDeviceType,
-        product_name: typeof finalProductName === "string" ? finalProductName.slice(0, 200) : null,
-        last_seen: now,
-      },
-      { onConflict: "visitor_id" }
-    );
-
-    if (error) {
-      console.warn("[Heartbeat Upsert Error]:", error.message);
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    }
+    const recorded = await recordActiveVisitor({
+      visitor_id,
+      path: typeof path === "string" ? path : "/",
+      device_type: finalDeviceType,
+      product_name: finalProductName,
+    });
 
     return NextResponse.json(
-      { ok: true, success: true, timestamp: now },
+      { ok: true, success: true, timestamp: recorded.last_seen },
       {
         status: 200,
         headers: {

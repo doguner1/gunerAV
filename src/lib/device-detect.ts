@@ -15,6 +15,9 @@ export function detectDeviceType(userAgent: string): "mobile" | "tablet" | "desk
   // 1. Tablet kontrolü (mobile'dan önce olmalı, çünkü bazı tablet UA'ları "mobile" de içerir)
   if (
     /ipad/.test(ua) ||
+    /matepad|mediapad/.test(ua) ||
+    (ua.includes("huawei") && (ua.includes("tablet") || (!ua.includes("mobile") && !ua.includes("phone")))) ||
+    /harmonyos.*tablet/.test(ua) ||
     /android(?!.*mobile)/.test(ua) ||        // Android tablet: "android" var ama "mobile" yok
     /\btablet\b/.test(ua) ||
     /kindle|silk/.test(ua) ||

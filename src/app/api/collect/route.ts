@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
 
     const visitorId = body?.params?.visitor_id || body?.visitor_id;
 
-    // Rate Limiting: Max 25 requests per 10 seconds per IP:visitor_id
-    const rateCheck = checkRateLimit("collect", clientIp, visitorId, 25, 10);
+    // Rate Limiting: Max 40 requests per 10 seconds per IP:visitor_id
+    const rateCheck = checkRateLimit("collect", clientIp, visitorId, 40, 10);
     if (!rateCheck.success) {
       return NextResponse.json(
         { success: false, error: "Too many requests. Please slow down." },

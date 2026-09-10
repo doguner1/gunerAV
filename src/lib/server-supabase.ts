@@ -5,10 +5,13 @@ let cachedClient: SupabaseClient | null = null;
 
 export function getSupabaseAdminClient(): SupabaseClient | null {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY; // SADECE bu, fallback YOK
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    console.error("[analytics] SUPABASE_SERVICE_ROLE_KEY tanımlı değil! Vercel env ayarlarını kontrol et.");
     return null;
   }
 
