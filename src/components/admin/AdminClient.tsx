@@ -1095,14 +1095,7 @@ export default function AdminClient() {
                               </div>
                             </button>
                             <div className="min-w-0">
-                              <div 
-                                onClick={() => {
-                                  setPreviewProduct(p);
-                                  setPreviewImageIdx(0);
-                                }}
-                                className="font-bold text-white text-xs truncate max-w-sm hover:text-[#d4af37] cursor-pointer transition-colors"
-                                title="Detayları görüntülemek için tıklayın"
-                              >
+                              <div className="font-bold text-white text-xs truncate max-w-sm select-text">
                                 {p.name_tr}
                               </div>
                               <div className="text-[10px] text-neutral-400 flex items-center gap-2 mt-0.5">

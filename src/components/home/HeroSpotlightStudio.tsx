@@ -37,7 +37,7 @@ export interface DesignConfig {
 // 1. TAM EKRAN (1920x1080) KULLANICININ ONAYLADIĞI SABİT AYAR
 export const FULLSCREEN_CONFIG: DesignConfig = {
   width: 435,
-  offsetX: 110,
+  offsetX: 0,
   offsetY: -245,
   imageHeight: 330,
   borderRadius: 36,
@@ -47,12 +47,12 @@ export const FULLSCREEN_CONFIG: DesignConfig = {
 
 // 2. PENCERE / YARIM EKRAN KULLANICININ ONAYLADIĞI SABİT AYAR
 export const DEFAULT_WINDOWED_CONFIG: DesignConfig = {
-  width: 430,
-  offsetX: 80,
+  width: 435,
+  offsetX: 0,
   offsetY: -180,
-  imageHeight: 290,
-  borderRadius: 40,
-  bgOpacity: 20,
+  imageHeight: 310,
+  borderRadius: 36,
+  bgOpacity: 10,
   padding: 18,
 };
 
@@ -91,7 +91,7 @@ export default function HeroSpotlightStudio({
     scale: number;
   }>({
     offsetY: FULLSCREEN_CONFIG.offsetY,
-    offsetX: FULLSCREEN_CONFIG.offsetX,
+    offsetX: 0,
     scale: 1,
   });
 
@@ -150,13 +150,13 @@ export default function HeroSpotlightStudio({
 
       // 1. ÜST SINIR KORUMASI (Header Navbar):
       // Header navbar yüksekliği h-16 (64px).
-      // 1080p tam ekranda 82px (Foto 1'deki orijinal boşluk), dar ekranlarda 72px.
-      const topSafeLimit = w >= 1600 ? 82 : 72;
+      // 1080p tam ekranda 82px, dar ekranlarda 76px güvenli üst sınır.
+      const topSafeLimit = w >= 1600 ? 82 : 76;
 
       // 2. ALT SINIR KORUMASI (Avcılığa Başlayın / Ekran Tabanı):
-      // Alttaki keşif oku ~h - 45px seviyesinde. 60px güvenlik payı bırakılır.
+      // Alttaki keşif oku ~h - 60px seviyesinde.
       const bottomSafeLimit = h - 60;
-      const availableHeight = Math.max(300, bottomSafeLimit - topSafeLimit);
+      const availableHeight = Math.max(280, bottomSafeLimit - topSafeLimit);
 
       // Referans kart yüksekliği (Kart ~475px + alt Google rozeti ~45px + boşluklar = ~530px)
       const baseCardHeight = 530;
@@ -165,31 +165,29 @@ export default function HeroSpotlightStudio({
       const scaleH = Math.min(1.0, availableHeight / baseCardHeight);
 
       // Kademeli yatay ölçekleme (scaleW):
-      // 1920px'den 1024px'e doğru ekran daraldıkça sol taraftaki metinlere baskı yapmaması için ölçeklenir
+      // 1800px'den 1024px'e doğru ekran daraldıkça orantılı olarak küçülür
       const scaleW = w >= 1800
         ? 1.0
-        : Math.min(1.0, 0.68 + ((Math.max(1024, w) - 1024) / (1800 - 1024)) * 0.32);
+        : Math.min(1.0, 0.70 + ((Math.max(1024, w) - 1024) / (1800 - 1024)) * 0.30);
 
-      // İki eksendeki sınırlamalardan en katı olanı seçilir
-      const effectiveScale = Math.max(0.62, Math.min(scaleH, scaleW, 1.0));
+      // İki eksendeki sınırlamalardan en katı olanı seçilir (min 0.60, max 1.0)
+      const effectiveScale = Math.max(0.60, Math.min(scaleH, scaleW, 1.0));
 
-      // 3. YATAY KONUM (offsetX):
-      // 1920x1080'de container 1600px olduğundan sağda 160px boşluk vardır, 110px sağa kaydırılır (Foto 1).
-      // Ekran 1600px ve altına düştüğünde taşmayı önlemek için offsetX sıfıra çekilir.
-      const dynamicOffsetX = w >= 1880
-        ? 110
-        : Math.max(0, Math.min(110, Math.round(((w - 1600) / 280) * 110)));
+      // 3. YATAY HİZALAMA:
+      // Sağ kenara tam sabitliyoruz (offsetX = 0). transformOrigin: "top right" ile küçülürken sağ kenar milim oynamaz.
+      const dynamicOffsetX = 0;
 
       // 4. DİKEY HİZALAMA (offsetY):
-      // Üst sınır mutlak korunur: parentTop + offsetY = topSafeLimit
-      let dynamicOffsetY = FULLSCREEN_CONFIG.offsetY; // Varsayılan -245px
+      // Üst sınır mutlak korunur: Ebeveyn satırın sayfa tepesine olan mesafesi hesaba katılarak
+      // kartın tepe noktası her pencere yüksekliğinde tam olarak topSafeLimit'e oturtulur.
+      let dynamicOffsetY = -220;
       if (containerRef.current) {
-        const parentEl = containerRef.current.parentElement;
-        const parentTop = parentEl ? parentEl.getBoundingClientRect().top : containerRef.current.getBoundingClientRect().top;
+        const parentRow = containerRef.current.parentElement;
+        const parentTop = parentRow
+          ? parentRow.getBoundingClientRect().top + window.scrollY
+          : containerRef.current.getBoundingClientRect().top + window.scrollY;
         
-        // Üst kenar asla topSafeLimit'in üstüne çıkamaz
-        const calculatedY = Math.round(topSafeLimit - parentTop);
-        dynamicOffsetY = Math.min(calculatedY, 20);
+        dynamicOffsetY = Math.round(topSafeLimit - parentTop);
       }
 
       setDynamicLayout({
@@ -200,10 +198,12 @@ export default function HeroSpotlightStudio({
     };
 
     updateResponsiveBounds();
-    const timer = setTimeout(updateResponsiveBounds, 80);
+    const timer1 = setTimeout(updateResponsiveBounds, 60);
+    const timer2 = setTimeout(updateResponsiveBounds, 250);
     window.addEventListener("resize", updateResponsiveBounds);
     return () => {
-      clearTimeout(timer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
       window.removeEventListener("resize", updateResponsiveBounds);
     };
   }, [isStudioEnabled, isPanelOpen]);
@@ -332,13 +332,20 @@ export default function HeroSpotlightStudio({
       {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma) */}
       <div
         ref={containerRef}
-        className="w-full sm:max-w-md lg:max-w-none lg:w-auto lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-150"
+        className="w-full sm:max-w-md lg:max-w-none lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-150"
+        style={{
+          width: isDesktop ? `${Math.round(activeConfig.width * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
+          height: isDesktop ? `${Math.round(530 * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
+        }}
       >
         {/* Dynamic Desktop Sizing & Translation Wrapper */}
         <div
           ref={cardRef}
-          className="w-full transition-all duration-150 relative"
+          className="w-full transition-all duration-150"
           style={{
+            position: isDesktop ? "absolute" : "relative",
+            right: 0,
+            top: 0,
             width: isDesktop ? `${activeConfig.width}px` : "100%",
             minWidth: isDesktop ? `${activeConfig.width}px` : "auto",
             maxWidth: isDesktop ? `${activeConfig.width}px` : "100%",
@@ -346,7 +353,6 @@ export default function HeroSpotlightStudio({
               ? `translate3d(${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetX : dynamicLayout.offsetX}px, ${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetY : dynamicLayout.offsetY}px, 0) scale(${(isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale})`
               : "none",
             transformOrigin: "top right",
-            marginLeft: "auto",
           }}
         >
           {/* iOS Liquid Glass Container */}

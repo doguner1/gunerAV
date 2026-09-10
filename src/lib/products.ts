@@ -120,9 +120,22 @@ export function getFeaturedProducts(list?: Product[]): Product[] {
 
 export function getHeroSpotlightProduct(list?: Product[]): Product | undefined {
   const arr = list || localProducts;
-  // SADECE ve SADECE is_hero_spotlight tikli olan ürün gösterilir.
-  // Hiçbir ürün tikli değilse rastgele ilk ürün atanmaz, undefined döner.
-  return arr.find((p) => Boolean(p.is_hero_spotlight));
+  if (!arr || arr.length === 0) return undefined;
+
+  // 1. Öncelik: Admin panelinden 'Hero Vitrin' olarak işaretlenen ürün
+  const explicitHero = arr.find((p) => Boolean(p.is_hero_spotlight));
+  if (explicitHero) return explicitHero;
+
+  // 2. Öncelik: Öne çıkan tüfekler arasından ilk model (Serengeti veya Castello)
+  const featuredFirearm = arr.find((p) => p.featured && p.category?.startsWith("tufek"));
+  if (featuredFirearm) return featuredFirearm;
+
+  // 3. Öncelik: Herhangi bir öne çıkan ürün
+  const featuredAny = arr.find((p) => p.featured);
+  if (featuredAny) return featuredAny;
+
+  // 4. Fallback: İlk tüfek veya veritabanındaki ilk ürün
+  return arr.find((p) => p.category?.startsWith("tufek")) || arr[0];
 }
 
 export function getDealsProducts(list?: Product[]): Product[] {

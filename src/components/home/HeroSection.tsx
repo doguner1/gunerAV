@@ -177,24 +177,22 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Yalnızca Hero Vitrin tikli bir ürün varsa gösterilir */}
-          {spotlightProduct && (
-            <HeroSpotlightStudio
-              spotlightProduct={spotlightProduct}
-              featuredProductSlug={featuredProductSlug}
-              spotlightTitle={spotlightTitle}
-              spotlightImage={spotlightImage}
-              badgeText={t("spotlightBadge")}
-              inStockText={t("spotlightInStock")}
-              discountPrefixText={t("spotlightDiscountPrefix")}
-              discountHighlightText={t("spotlightDiscountHighlight")}
-              googleBadgeTitle={t("googleMapsBadgeTitle")}
-              googleBadgeSubtitle={t("googleMapsBadgeSubtitle")}
-              reviewCount={STORE_INFO.reviewCount}
-              mapsUrl={STORE_INFO.mapsUrl}
-              inspectText={t("spotlightInspect")}
-            />
-          )}
+          {/* RIGHT COLUMN: Interactive Hero Spotlight with Live Design Studio */}
+          <HeroSpotlightStudio
+            spotlightProduct={spotlightProduct}
+            featuredProductSlug={featuredProductSlug}
+            spotlightTitle={spotlightTitle}
+            spotlightImage={spotlightImage}
+            badgeText={t("spotlightBadge")}
+            inStockText={t("spotlightInStock")}
+            discountPrefixText={t("spotlightDiscountPrefix")}
+            discountHighlightText={t("spotlightDiscountHighlight")}
+            googleBadgeTitle={t("googleMapsBadgeTitle")}
+            googleBadgeSubtitle={t("googleMapsBadgeSubtitle")}
+            reviewCount={STORE_INFO.reviewCount}
+            mapsUrl={STORE_INFO.mapsUrl}
+            inspectText={t("spotlightInspect")}
+          />
         </div>
       </div>
 
