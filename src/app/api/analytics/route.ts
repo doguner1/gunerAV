@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { isAdminAuthorized } from "@/lib/server-auth";
-import {
-  recordAnalyticsEvent,
-  loadLocalAnalyticsEvents,
-  clearLocalAnalyticsEvents,
-} from "@/lib/server-analytics";
-
-export interface StoredAnalyticsEvent {
-  id: string;
-  received_at: string;
-  client_ip: string;
-  user_agent: string;
-  event: string;
-  params: Record<string, any>;
-  device_type?: string;
-  path?: string;
-  duration_seconds?: number;
-}
+import { recordAnalyticsEvent } from "@/lib/server-analytics";
 
 // =========================================================================
 // POST: Record New Event or Handle Admin Wipe
@@ -41,7 +25,6 @@ export async function POST(req: NextRequest) {
           console.error("[Analytics Clear Supabase Error]:", dbErr);
         }
       }
-      clearLocalAnalyticsEvents();
 
       return NextResponse.json({ success: true, message: "Analitik logları sıfırlandı." });
     }
@@ -62,56 +45,70 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
-  let mappedEvents: StoredAnalyticsEvent[] = [];
-  let source = "fallback_cache";
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({
+      authenticated: true,
+      source: "supabase",
+      count: 0,
+      events: [],
+    });
+  }
 
   try {
-    const supabase = getSupabaseAdminClient();
-    if (supabase) {
-      const { data, error } = await supabase
-        .from("analytics_events")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1000);
+    const { data, error } = await supabase
+      .from("analytics_events")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1000);
 
-      if (!error && Array.isArray(data) && data.length > 0) {
-        source = "supabase";
-        mappedEvents = data.map((row: any) => ({
-          id: row.id,
-          received_at: row.created_at,
-          client_ip: row.ip_hash || "gizli",
-          user_agent: row.user_agent || "unknown",
-          event: row.event_type,
-          params: {
-            ...row.raw_params,
-            item_id: row.product_id || row.raw_params?.item_id,
-            item_name: row.product_name || row.raw_params?.item_name,
-            item_category: row.category || row.raw_params?.item_category,
-            slug: row.product_slug || row.raw_params?.slug,
-            search_term: row.search_term || row.raw_params?.search_term,
-            results_count: row.results_count ?? row.raw_params?.results_count,
-            source: row.whatsapp_source || row.raw_params?.source,
-            duration_seconds: row.duration_seconds ?? row.raw_params?.duration_seconds,
-          },
-          device_type: row.device_type,
-          path: row.path,
-          duration_seconds: row.duration_seconds ?? undefined,
-        }));
-      }
+    if (error) {
+      console.error("[Analytics GET Supabase Error]:", error);
+      return NextResponse.json({
+        authenticated: true,
+        source: "supabase",
+        count: 0,
+        events: [],
+        error: error.message,
+      });
     }
+
+    const mappedEvents = (data || []).map((row: any) => ({
+      id: row.id,
+      received_at: row.created_at,
+      client_ip: row.ip_hash || "gizli",
+      user_agent: row.user_agent || "unknown",
+      event: row.event_type,
+      params: {
+        ...row.raw_params,
+        item_id: row.product_id || row.raw_params?.item_id,
+        item_name: row.product_name || row.raw_params?.item_name,
+        item_category: row.category || row.raw_params?.item_category,
+        slug: row.product_slug || row.raw_params?.slug,
+        search_term: row.search_term || row.raw_params?.search_term,
+        results_count: row.results_count ?? row.raw_params?.results_count,
+        source: row.whatsapp_source || row.raw_params?.source,
+        duration_seconds: row.duration_seconds ?? row.raw_params?.duration_seconds,
+      },
+      device_type: row.device_type,
+      path: row.path,
+      duration_seconds: row.duration_seconds ?? undefined,
+    }));
+
+    return NextResponse.json({
+      authenticated: true,
+      source: "supabase",
+      count: mappedEvents.length,
+      events: mappedEvents,
+    });
   } catch (err: any) {
-    console.warn("[Analytics GET Supabase Error, falling back]:", err);
+    console.error("[Analytics GET Exception]:", err);
+    return NextResponse.json({
+      authenticated: true,
+      source: "supabase",
+      count: 0,
+      events: [],
+      error: err?.message || "Veritabanı hatası",
+    });
   }
-
-  // If Supabase had no data or failed, load from guaranteed local cache
-  if (mappedEvents.length === 0) {
-    mappedEvents = loadLocalAnalyticsEvents();
-  }
-
-  return NextResponse.json({
-    authenticated: true,
-    source,
-    count: mappedEvents.length,
-    events: mappedEvents,
-  });
 }

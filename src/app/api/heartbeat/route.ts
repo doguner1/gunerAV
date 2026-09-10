@@ -42,23 +42,22 @@ export async function POST(req: NextRequest) {
     }
 
     const userAgent = req.headers.get("user-agent") || "";
-    const serverDevice = detectDeviceType(userAgent);
-    const finalDeviceType =
-      serverDevice !== "desktop"
-        ? serverDevice
-        : (typeof device_type === "string" && device_type.length > 0 ? device_type : "desktop");
-
+    const deviceType = detectDeviceType(userAgent);
     const finalProductName = product_name || productName || null;
 
-    const recorded = await recordActiveVisitor({
+    const success = await recordActiveVisitor({
       visitor_id,
       path: typeof path === "string" ? path : "/",
-      device_type: finalDeviceType,
+      device_type: deviceType,
       product_name: finalProductName,
     });
 
+    if (!success) {
+      return NextResponse.json({ ok: false, error: "Failed to record heartbeat" }, { status: 500 });
+    }
+
     return NextResponse.json(
-      { ok: true, success: true, timestamp: recorded.last_seen },
+      { ok: true, success: true, timestamp: new Date().toISOString() },
       {
         status: 200,
         headers: {

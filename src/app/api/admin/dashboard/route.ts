@@ -4,7 +4,6 @@ import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { isAdminAuthorized } from "@/lib/server-auth";
 import { detectDeviceType } from "@/lib/device-detect";
 import { getActiveVisitors } from "@/lib/active-visitors-store";
-import { loadLocalAnalyticsEvents } from "@/lib/server-analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -67,11 +66,11 @@ export async function GET(req: NextRequest) {
   }
 
   let rawRows: any[] = [];
-  let dataSource: "supabase" | "local_cache" | "hybrid" = "local_cache";
+  const dataSource = "supabase";
   let activeVisitorsCount = 0;
   let activeVisitorsList: any[] = [];
 
-  // 1. Live Active Visitors (from active-visitors-store with Supabase sync)
+  // 1. Live Active Visitors (from active-visitors-store via Supabase)
   try {
     activeVisitorsList = await getActiveVisitors(45000);
     activeVisitorsCount = activeVisitorsList.length;
@@ -80,7 +79,6 @@ export async function GET(req: NextRequest) {
   }
 
   // 2. Query Supabase
-  let supabaseRowsCount = 0;
   const supabase = getSupabaseAdminClient();
   if (supabase) {
     // 2.a Fire-and-forget 30-day cleanup of active_visitors
@@ -107,7 +105,6 @@ export async function GET(req: NextRequest) {
 
       const { data, error } = await query;
       if (!error && Array.isArray(data) && data.length > 0) {
-        supabaseRowsCount = data.length;
         rawRows = data.map((r: any) => ({
           id: r.id,
           received_at: r.created_at,
@@ -138,45 +135,6 @@ export async function GET(req: NextRequest) {
     } catch (err) {
       console.warn("[Dashboard Supabase Read Error]:", err);
     }
-  }
-
-  // 3. Merge Local /tmp Events with Supabase Events (Zero Data Loss)
-  try {
-    const localEvents = loadLocalAnalyticsEvents();
-    const idSet = new Set(rawRows.map((r) => r.id).filter(Boolean));
-    let localAdded = 0;
-
-    for (const l of localEvents) {
-      if (startDate && new Date(l.received_at) < startDate) continue;
-      if (!idSet.has(l.id)) {
-        idSet.add(l.id);
-        rawRows.push({
-          id: l.id,
-          received_at: l.received_at,
-          client_ip: l.client_ip || "gizli",
-          user_agent: l.user_agent || "unknown",
-          event: l.event,
-          params: l.params || {},
-          device_type: l.device_type,
-          path: l.path,
-          duration_seconds: l.duration_seconds,
-        });
-        localAdded++;
-      }
-    }
-
-    // Sort combined rows chronologically descending
-    rawRows.sort((a, b) => new Date(b.received_at).getTime() - new Date(a.received_at).getTime());
-
-    if (supabaseRowsCount > 0 && localAdded > 0) {
-      dataSource = "hybrid";
-    } else if (supabaseRowsCount > 0) {
-      dataSource = "supabase";
-    } else {
-      dataSource = "local_cache";
-    }
-  } catch (err) {
-    console.warn("[Dashboard Local Events Merge Error]:", err);
   }
 
   // 2. Supabase Diagnostic Info
