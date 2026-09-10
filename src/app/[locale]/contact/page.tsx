@@ -205,7 +205,7 @@ export default async function ContactPage({
             <div className="h-72 w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-md">
               <iframe
                 title={STORE_INFO.name}
-                src={`https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=tr&z=17&output=embed`}
+                src={STORE_INFO.mapsEmbedUrl || `https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=tr&z=17&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

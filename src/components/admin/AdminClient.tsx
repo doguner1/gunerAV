@@ -37,6 +37,12 @@ import {
   Route,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
+  X,
+  ChevronLeft,
+  ZoomIn,
+  Tag,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface AnalyticsEvent {
@@ -232,6 +238,9 @@ export default function AdminClient() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [onlyModified, setOnlyModified] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
+  const [priceFilter, setPriceFilter] = useState<"all" | "with_price" | "no_price">("all");
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [previewImageIdx, setPreviewImageIdx] = useState(0);
 
   // Analytics & Dashboard State
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
@@ -499,12 +508,21 @@ export default function AdminClient() {
   // Handle Edit Field
   const handleEdit = (id: string, field: keyof Product, value: any) => {
     setEditedProducts((prev) => {
-      const currentMod = prev[id] || {};
-      const nextMod = { ...currentMod, [field]: value };
-      return {
-        ...prev,
-        [id]: nextMod,
-      };
+      let nextState = { ...prev };
+
+      // Eğer bir ürün Hero Vitrin (is_hero_spotlight) yapılıyorsa,
+      // diğer tüm ürünlerde is_hero_spotlight otomatik olarak kaldırılır (tekil vitrin kuralı)
+      if (field === "is_hero_spotlight" && value === true) {
+        products.forEach((p) => {
+          if (p.id !== id && (p.is_hero_spotlight || nextState[p.id]?.is_hero_spotlight)) {
+            nextState[p.id] = { ...(nextState[p.id] || {}), is_hero_spotlight: false };
+          }
+        });
+      }
+
+      const currentMod = nextState[id] || {};
+      nextState[id] = { ...currentMod, [field]: value };
+      return nextState;
     });
   };
 
@@ -618,9 +636,36 @@ export default function AdminClient() {
         return false;
       }
 
+      if (priceFilter === "with_price" && (!current.price || current.price <= 0)) {
+        return false;
+      }
+
+      if (priceFilter === "no_price" && (current.price && current.price > 0)) {
+        return false;
+      }
+
       return true;
     });
-  }, [products, editedProducts, searchQuery, categoryFilter, onlyModified, onlyInStock]);
+  }, [products, editedProducts, searchQuery, categoryFilter, onlyModified, onlyInStock, priceFilter]);
+
+  // Products Quick Stats
+  const productsStats = useMemo(() => {
+    let inStock = 0;
+    let withPrice = 0;
+    let withoutPrice = 0;
+    let licensed = 0;
+
+    products.forEach((p) => {
+      const cur = { ...p, ...(editedProducts[p.id] || {}) };
+      if (deletedProducts.has(p.id)) return;
+      if (cur.in_stock) inStock++;
+      if (cur.price && cur.price > 0) withPrice++;
+      else withoutPrice++;
+      if (cur.requires_license) licensed++;
+    });
+
+    return { inStock, withPrice, withoutPrice, licensed };
+  }, [products, editedProducts, deletedProducts]);
 
   // Analytics Aggregates
   const analyticsSummary = useMemo(() => {
@@ -788,27 +833,98 @@ export default function AdminClient() {
       ========================================================================= */}
       {activeTab === "products" && (
         <div className="space-y-6">
+          {/* Quick Stats Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="rounded-2xl bg-neutral-900/80 border border-neutral-800/80 p-3.5 flex items-center justify-between shadow-lg">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Toplam Ürün</div>
+                <div className="text-xl font-heading font-black text-white mt-0.5">{products.length}</div>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400">
+                <Package className="h-4 w-4" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-neutral-900/80 border border-neutral-800/80 p-3.5 flex items-center justify-between shadow-lg">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Stokta Olan</div>
+                <div className="text-xl font-heading font-black text-emerald-400 mt-0.5">{productsStats.inStock}</div>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <Check className="h-4 w-4" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-neutral-900/80 border border-neutral-800/80 p-3.5 flex items-center justify-between shadow-lg">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Fiyatı Olan</div>
+                <div className="text-xl font-heading font-black text-amber-400 mt-0.5">{productsStats.withPrice}</div>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <Tag className="h-4 w-4" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-neutral-900/80 border border-neutral-800/80 p-3.5 flex items-center justify-between shadow-lg">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Fiyatı Belirsiz</div>
+                <div className="text-xl font-heading font-black text-neutral-300 mt-0.5">{productsStats.withoutPrice}</div>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400">
+                <PhoneCall className="h-4 w-4" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-neutral-900/80 border border-neutral-800/80 p-3.5 flex items-center justify-between shadow-lg">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-red-400 tracking-wider">Ruhsatlı Tüfek</div>
+                <div className="text-xl font-heading font-black text-red-400 mt-0.5">{productsStats.licensed}</div>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                <ShieldCheck className="h-4 w-4" />
+              </div>
+            </div>
+
+            <div className={`rounded-2xl border p-3.5 flex items-center justify-between shadow-lg transition-all ${modifiedCount > 0 ? 'bg-[#d4af37]/15 border-[#d4af37]/50' : 'bg-neutral-900/80 border-neutral-800/80'}`}>
+              <div>
+                <div className="text-[10px] uppercase font-bold text-[#d4af37] tracking-wider">Bekleyen İşlem</div>
+                <div className="text-xl font-heading font-black text-[#d4af37] mt-0.5">{modifiedCount} işlem</div>
+              </div>
+              <div className="h-9 w-9 rounded-xl bg-[#d4af37]/20 border border-[#d4af37]/40 flex items-center justify-center text-[#d4af37]">
+                <Sparkles className="h-4 w-4" />
+              </div>
+            </div>
+          </div>
+
           {/* Action Header & Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-neutral-900/80 border border-neutral-800 rounded-2xl p-4 backdrop-blur-xl">
             {/* Search & Category Filters */}
             <div className="flex flex-wrap items-center gap-3 flex-1">
               {/* Search input */}
-              <div className="relative min-w-[220px] flex-1 sm:flex-initial">
-                <Search className="h-4 w-4 text-neutral-400 absolute left-3 top-3 pointer-events-none" />
+              <div className="relative min-w-[240px] flex-1 sm:flex-initial">
+                <Search className="h-4 w-4 text-neutral-400 absolute left-3 top-2.5 pointer-events-none" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ürün adı ara..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-black border border-neutral-700 text-xs text-white placeholder-neutral-500 focus:border-[#d4af37] outline-none"
+                  placeholder="Ürün adı veya model ara..."
+                  className="w-full pl-9 pr-8 py-2 rounded-xl bg-black border border-neutral-700 text-xs text-white placeholder-neutral-500 focus:border-[#d4af37] outline-none transition-colors"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-2.5 text-neutral-400 hover:text-white"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Category selector */}
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="py-2 px-3 rounded-xl bg-black border border-neutral-700 text-xs text-white focus:border-[#d4af37] outline-none"
+                className="py-2 px-3 rounded-xl bg-black border border-neutral-700 text-xs text-white focus:border-[#d4af37] outline-none cursor-pointer"
               >
                 <option value="all">Tüm Kategoriler ({products.length})</option>
                 {categories.map((c) => (
@@ -816,6 +932,17 @@ export default function AdminClient() {
                     {c}
                   </option>
                 ))}
+              </select>
+
+              {/* Price Filter */}
+              <select
+                value={priceFilter}
+                onChange={(e) => setPriceFilter(e.target.value as any)}
+                className="py-2 px-3 rounded-xl bg-black border border-neutral-700 text-xs text-white focus:border-[#d4af37] outline-none cursor-pointer"
+              >
+                <option value="all">Tüm Fiyatlar</option>
+                <option value="with_price">💰 Fiyatı Girilenler ({productsStats.withPrice})</option>
+                <option value="no_price">📞 Fiyat Sorulanlar ({productsStats.withoutPrice})</option>
               </select>
 
               {/* Toggle Modified Only */}
@@ -915,7 +1042,7 @@ export default function AdminClient() {
                 <thead className="bg-black/80 sticky top-0 z-20 text-neutral-400 uppercase text-[10px] tracking-wider border-b border-neutral-800">
                   <tr>
                     <th className="px-4 py-3.5">Ürün</th>
-                    <th className="px-4 py-3.5 w-32">Fiyat (TL)</th>
+                    <th className="px-4 py-3.5 w-36">Fiyat (TL)</th>
                     <th className="px-4 py-3.5 w-24">İndirim (%)</th>
                     <th className="px-4 py-3.5 text-center w-24">Stokta</th>
                     <th className="px-4 py-3.5 text-center w-28">Öne Çıkan</th>
@@ -946,21 +1073,40 @@ export default function AdminClient() {
                         {/* Product Title & Thumbnail */}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-white border border-neutral-700">
+                            {/* Clickable HD Image Zoom Trigger */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreviewProduct(p);
+                                setPreviewImageIdx(0);
+                              }}
+                              title="Resmi ve özellikleri incelemek için tıklayın"
+                              className="relative h-12 w-12 shrink-0 rounded-xl overflow-hidden bg-white border border-neutral-700 hover:border-[#d4af37] transition-all group shadow-sm hover:scale-105 active:scale-95 focus:outline-none"
+                            >
                               <Image
                                 src={thumbnail}
                                 alt={p.name_tr}
                                 fill
                                 unoptimized
-                                className="object-contain p-1"
+                                className="object-contain p-1 group-hover:scale-110 transition-transform duration-300"
                               />
-                            </div>
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <ZoomIn className="h-4 w-4 text-[#d4af37] drop-shadow" />
+                              </div>
+                            </button>
                             <div className="min-w-0">
-                              <div className="font-bold text-white text-xs truncate max-w-sm">
+                              <div 
+                                onClick={() => {
+                                  setPreviewProduct(p);
+                                  setPreviewImageIdx(0);
+                                }}
+                                className="font-bold text-white text-xs truncate max-w-sm hover:text-[#d4af37] cursor-pointer transition-colors"
+                                title="Detayları görüntülemek için tıklayın"
+                              >
                                 {p.name_tr}
                               </div>
                               <div className="text-[10px] text-neutral-400 flex items-center gap-2 mt-0.5">
-                                <span className="uppercase font-mono text-[#d4af37]">{p.category}</span>
+                                <span className="uppercase font-mono text-[#d4af37] font-semibold">{p.category}</span>
                                 <span>&bull;</span>
                                 <span className="font-mono text-neutral-500 truncate">{p.id}</span>
                               </div>
@@ -975,7 +1121,7 @@ export default function AdminClient() {
                               type="number"
                               disabled={isDeleted}
                               value={current.price ?? ""}
-                              placeholder="Fiyat Sorun"
+                              placeholder="Sorun (₺ Yok)"
                               onChange={(e) =>
                                 handleEdit(
                                   p.id,

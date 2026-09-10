@@ -61,7 +61,33 @@
     "description_tr": "Olta takımları, makine ve misinalar, profesyonel kamp çadırları, taktik sırt çantaları ve fenerler.",
     "description_en": "Fishing rods and reels, professional camping tents, tactical backpacks, high-lumen flashlights, and outdoor gear.",
     "icon": "Compass",
-    "image": "/images/categories/camping.webp"
+    "image": "/images/categories/camping.webp",
+    "subcategories": [
+      {
+        "id": "kamp-cadir",
+        "slug": "kamp-cadir",
+        "name_tr": "Çadır",
+        "name_en": "Tents"
+      },
+      {
+        "id": "kamp-cadir-aksesuari",
+        "slug": "kamp-cadir-aksesuari",
+        "name_tr": "Çadır Aksesuarları",
+        "name_en": "Tent Accessories"
+      },
+      {
+        "id": "kamp-mat",
+        "slug": "kamp-mat",
+        "name_tr": "Mat",
+        "name_en": "Mats"
+      },
+      {
+        "id": "kamp-uyku-tulumu",
+        "slug": "kamp-uyku-tulumu",
+        "name_tr": "Uyku Tulumu",
+        "name_en": "Sleeping Bags"
+      }
+    ]
   },
   {
     "id": "optik",

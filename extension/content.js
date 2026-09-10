@@ -1000,15 +1000,41 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
         result.category = "muhimmat";
       }
     } else if (
-      fullText.includes("uyku tulumu") ||
-      fullText.includes("tulum") ||
+      currentUrl.includes("cadir-aksesuarlari") ||
+      ((fullText.includes("çadır") || fullText.includes("cadir") || fullText.includes("tent")) &&
+       (fullText.includes("aksesuar") || fullText.includes("tente") || fullText.includes("kazık") || fullText.includes("ip") || fullText.includes("tamir")))
+    ) {
+      result.category = "kamp-cadir-aksesuari";
+      result.requires_license = false;
+    } else if (
+      currentUrl.includes("cadir-k-") ||
+      currentUrl.includes("cadir") ||
       fullText.includes("çadır") ||
       fullText.includes("cadir") ||
+      fullText.includes("tent")
+    ) {
+      result.category = "kamp-cadir";
+      result.requires_license = false;
+    } else if (
+      currentUrl.includes("uyku-tulumu") ||
+      fullText.includes("uyku tulumu") ||
+      fullText.includes("sleeping bag")
+    ) {
+      result.category = "kamp-uyku-tulumu";
+      result.requires_license = false;
+    } else if (
+      currentUrl.includes("mat-k-") ||
+      fullText.includes("kamp mat") ||
+      fullText.includes("şişme mat") ||
+      fullText.includes("şişme yatak") ||
+      fullText.includes("mat ")
+    ) {
+      result.category = "kamp-mat";
+      result.requires_license = false;
+    } else if (
       fullText.includes("kamp") ||
       fullText.includes("termos") ||
       fullText.includes("matara") ||
-      fullText.includes("şişme yatak") ||
-      fullText.includes("kamp mat") ||
       fullText.includes("sandalye") ||
       fullText.includes("kamp masa") ||
       fullText.includes("kamp ocak") ||

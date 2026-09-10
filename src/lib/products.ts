@@ -120,11 +120,9 @@ export function getFeaturedProducts(list?: Product[]): Product[] {
 
 export function getHeroSpotlightProduct(list?: Product[]): Product | undefined {
   const arr = list || localProducts;
-  return (
-    arr.find((p) => p.is_hero_spotlight) ||
-    arr.find((p) => p.id === "castello-mod-505-otomatik-av-tufegi") ||
-    arr[0]
-  );
+  // SADECE ve SADECE is_hero_spotlight tikli olan ürün gösterilir.
+  // Hiçbir ürün tikli değilse rastgele ilk ürün atanmaz, undefined döner.
+  return arr.find((p) => Boolean(p.is_hero_spotlight));
 }
 
 export function getDealsProducts(list?: Product[]): Product[] {
@@ -173,6 +171,9 @@ export function getProductBySlug(
 
 export function getProductsByCategory(category: string, list?: Product[]): Product[] {
   const arr = list || localProducts;
+  if (category === "kamp") {
+    return arr.filter((p) => p.category.startsWith("kamp"));
+  }
   if (category === "tufek") {
     return arr.filter((p) => p.category.startsWith("tufek") || p.category === "silah-muhimmat");
   }
@@ -195,6 +196,7 @@ export async function getRelatedProducts(
   return arr
     .filter((p) => {
       if (p.id === currentId) return false;
+      if (category.startsWith("kamp") && p.category.startsWith("kamp")) return true;
       if (category.startsWith("tufek") && p.category.startsWith("tufek")) return true;
       if ((category === "bicak" || category === "aksesuar") && (p.category === "bicak" || p.category === "aksesuar")) return true;
       return p.category === category;

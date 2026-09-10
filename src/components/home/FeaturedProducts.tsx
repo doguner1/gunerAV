@@ -1,9 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { getFeaturedProducts, getAllCategories } from "@/lib/products";
 import { Product } from "@/types/product";
 import ProductCard from "@/components/product/ProductCard";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 
 export default function FeaturedProducts({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Products");
@@ -12,6 +15,10 @@ export default function FeaturedProducts({ products = [] }: { products?: Product
   const isTr = locale === "tr";
   const featured = getFeaturedProducts(products);
   const categories = getAllCategories();
+
+  // 5 satır x 4 sütun = 20 ürün (Kullanıcı tıkladıkça 5 satır daha eklenir)
+  const [visibleCount, setVisibleCount] = useState(20);
+  const visibleProducts = featured.slice(0, visibleCount);
 
   return (
     <section className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-black py-20 transition-colors">
@@ -49,19 +56,40 @@ export default function FeaturedProducts({ products = [] }: { products?: Product
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {featured.map((product, idx) => {
-              const cat = categories.find((c) => c.id === product.category);
-              return (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  categoryName={isTr ? cat?.name_tr : cat?.name_en}
-                  priority={idx < 4}
-                />
-              );
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visibleProducts.map((product, idx) => {
+                const cat = categories.find((c) => c.id === product.category);
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    categoryName={isTr ? cat?.name_tr : cat?.name_en}
+                    priority={idx < 4}
+                  />
+                );
+              })}
+            </div>
+
+            {/* 5 Satır Sonrası Daha Fazla Göster Butonu */}
+            {visibleCount < featured.length && (
+              <div className="mt-14 flex flex-col items-center justify-center gap-3">
+                <span className="text-xs font-bold font-mono text-neutral-500 uppercase tracking-wider">
+                  {isTr
+                    ? `${visibleProducts.length} / ${featured.length} Vitrin Ürünü Gösteriliyor`
+                    : `Showing ${visibleProducts.length} of ${featured.length} Showcase Products`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 20)}
+                  className="group inline-flex items-center gap-2.5 rounded-2xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white shadow-lg transition-all hover:scale-105 hover:border-[#d4af37] hover:bg-neutral-100 dark:hover:bg-neutral-850 active:scale-95 cursor-pointer"
+                >
+                  <span>{isTr ? "Daha Fazla Göster (+5 Satır)" : "Show More (+5 Rows)"}</span>
+                  <ChevronDown className="h-4 w-4 text-[#b45309] dark:text-[#d4af37] transition-transform duration-300 group-hover:translate-y-1" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

@@ -4,10 +4,17 @@ import { STORE_INFO } from "@/lib/store";
 import { generateWhatsAppLink } from "@/lib/utils";
 import { MessageCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/routing";
 import { trackWhatsAppClick } from "@/lib/analytics";
 
 export default function WhatsAppFloatingButton() {
+  const pathname = usePathname();
   const locale = useLocale();
+
+  // Admin panelinde WhatsApp butonu gizlenir
+  if (pathname && (pathname.includes("/admin") || pathname === "/admin")) {
+    return null;
+  }
   const t = useTranslations("Common");
 
   const defaultMsg =

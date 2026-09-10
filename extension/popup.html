@@ -164,11 +164,11 @@
       <div class="form-group" style="margin-bottom: 10px;">
         <label style="font-weight: 700; color: #d4af37; font-size: 11px;">📁 Kategori (Tüm ürünler bu kategoriye atanır):</label>
         <select id="fldBatchCategory" style="margin-top: 4px;">
-          <option value="auto">🔍 Otomatik Algıla (Ürün başlığından tahmin et)</option>
+          <option value="auto" selected>✨ Otomatik Algıla (Tedarikçi Sayfasından / URL'den / Başlıktan)</option>
           <optgroup label="Av Tüfekleri (Ruhsatlı)">
             <option value="tufek-bullpup">Tüfek - Bullpup</option>
             <option value="tufek-sarjorlu">Tüfek - Şarjörlü</option>
-            <option value="tufek-yari-otomatik" selected>Tüfek - Yarı Otomatik</option>
+            <option value="tufek-yari-otomatik">Tüfek - Yarı Otomatik</option>
             <option value="tufek-pompali">Tüfek - Pompalı</option>
             <option value="tufek-tek-kirma">Tüfek - Tek Kırma</option>
             <option value="tufek-superpoze">Tüfek - Süperpoze</option>
@@ -190,8 +190,14 @@
             <option value="muhimmat-ozel-dolum">Fişek - Özel Dolum / Karışık Saçma</option>
             <option value="muhimmat">Mühimmat &amp; Fişek (Genel)</option>
           </optgroup>
+          <optgroup label="Balık &amp; Kamp">
+            <option value="kamp-cadir">Çadır</option>
+            <option value="kamp-cadir-aksesuari">Çadır Aksesuarları</option>
+            <option value="kamp-mat">Mat</option>
+            <option value="kamp-uyku-tulumu">Uyku Tulumu</option>
+            <option value="kamp">Kamp &amp; Balık (Genel)</option>
+          </optgroup>
           <optgroup label="Diğer Kategoriler">
-            <option value="kamp">Balık ve Kamp Ekipmanları</option>
             <option value="optik">Optik &amp; Dürbün</option>
             <option value="bicak">Bıçak &amp; Aksesuar</option>
             <option value="giyim">Av &amp; Doğa Giyimi</option>

@@ -717,16 +717,19 @@ function populateForm(data) {
   ) {
     catSelect.value = "bicak";
     licenseChk.checked = false;
+  } else if (fullText.includes("çadır") || fullText.includes("cadir") || fullText.includes("tent")) {
+    catSelect.value = (fullText.includes("aksesuar") || fullText.includes("tente") || fullText.includes("kazık") || fullText.includes("ip")) ? "kamp-cadir-aksesuari" : "kamp-cadir";
+    licenseChk.checked = false;
+  } else if (fullText.includes("uyku tulumu") || fullText.includes("tulum") || fullText.includes("sleeping bag")) {
+    catSelect.value = "kamp-uyku-tulumu";
+    licenseChk.checked = false;
+  } else if (fullText.includes("kamp mat") || fullText.includes("mat ") || fullText.includes("şişme mat") || fullText.includes("şişme yatak") || fullText.includes("kamp yatak")) {
+    catSelect.value = "kamp-mat";
+    licenseChk.checked = false;
   } else if (
-    fullText.includes("uyku tulumu") ||
-    fullText.includes("tulum") ||
-    fullText.includes("çadır") ||
-    fullText.includes("cadir") ||
     fullText.includes("kamp") ||
     fullText.includes("termos") ||
     fullText.includes("matara") ||
-    fullText.includes("şişme yatak") ||
-    fullText.includes("kamp mat") ||
     fullText.includes("sandalye") ||
     fullText.includes("kamp masa") ||
     fullText.includes("kamp ocak") ||
@@ -1429,14 +1432,41 @@ async function runBatchScrape() {
     const useSupplierDesc = document.getElementById("chkBatchUseSupplierDesc")?.checked ?? false;
     const batchCategory = document.getElementById("fldBatchCategory")?.value || "auto";
 
-    // Eğer kategori manuel seçilmişse tüm ürünlere uygula
+    // Eğer kategori manuel seçilmişse uygula, değilse liste linkinden veya ürün detayından otomatik çıkar
     if (batchCategory !== "auto") {
       const isFirearmCat = batchCategory.startsWith("tufek");
       rawProducts.forEach((p) => {
         p.category = batchCategory;
         if (isFirearmCat) p.requires_license = true;
       });
-      appendBatchLog(`📁 Tüm ürünlere kategori atandı: ${batchCategory}`, "info");
+      appendBatchLog(`📁 Seçilen kategori uygulandı: ${batchCategory}`, "info");
+    } else {
+      // Liste linki veya geçerli sekme URL'sinden otomatik kategori tespiti
+      const activeUrl = (document.getElementById("fldBatchUrl")?.value || targetTabUrl || "").toLowerCase();
+      let autoDetectedCat = null;
+      if (activeUrl.includes("cadir-aksesuarlari")) autoDetectedCat = "kamp-cadir-aksesuari";
+      else if (activeUrl.includes("cadir-k-") || activeUrl.includes("cadir")) autoDetectedCat = "kamp-cadir";
+      else if (activeUrl.includes("uyku-tulumu")) autoDetectedCat = "kamp-uyku-tulumu";
+      else if (activeUrl.includes("mat-k-") || activeUrl.includes("mat-")) autoDetectedCat = "kamp-mat";
+      else if (activeUrl.includes("yari-otomatik")) autoDetectedCat = "tufek-yari-otomatik";
+      else if (activeUrl.includes("pompali")) autoDetectedCat = "tufek-pompali";
+      else if (activeUrl.includes("sarjorlu")) autoDetectedCat = "tufek-sarjorlu";
+      else if (activeUrl.includes("bullpup")) autoDetectedCat = "tufek-bullpup";
+      else if (activeUrl.includes("superpoze")) autoDetectedCat = "tufek-superpoze";
+      else if (activeUrl.includes("cifte")) autoDetectedCat = "tufek-cifte";
+      else if (activeUrl.includes("tek-kirma")) autoDetectedCat = "tufek-tek-kirma";
+
+      if (autoDetectedCat) {
+        rawProducts.forEach((p) => {
+          if (!p.category || p.category === "kamp" || p.category === "tufek") {
+            p.category = autoDetectedCat;
+            if (autoDetectedCat.startsWith("tufek")) p.requires_license = true;
+          }
+        });
+        appendBatchLog(`🤖 Tedarikçi liste linkinden kategori otomatik algılandı: ${autoDetectedCat}`, "info");
+      } else {
+        appendBatchLog("🤖 Kategori her ürünün kendi detay sayfasından ve başlığından otomatik belirlendi.", "info");
+      }
     }
 
     let finalProducts = [];

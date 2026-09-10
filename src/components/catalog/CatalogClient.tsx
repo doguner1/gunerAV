@@ -6,7 +6,7 @@ import { Product, Category } from "@/types/product";
 import FilterBar from "./FilterBar";
 import ProductCard from "@/components/product/ProductCard";
 import { useLocale, useTranslations } from "next-intl";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronDown } from "lucide-react";
 import { trackSearch, trackCategoryClick } from "@/lib/analytics";
 
 interface CatalogClientProps {
@@ -29,6 +29,11 @@ export default function CatalogClient({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [licenseOnly, setLicenseOnly] = useState<boolean>(false);
   const [dealsOnly, setDealsOnly] = useState<boolean>(false);
+  const [visibleCount, setVisibleCount] = useState<number>(20);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [selectedCategory, searchQuery, licenseOnly, dealsOnly]);
 
   // Sync state if URL query param changes
   useEffect(() => {
@@ -130,6 +135,10 @@ export default function CatalogClient({
           } else {
             return false;
           }
+        } else if (selectedCategory === "kamp") {
+          if (!product.category.startsWith("kamp")) return false;
+        } else if (selectedCategory.startsWith("kamp-")) {
+          if (product.category !== selectedCategory) return false;
         } else if (product.category !== selectedCategory) {
           return false;
         }
@@ -182,6 +191,8 @@ export default function CatalogClient({
     trackCategoryClick(cat);
   };
 
+const visibleProducts = filteredProducts.slice(0, visibleCount);
+
   return (
     <div className="space-y-8">
       {/* Filter Toolbar */}
@@ -207,8 +218,9 @@ export default function CatalogClient({
 
       {/* Products Grid or Empty State */}
       {filteredProducts.length > 0 ? (
+        <>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredProducts.map((product, idx) => {
+          {visibleProducts.map((product, idx) => {
             const cat = categories.find((c) => c.id === product.category);
             return (
               <ProductCard
@@ -220,6 +232,26 @@ export default function CatalogClient({
             );
           })}
         </div>
+
+        {/* 5 Satır Sonrası Daha Fazla Göster Butonu */}
+        {visibleCount < filteredProducts.length && (
+          <div className="mt-14 flex flex-col items-center justify-center gap-3">
+            <span className="text-xs font-bold font-mono text-neutral-500 uppercase tracking-wider">
+              {isTr
+                ? `${visibleProducts.length} / ${filteredProducts.length} Ürün Listeleniyor`
+                : `Showing ${visibleProducts.length} of ${filteredProducts.length} Products`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + 20)}
+              className="group inline-flex items-center gap-2.5 rounded-2xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white shadow-lg transition-all hover:scale-105 hover:border-[#d4af37] hover:bg-neutral-100 dark:hover:bg-neutral-850 active:scale-95 cursor-pointer"
+            >
+              <span>{isTr ? "Daha Fazla Göster (+5 Satır)" : "Show More (+5 Rows)"}</span>
+              <ChevronDown className="h-4 w-4 text-[#b45309] dark:text-[#d4af37] transition-transform duration-300 group-hover:translate-y-1" />
+            </button>
+          </div>
+        )}
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-12 text-center shadow-sm">
           <AlertCircle className="h-10 w-10 text-neutral-400 dark:text-neutral-500 mb-3" />

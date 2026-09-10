@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { Crosshair, MapPin, ArrowRight, Sliders, Copy, Check, RotateCcw, X, Eye, Monitor, Smartphone, Star, Sparkles } from "lucide-react";
@@ -83,6 +83,18 @@ export default function HeroSpotlightStudio({
   const [copied, setCopied] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [dynamicLayout, setDynamicLayout] = useState<{
+    offsetY: number;
+    offsetX: number;
+    scale: number;
+  }>({
+    offsetY: FULLSCREEN_CONFIG.offsetY,
+    offsetX: FULLSCREEN_CONFIG.offsetX,
+    scale: 1,
+  });
+
   // URL parametresi (?design=1, ?studio=1, ?tasarim=1) veya Alt+D kısayolu ile istendiğinde stüdyoyu aç
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -106,27 +118,95 @@ export default function HeroSpotlightStudio({
     }
   }, []);
 
-  // Ekran boyutunu anlık takip et
+  // Ekran boyutunu ve üst/alt sınırları anlık hesapla
   useEffect(() => {
-    const handleResize = () => {
+    const updateResponsiveBounds = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      setIsDesktop(w >= 1024);
+      const desktop = w >= 1024;
+      setIsDesktop(desktop);
       setScreenSize({ width: w, height: h });
 
-      // 1880px ve 960px üzeri: Tam Ekran Masaüstü (F11 / Native Fullscreen 1920x1080)
-      // Altındaki çözünürlükler (1871x935 sekmeli, laptoplar, yarım ekran): Pencere Modu
       if (w < 1880 || h < 960) {
         setEditMode("windowed");
       } else {
         setEditMode("fullscreen");
       }
+
+      if (!desktop) {
+        setDynamicLayout({ offsetY: 0, offsetX: 0, scale: 1 });
+        return;
+      }
+
+      // Canlı stüdyo paneli açıkken manuel değerleri koru
+      if (isStudioEnabled && isPanelOpen) {
+        setDynamicLayout({
+          offsetY: activeConfig.offsetY,
+          offsetX: activeConfig.offsetX,
+          scale: 1,
+        });
+        return;
+      }
+
+      // 1. ÜST SINIR KORUMASI (Header Navbar):
+      // Header navbar yüksekliği h-16 (64px).
+      // 1080p tam ekranda 82px (Foto 1'deki orijinal boşluk), dar ekranlarda 72px.
+      const topSafeLimit = w >= 1600 ? 82 : 72;
+
+      // 2. ALT SINIR KORUMASI (Avcılığa Başlayın / Ekran Tabanı):
+      // Alttaki keşif oku ~h - 45px seviyesinde. 60px güvenlik payı bırakılır.
+      const bottomSafeLimit = h - 60;
+      const availableHeight = Math.max(300, bottomSafeLimit - topSafeLimit);
+
+      // Referans kart yüksekliği (Kart ~475px + alt Google rozeti ~45px + boşluklar = ~530px)
+      const baseCardHeight = 530;
+
+      // Kademeli dikey ölçekleme (scaleH)
+      const scaleH = Math.min(1.0, availableHeight / baseCardHeight);
+
+      // Kademeli yatay ölçekleme (scaleW):
+      // 1920px'den 1024px'e doğru ekran daraldıkça sol taraftaki metinlere baskı yapmaması için ölçeklenir
+      const scaleW = w >= 1800
+        ? 1.0
+        : Math.min(1.0, 0.68 + ((Math.max(1024, w) - 1024) / (1800 - 1024)) * 0.32);
+
+      // İki eksendeki sınırlamalardan en katı olanı seçilir
+      const effectiveScale = Math.max(0.62, Math.min(scaleH, scaleW, 1.0));
+
+      // 3. YATAY KONUM (offsetX):
+      // 1920x1080'de container 1600px olduğundan sağda 160px boşluk vardır, 110px sağa kaydırılır (Foto 1).
+      // Ekran 1600px ve altına düştüğünde taşmayı önlemek için offsetX sıfıra çekilir.
+      const dynamicOffsetX = w >= 1880
+        ? 110
+        : Math.max(0, Math.min(110, Math.round(((w - 1600) / 280) * 110)));
+
+      // 4. DİKEY HİZALAMA (offsetY):
+      // Üst sınır mutlak korunur: parentTop + offsetY = topSafeLimit
+      let dynamicOffsetY = FULLSCREEN_CONFIG.offsetY; // Varsayılan -245px
+      if (containerRef.current) {
+        const parentEl = containerRef.current.parentElement;
+        const parentTop = parentEl ? parentEl.getBoundingClientRect().top : containerRef.current.getBoundingClientRect().top;
+        
+        // Üst kenar asla topSafeLimit'in üstüne çıkamaz
+        const calculatedY = Math.round(topSafeLimit - parentTop);
+        dynamicOffsetY = Math.min(calculatedY, 20);
+      }
+
+      setDynamicLayout({
+        offsetY: dynamicOffsetY,
+        offsetX: dynamicOffsetX,
+        scale: effectiveScale,
+      });
     };
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    updateResponsiveBounds();
+    const timer = setTimeout(updateResponsiveBounds, 80);
+    window.addEventListener("resize", updateResponsiveBounds);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateResponsiveBounds);
+    };
+  }, [isStudioEnabled, isPanelOpen]);
 
   // Şu anki ekran pencere / yarım ekran modunda mı?
   // w < 1880px veya h < 960px: Pencere / Yarım Ekran modu (offsetY: -180px, width: 430px, bgOpacity: 20%)
@@ -251,18 +331,21 @@ export default function HeroSpotlightStudio({
     <>
       {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma) */}
       <div
-        className="w-full sm:max-w-md lg:max-w-none lg:w-auto lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-75"
+        ref={containerRef}
+        className="w-full sm:max-w-md lg:max-w-none lg:w-auto lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-150"
       >
         {/* Dynamic Desktop Sizing & Translation Wrapper */}
         <div
-          className="w-full transition-all duration-75 relative"
+          ref={cardRef}
+          className="w-full transition-all duration-150 relative"
           style={{
             width: isDesktop ? `${activeConfig.width}px` : "100%",
             minWidth: isDesktop ? `${activeConfig.width}px` : "auto",
             maxWidth: isDesktop ? `${activeConfig.width}px` : "100%",
             transform: isDesktop
-              ? `translate3d(${activeConfig.offsetX}px, ${activeConfig.offsetY}px, 0)`
+              ? `translate3d(${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetX : dynamicLayout.offsetX}px, ${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetY : dynamicLayout.offsetY}px, 0) scale(${(isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale})`
               : "none",
+            transformOrigin: "top right",
             marginLeft: "auto",
           }}
         >

@@ -140,7 +140,7 @@ export default function MapAndHoursSection() {
           <div className="relative min-h-[420px] overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-lg lg:col-span-7">
             <iframe
               title={STORE_INFO.name}
-              src={`https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=${locale}&z=17&output=embed`}
+              src={STORE_INFO.mapsEmbedUrl || `https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=${locale}&z=17&output=embed`}
               width="100%"
               height="100%"
               style={{ border: 0, minHeight: "420px" }}
