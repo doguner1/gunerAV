@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { notFound } from "next/navigation";
+import AnalyticsProvider from "@/components/providers/AnalyticsProvider";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import WhatsAppFloatingButton from "@/components/common/WhatsAppFloatingButton";
@@ -167,14 +168,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <WhatsAppFloatingButton />
-          <MobileQuickBar />
-          <CookieBanner />
-          <Analytics />
-          <SpeedInsights />
+          <AnalyticsProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <WhatsAppFloatingButton />
+            <MobileQuickBar />
+            <CookieBanner />
+            <Analytics />
+            <SpeedInsights />
+          </AnalyticsProvider>
         </NextIntlClientProvider>
       </body>
     </html>

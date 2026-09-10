@@ -23,7 +23,7 @@ declare global {
 const LOCAL_STORAGE_LOG_KEY = "gunerav_analytics_log";
 const MAX_LOCAL_LOGS = 100;
 
-function getVisitorId(): string {
+export function getOrCreateVisitorId(): string {
   if (typeof window === "undefined") return "anon";
   try {
     let vid = localStorage.getItem("gunerav_visitor_id");
@@ -37,7 +37,9 @@ function getVisitorId(): string {
   }
 }
 
-function getSessionId(): string {
+export const getVisitorId = getOrCreateVisitorId;
+
+export function getSessionId(): string {
   if (typeof window === "undefined") return "sess";
   try {
     let sid = sessionStorage.getItem("gunerav_session_id");

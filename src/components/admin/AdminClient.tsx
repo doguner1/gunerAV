@@ -43,6 +43,11 @@ import {
   ZoomIn,
   Tag,
   SlidersHorizontal,
+  Users,
+  Radio,
+  Share2,
+  Target,
+  Activity,
 } from "lucide-react";
 
 interface AnalyticsEvent {
@@ -206,6 +211,17 @@ function parseUserAgent(ua: string, deviceType?: string): { device: string; brow
   return { device, browser };
 }
 
+function formatSecondsAgo(isoString: string): string {
+  try {
+    const diff = Math.max(0, Math.floor((Date.now() - new Date(isoString).getTime()) / 1000));
+    if (diff < 5) return "Az önce";
+    if (diff < 60) return `${diff} sn önce`;
+    return `${Math.floor(diff / 60)} dk önce`;
+  } catch {
+    return "Az önce";
+  }
+}
+
 export default function AdminClient() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -326,8 +342,69 @@ export default function AdminClient() {
       tablet: { count: number; percent: number };
       desktop: { count: number; percent: number };
     };
+    visitorLoyalty?: {
+      newCount: number;
+      newPercent: number;
+      returningCount: number;
+      returningPercent: number;
+      totalTracked: number;
+    };
+    trafficSources?: Array<{
+      channel: string;
+      visits: number;
+      percent: number;
+      whatsappLeads: number;
+      conversionRate: string;
+    }>;
+    conversionFunnel?: Array<{
+      step: string;
+      description: string;
+      count: number;
+      percent: number;
+      dropRate: string;
+    }>;
     recentEvents: AnalyticsEvent[];
   } | null>(null);
+
+  // Real-time active visitors state & polling
+  const [activeVisitors, setActiveVisitors] = useState<
+    Array<{
+      visitor_id: string;
+      path: string;
+      device_type: string;
+      product_name?: string;
+      last_seen: string;
+    }>
+  >([]);
+  const [activeCount, setActiveCount] = useState<number>(0);
+  const [showActiveVisitorsTable, setShowActiveVisitorsTable] = useState<boolean>(false);
+
+  // Active visitors live polling (every 6s)
+  useEffect(() => {
+    if (!isAuthenticated || activeTab !== "analytics") return;
+
+    let isMounted = true;
+    const fetchActive = async () => {
+      try {
+        const key = password || sessionStorage.getItem("gunerav_admin_auth") || "";
+        const res = await fetch("/api/admin/active-visitors", {
+          headers: key ? { "x-admin-key": key } : {},
+        });
+        const data = await res.json();
+        if (isMounted && data.success) {
+          setActiveCount(data.count ?? 0);
+          setActiveVisitors(data.activeVisitors || []);
+        }
+      } catch {}
+    };
+
+    fetchActive();
+    const interval = setInterval(fetchActive, 6000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isAuthenticated, activeTab, password]);
 
   // Restore admin session if already logged in within the browser session
   useEffect(() => {
@@ -1218,7 +1295,7 @@ export default function AdminClient() {
       {activeTab === "analytics" && (() => {
         const summary = dashboardData?.summary || {
           totalEvents: events.length,
-          uniqueVisitors: Math.max(1, Math.round(events.length / 2.5)),
+          uniqueVisitors: events.length > 0 ? new Set(events.map(e => e.params?.visitor_id || e.client_ip)).size : 0,
           totalPageViews: analyticsSummary.productViews,
           whatsappLeads: analyticsSummary.whatsappClicks,
           phoneCalls: analyticsSummary.phoneCalls,
@@ -1241,6 +1318,20 @@ export default function AdminClient() {
           tablet: { count: 0, percent: 15 },
           desktop: { count: 0, percent: 30 },
         };
+        const visitorLoyalty = dashboardData?.visitorLoyalty || {
+          newCount: 0,
+          newPercent: 100,
+          returningCount: 0,
+          returningPercent: 0,
+          totalTracked: 0,
+        };
+        const trafficSources = dashboardData?.trafficSources || [];
+        const conversionFunnel = dashboardData?.conversionFunnel || [
+          { step: "1. Site Ziyareti", description: "Siteye giriş yapan tüm ziyaret oturumları", count: summary.uniqueVisitors, percent: 100, dropRate: "0%" },
+          { step: "2. Ürün İnceleme", description: "Katalogda en az bir ürün detayına girenler", count: summary.totalPageViews, percent: 0, dropRate: "0%" },
+          { step: "3. Derin İnceleme (HD Zoom / 30sn+)", description: "Görseli büyüten veya 30sn+ inceleyenler", count: summary.zooms, percent: 0, dropRate: "0%" },
+          { step: "4. WhatsApp Satış Görüşmesi", description: "WhatsApp sipariş butonuna tıklayıp bayiye ulaşanlar", count: summary.whatsappLeads, percent: 0, dropRate: "0%" },
+        ];
         const isSupabaseSource = dashboardData?.dataSource === "supabase";
 
         return (
@@ -1336,6 +1427,115 @@ export default function AdminClient() {
                 <span className="text-neutral-300">Tüm ziyaretçi ve ürün hareketleri bulutta kalıcı olarak saklanıyor ({summary.totalEvents} olay).</span>
               </div>
             )}
+
+            {/* Real-time Presence & Live Event Ticker (Şu An Sitede) */}
+            <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-neutral-900/90 to-black/80 p-4 shadow-xl backdrop-blur-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Left: Active Visitors Count */}
+                <div className="flex items-center gap-3">
+                  <div className="relative flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono uppercase tracking-widest text-emerald-400 font-bold">
+                        Şu An Sitede (Canlı Ziyaretçi)
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/30">
+                        20sn Heartbeat
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className="text-2xl sm:text-3xl font-black font-heading text-white">
+                        {activeCount}
+                      </span>
+                      <span className="text-xs font-semibold text-neutral-300">
+                        ziyaretçi şu an web sitenizde geziniyor
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Live Ticker & Toggle Table */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {events[0] && (
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 border border-neutral-800 text-xs">
+                      <Activity className="h-3.5 w-3.5 text-emerald-400 animate-pulse shrink-0" />
+                      <span className="text-neutral-400 text-[11px]">Son Canlı Olay:</span>
+                      <span className="text-white font-medium truncate max-w-[220px]">
+                        {formatEventDetail(events[0]).title}
+                      </span>
+                      <span className="text-neutral-500 font-mono text-[10px]">
+                        ({formatSecondsAgo(events[0].received_at)})
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowActiveVisitorsTable(!showActiveVisitorsTable)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all"
+                  >
+                    <Radio className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>{showActiveVisitorsTable ? "Listeyi Kapat" : `Canlı Ziyaretçileri Gör (${activeVisitors.length})`}</span>
+                    {showActiveVisitorsTable ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expandable Active Visitors Table */}
+              {showActiveVisitorsTable && (
+                <div className="mt-4 pt-4 border-t border-emerald-500/20">
+                  <div className="overflow-x-auto max-h-[260px]">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-black/60 sticky top-0 text-neutral-400 uppercase text-[10px] tracking-wider border-b border-neutral-800">
+                        <tr>
+                          <th className="px-3 py-2">Ziyaretçi Kimliği</th>
+                          <th className="px-3 py-2">Cihaz</th>
+                          <th className="px-3 py-2">Bulunduğu Sayfa / İncelediği Ürün</th>
+                          <th className="px-3 py-2 text-right">Son Sinyal (Heartbeat)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/60 font-mono">
+                        {activeVisitors.map((v, idx) => (
+                          <tr key={v.visitor_id || idx} className="hover:bg-neutral-800/30">
+                            <td className="px-3 py-2 font-sans font-medium text-white flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0"></span>
+                              <span className="font-mono text-[11px] text-neutral-300">
+                                {v.visitor_id ? `${v.visitor_id.slice(0, 10)}...` : "anonim"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 font-sans text-neutral-300 text-[11px] capitalize">
+                              {v.device_type === "mobile" ? "📱 Mobil" : v.device_type === "tablet" ? "📲 Tablet" : "💻 Masaüstü"}
+                            </td>
+                            <td className="px-3 py-2 text-neutral-200 truncate max-w-[260px]">
+                              {v.product_name ? (
+                                <span className="font-bold text-[#d4af37] font-sans">
+                                  {v.product_name}
+                                </span>
+                              ) : (
+                                <span className="font-mono text-neutral-400">{v.path || "/"}</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-right text-emerald-400 font-mono text-[11px]">
+                              {formatSecondsAgo(v.last_seen)}
+                            </td>
+                          </tr>
+                        ))}
+                        {activeVisitors.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="py-6 text-center text-neutral-500 font-sans text-xs">
+                              Son 35 saniyede aktif bir ziyaretçi sinyali bulunmuyor. Siteye biri girdiğinde burada anlık görünecektir.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Summary Metric Cards (6 Cards Grid) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -1462,6 +1662,177 @@ export default function AdminClient() {
                   className="bg-blue-500 h-full transition-all"
                   title={`Masaüstü: %${deviceBreakdown.desktop.percent}`}
                 />
+              </div>
+            </div>
+
+            {/* Conversion Funnel & Marketing Attribution Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* 1. Conversion Funnel (7 cols) */}
+              <div className="lg:col-span-7 rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-xl p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-neutral-800">
+                  <div>
+                    <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <Target className="h-4 w-4 text-[#d4af37]" />
+                      <span>Dönüşüm Hunisi (Ziyaretten Satışa)</span>
+                    </h3>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Siteye girişten WhatsApp sipariş butonuna kadar her aşamadaki ziyaretçi kaybı ve başarı oranı.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 font-bold self-start sm:self-auto">
+                    {conversionFunnel[3]?.percent ?? 0}% Tam Dönüşüm
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {conversionFunnel.map((step, idx) => {
+                    const stepColors = [
+                      "from-blue-600 to-blue-400 text-blue-400 border-blue-500/30",
+                      "from-purple-600 to-purple-400 text-purple-400 border-purple-500/30",
+                      "from-amber-600 to-[#d4af37] text-amber-300 border-amber-500/30",
+                      "from-emerald-600 to-emerald-400 text-emerald-400 border-emerald-500/30",
+                    ];
+                    const colorClass = stepColors[idx] || stepColors[0];
+
+                    return (
+                      <div key={idx} className="space-y-1.5 bg-black/40 p-3 rounded-xl border border-neutral-800/80">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-xs">{step.step}</span>
+                            <span className="text-[10px] text-neutral-400 hidden sm:inline">
+                              · {step.description}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 font-mono">
+                            <span className="font-bold text-white">{step.count} Oturum</span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-white/10 text-white">
+                              %{step.percent}
+                            </span>
+                            {idx < 3 && (
+                              <span className="text-[10px] text-red-400 font-sans font-medium">
+                                ({step.dropRate})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Funnel Progress Bar */}
+                        <div className="h-2.5 w-full rounded-full bg-neutral-800 overflow-hidden">
+                          <div
+                            style={{ width: `${Math.max(4, step.percent)}%` }}
+                            className={`h-full bg-gradient-to-r ${colorClass.split(" ")[0]} ${colorClass.split(" ")[1]} transition-all duration-500`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Right Side: Visitor Loyalty & Traffic Sources (5 cols) */}
+              <div className="lg:col-span-5 flex flex-col gap-6">
+                {/* 2.a Visitor Loyalty (Yeni vs Geri Dönen) */}
+                <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-xl p-5">
+                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800">
+                    <div>
+                      <h3 className="text-xs font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <Users className="h-4 w-4 text-[#d4af37]" />
+                        <span>Yeni vs Geri Dönen Ziyaretçi</span>
+                      </h3>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Kalıcı cihaz kimliğiyle sadık müşteri takibi
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    {/* New Visitors */}
+                    <div className="bg-black/60 border border-blue-900/40 rounded-xl p-3">
+                      <div className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                        Yeni Ziyaretçi
+                      </div>
+                      <div className="text-xl font-black font-heading text-white mt-1">
+                        {visitorLoyalty.newCount}
+                        <span className="text-xs text-blue-300 font-mono ml-1.5">
+                          (%{visitorLoyalty.newPercent})
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-neutral-400 mt-0.5">Siteye ilk defa girenler</p>
+                    </div>
+
+                    {/* Returning Visitors */}
+                    <div className="bg-black/60 border border-[#d4af37]/40 rounded-xl p-3">
+                      <div className="text-[10px] font-bold text-[#d4af37] uppercase tracking-wider">
+                        Geri Dönen (Sadık)
+                      </div>
+                      <div className="text-xl font-black font-heading text-white mt-1">
+                        {visitorLoyalty.returningCount}
+                        <span className="text-xs text-amber-300 font-mono ml-1.5">
+                          (%{visitorLoyalty.returningPercent})
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-neutral-400 mt-0.5">Tekrar siteyi ziyaret edenler</p>
+                    </div>
+                  </div>
+
+                  {/* Loyalty Bar */}
+                  <div className="h-2 w-full rounded-full bg-neutral-800 overflow-hidden flex">
+                    <div
+                      style={{ width: `${visitorLoyalty.newPercent}%` }}
+                      className="bg-blue-500 h-full transition-all"
+                      title={`Yeni: %${visitorLoyalty.newPercent}`}
+                    />
+                    <div
+                      style={{ width: `${visitorLoyalty.returningPercent}%` }}
+                      className="bg-[#d4af37] h-full transition-all"
+                      title={`Geri Dönen: %${visitorLoyalty.returningPercent}`}
+                    />
+                  </div>
+                </div>
+
+                {/* 2.b Traffic Sources (Sosyal Medya & UTM) */}
+                <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-xl p-5 flex-1">
+                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800">
+                    <h3 className="text-xs font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <Share2 className="h-4 w-4 text-emerald-400" />
+                      <span>Trafik Kaynakları (Pazarlama & Sosyal Medya)</span>
+                    </h3>
+                    <span className="text-[10px] text-neutral-400 font-mono">
+                      {trafficSources.length} Kaynak
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
+                    {trafficSources.map((source, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between rounded-lg bg-black/60 border border-neutral-800/80 px-3 py-2 text-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-neutral-200">{source.channel}</span>
+                          <span className="text-[10px] font-mono text-neutral-400">
+                            %{source.percent}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-neutral-300 font-mono text-[11px]">
+                            {source.visits} Ziyaret
+                          </span>
+                          {source.whatsappLeads > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
+                              💬 {source.whatsappLeads} Satış
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {trafficSources.length === 0 && (
+                      <div className="text-center py-4 text-[11px] text-neutral-500">
+                        Henüz trafik kaynağı verisi kaydedilmedi.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

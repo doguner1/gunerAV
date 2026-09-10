@@ -35,3 +35,8 @@ yarn-error.log*
 # User screenshots / dumps
 Screenshot*.png
 
+# Analytics Local Storage
+data/
+data/analytics_events.json
+
+

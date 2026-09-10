@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAllProducts } from "@/lib/products";
 import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { isAdminAuthorized } from "@/lib/server-auth";
-import { loadFallbackEvents, StoredAnalyticsEvent } from "@/lib/server-analytics";
 import { detectDeviceType } from "@/lib/device-detect";
+
+export const dynamic = "force-dynamic";
 
 export interface JourneyStep {
   time: string;
@@ -64,11 +65,42 @@ export async function GET(req: NextRequest) {
   }
 
   let rawRows: any[] = [];
-  let dataSource: "supabase" | "fallback_disk" = "fallback_disk";
+  const dataSource = "supabase";
+  let activeVisitorsCount = 0;
 
-  // 1. Try Supabase
-  const supabase = getSupabaseAdminClient();
+  // 1. Query Supabase
+  let supabase: ReturnType<typeof getSupabaseAdminClient> | null = null;
+  try {
+    supabase = getSupabaseAdminClient();
+  } catch (err: any) {
+    console.warn("[Dashboard Supabase Admin Init]:", err.message);
+  }
   if (supabase) {
+    // 1.a Fire-and-forget 30-day cleanup of active_visitors (runs in background)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    (async () => {
+      try {
+        await supabase.from("active_visitors").delete().lt("last_seen", thirtyDaysAgo);
+      } catch (err) {
+        console.warn("[Active Visitors 30d Cleanup Error]:", err);
+      }
+    })();
+
+    // 1.b Live Active Visitors Count (last 35 seconds)
+    try {
+      const activeCutoff = new Date(Date.now() - 35 * 1000).toISOString();
+      const { count } = await supabase
+        .from("active_visitors")
+        .select("*", { count: "exact", head: true })
+        .gte("last_seen", activeCutoff);
+      if (typeof count === "number") {
+        activeVisitorsCount = count;
+      }
+    } catch (err) {
+      console.warn("[Active Visitors Count Error]:", err);
+    }
+
+    // 1.c Analytics Events Query
     try {
       let query = supabase
         .from("analytics_events")
@@ -97,6 +129,7 @@ export async function GET(req: NextRequest) {
             search_term: r.search_term || r.raw_params?.search_term,
             results_count: r.results_count ?? r.raw_params?.results_count,
             source: r.whatsapp_source || r.raw_params?.source,
+            source_channel: r.raw_params?.source_channel || r.raw_params?.utm_source,
             visitor_id: r.visitor_id || r.raw_params?.visitor_id,
             session_id: r.session_id || r.raw_params?.session_id,
             duration_seconds: r.duration_seconds ?? r.raw_params?.duration_seconds,
@@ -105,44 +138,30 @@ export async function GET(req: NextRequest) {
           path: r.path,
           duration_seconds: r.duration_seconds,
         }));
-        dataSource = "supabase";
+      } else if (error) {
+        console.warn("[Dashboard Supabase Query Error]:", error);
       }
     } catch (err) {
       console.warn("[Dashboard Supabase Read Error]:", err);
     }
   }
 
-  // 2. Fallback disk if Supabase had no rows or was unavailable
-  if (rawRows.length === 0 && dataSource !== "supabase") {
-    const diskEvents = loadFallbackEvents();
-    if (startDate) {
-      const startTime = startDate.getTime();
-      rawRows = diskEvents.filter((ev) => {
-        const t = new Date(ev.received_at).getTime();
-        return !isNaN(t) && t >= startTime;
-      });
-    } else {
-      rawRows = diskEvents;
-    }
-  }
-
-  // 3. Supabase Diagnostic Info
+  // 2. Supabase Diagnostic Info
   const hasUrl = Boolean(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const hasServiceKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
-  const hasAnonKey = Boolean(process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const hasServiceKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
   const missingEnv: string[] = [];
-  if (!hasUrl) missingEnv.push("NEXT_PUBLIC_SUPABASE_URL");
-  if (!hasServiceKey && !hasAnonKey) missingEnv.push("SUPABASE_SERVICE_ROLE_KEY (veya ANON_KEY)");
+  if (!hasUrl) missingEnv.push("SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL");
+  if (!hasServiceKey) missingEnv.push("SUPABASE_SERVICE_ROLE_KEY");
 
   const supabaseStatus = {
-    connected: dataSource === "supabase",
-    isConfigured: hasUrl && (hasServiceKey || hasAnonKey),
+    connected: Boolean(supabase),
+    isConfigured: hasUrl && hasServiceKey,
     missingEnv,
     tableRowCount: rawRows.length,
     storageType: dataSource,
   };
 
-  // 4. Fetch All Catalog Products for LEFT JOIN
+  // 3. Fetch All Catalog Products for LEFT JOIN
   const catalogProducts = await getAllProducts();
   const productStatsMap: Record<
     string,
@@ -181,13 +200,12 @@ export async function GET(req: NextRequest) {
     if (prod.name_en) productLookup.set(prod.name_en.toLowerCase(), primaryKey);
   }
 
-  // 5. Aggregate metrics & Session grouping
+  // 4. Aggregate metrics & Session grouping
   const uniqueVisitorsSet = new Set<string>();
   let totalPageViews = 0;
   let whatsappLeads = 0;
   let phoneCalls = 0;
   let locationClicks = 0;
-  let searches = 0;
   let zooms = 0;
 
   const searchTermsMap: Record<
@@ -211,13 +229,13 @@ export async function GET(req: NextRequest) {
     const evName = (ev.event || "").toLowerCase();
     const p = ev.params || {};
 
-    // Visitor tracking
+    // Visitor tracking: UUID visitor_id from localStorage or client_ip
     const visitorId = p.visitor_id || ev.client_ip;
     if (visitorId && visitorId !== "unknown" && visitorId !== "gizli") {
       uniqueVisitorsSet.add(visitorId);
     }
 
-    // Devices (BUG A FIX: UA bazlı doğru tespit, client ekran genişliği hatasını düzeltir)
+    // Devices: UA based detection
     const dev =
       ev.user_agent && ev.user_agent !== "unknown"
         ? detectDeviceType(ev.user_agent)
@@ -241,7 +259,6 @@ export async function GET(req: NextRequest) {
       matchedKey = productLookup.get(String(rawPId).toLowerCase());
     }
 
-    // If not in catalog, create or use ad-hoc entry
     const finalKey = matchedKey || rawPId;
     if (finalKey) {
       if (!productStatsMap[finalKey]) {
@@ -261,7 +278,6 @@ export async function GET(req: NextRequest) {
       if (evName === "product_zoom") productStatsMap[finalKey].zooms++;
       if (evName.includes("whatsapp")) productStatsMap[finalKey].whatsappClicks++;
 
-      // BUG C FIX: page_time_spent ve product_time_spent ikisini de destekle
       if (evName === "product_time_spent" || evName === "page_time_spent") {
         const sec = typeof p.duration_seconds === "number" ? p.duration_seconds : ev.duration_seconds;
         if (typeof sec === "number" && sec >= 2) {
@@ -284,10 +300,7 @@ export async function GET(req: NextRequest) {
     sessionMap.get(sId)!.events.push(ev);
   }
 
-  // 5.b Akıllı Arama & Yazım Birleştirme (Smart Keystroke Consolidation)
-  // Kullanıcı "Huğulu" yazarken ara harflerde ("hu", "huğ") 0 sonuç çıksa bile,
-  // aynı oturumda devam edip kelimeyi tamamladıysa aradaki eksik harfler Kaçırılan Talepler'e DÜŞMEZ.
-  // Sadece yazmayı bırakıp o şekilde terk ettiği gerçek sonuçlar Kaçırılan Talepler'de yer alır.
+  // 5. Smart Keystroke Consolidation for Searches
   let validSearchCount = 0;
   const supersededSearchEventIds = new Set<string>();
 
@@ -304,14 +317,12 @@ export async function GET(req: NextRequest) {
       const currNorm = rawTerm.toLocaleLowerCase("tr");
       const currTime = new Date(currEv.received_at).getTime();
 
-      // Bu oturumda daha sonra yazılmış ve bu kelimeyle başlayıp daha uzun olan bir arama var mı?
       const isSuperseded = sessionSearchEvents.slice(i + 1).some((laterEv) => {
         const laterRaw = String(laterEv.params?.search_term || "").trim();
         const laterNorm = laterRaw.toLocaleLowerCase("tr");
         const laterTime = new Date(laterEv.received_at).getTime();
 
         const timeDiffMs = !isNaN(laterTime) && !isNaN(currTime) ? laterTime - currTime : 0;
-        // Kısa yazımlarda (<= 4 karakter, örn "hu", "tüf") 3 dakikalık pencere; uzunlarda 60 saniye
         const maxWindowMs = currNorm.length <= 4 ? 3 * 60 * 1000 : 60 * 1000;
 
         return (
@@ -326,7 +337,6 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      // Tamamlanmış / Gerçek arama
       validSearchCount++;
       const termKey = currNorm;
       if (!searchTermsMap[termKey]) {
@@ -350,15 +360,13 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  searches = validSearchCount;
+  const searches = validSearchCount;
 
-  // 6. Format Product Stats (All Products Included, with Dwell Time & Anomaly Detection)
+  // 6. Format Product Stats
   const topProducts = Object.values(productStatsMap)
     .map((p) => {
       const conversionRate = p.views > 0 ? ((p.whatsappClicks / p.views) * 100).toFixed(1) : "0.0";
       const avgDurationSeconds = p.durationCount > 0 ? Math.round(p.totalDurationSeconds / p.durationCount) : 0;
-      // BUG B FIX: Anomali sadece zoom_count > 0 AND view_count === 0 olduğunda geçerlidir.
-      // 1 view ve 6 zoom normaldir ve ANOMALİ DEĞİLDİR.
       const hasAnomaly = p.views === 0 && p.zooms > 0;
 
       return {
@@ -374,7 +382,6 @@ export async function GET(req: NextRequest) {
       };
     })
     .sort((a, b) => {
-      // Primary: views desc, Secondary: whatsappClicks desc, Tertiary: name asc
       if (b.views !== a.views) return b.views - a.views;
       if (b.whatsappClicks !== a.whatsappClicks) return b.whatsappClicks - a.whatsappClicks;
       if (b.zooms !== a.zooms) return b.zooms - a.zooms;
@@ -395,9 +402,9 @@ export async function GET(req: NextRequest) {
 
   // 9. Build Visitor Journeys
   const sessions: VisitorJourneySession[] = [];
+  const sessionsWithLead = new Set<string>();
 
   for (const [sessionId, sessionData] of Array.from(sessionMap.entries())) {
-    // Sort events ascending by timestamp
     const sortedEvs = [...sessionData.events].sort(
       (a, b) => new Date(a.received_at).getTime() - new Date(b.received_at).getTime()
     );
@@ -416,7 +423,10 @@ export async function GET(req: NextRequest) {
       let description = "Sayfa Görüntülendi";
       let badge: JourneyStep["badge"] = { text: "Gezinme", color: "gray" };
 
-      if (evName === "view_item") {
+      if (evName === "session_start") {
+        description = `Siteye Giriş Yapıldı (${p.source_channel || "Doğrudan"})`;
+        badge = { text: "Giriş", color: "blue" };
+      } else if (evName === "view_item") {
         description = `Ürün İnceleme: ${p.item_name || p.slug || "Ürün Detayı"}`;
         badge = { text: "İnceleme", color: "blue" };
       } else if (evName === "product_time_spent" || evName === "page_time_spent") {
@@ -432,7 +442,6 @@ export async function GET(req: NextRequest) {
         badge = { text: "WhatsApp Satış", color: "green" };
       } else if (evName === "search") {
         if (ev.id && supersededSearchEventIds.has(ev.id)) {
-          // Ara yazım harflerini yolculuk zaman tünelinde gizle, sadece tamamlanmış aramayı göster
           continue;
         }
         const isZero = p.results_count === 0;
@@ -467,6 +476,10 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (hasWhatsAppLead) {
+      sessionsWithLead.add(sessionId);
+    }
+
     sessions.push({
       sessionId: sessionId.length > 12 ? sessionId.slice(0, 10) + "..." : sessionId,
       visitorId: sessionData.visitorId,
@@ -482,8 +495,146 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Sort sessions by latest first
   sessions.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
+  // 10. Visitor Loyalty (Yeni vs Geri Dönen)
+  const visitorSessionCounts = new Map<string, number>();
+  for (const [_, sData] of Array.from(sessionMap.entries())) {
+    const vId = sData.visitorId;
+    if (vId && vId !== "anonim" && vId !== "unknown" && vId !== "gizli") {
+      visitorSessionCounts.set(vId, (visitorSessionCounts.get(vId) || 0) + 1);
+    }
+  }
+
+  let newVisitorsCount = 0;
+  let returningVisitorsCount = 0;
+  for (const count of Array.from(visitorSessionCounts.values())) {
+    if (count > 1) {
+      returningVisitorsCount++;
+    } else {
+      newVisitorsCount++;
+    }
+  }
+  const totalTrackedLoyalty = newVisitorsCount + returningVisitorsCount;
+  const visitorLoyalty = {
+    newCount: newVisitorsCount,
+    newPercent: totalTrackedLoyalty > 0 ? Math.round((newVisitorsCount / totalTrackedLoyalty) * 100) : 100,
+    returningCount: returningVisitorsCount,
+    returningPercent: totalTrackedLoyalty > 0 ? Math.round((returningVisitorsCount / totalTrackedLoyalty) * 100) : 0,
+    totalTracked: totalTrackedLoyalty,
+  };
+
+  // 11. Traffic Sources (Sosyal Medya, Arama Motorları, Doğrudan)
+  const channelStats = new Map<string, { visits: number; whatsappLeads: number }>();
+  const trackedSessionIds = new Set<string>();
+
+  for (const ev of rawRows) {
+    const evName = (ev.event || "").toLowerCase();
+    const p = ev.params || {};
+    const sId = p.session_id || p.visitor_id || ev.client_ip;
+
+    if ((evName === "session_start" || p.source_channel) && sId && !trackedSessionIds.has(sId)) {
+      trackedSessionIds.add(sId);
+      const ch = p.source_channel || "Doğrudan (Direkt)";
+      const curr = channelStats.get(ch) || { visits: 0, whatsappLeads: 0 };
+      curr.visits++;
+      if (sessionsWithLead.has(sId)) {
+        curr.whatsappLeads++;
+      }
+      channelStats.set(ch, curr);
+    }
+  }
+
+  // Backfill any sessions without explicit session_start as "Doğrudan (Direkt)"
+  const unclassifiedSessions = Math.max(0, sessionMap.size - trackedSessionIds.size);
+  if (unclassifiedSessions > 0 || channelStats.size === 0) {
+    let unclassifiedLeads = 0;
+    for (const [sId] of Array.from(sessionMap.entries())) {
+      if (!trackedSessionIds.has(sId) && sessionsWithLead.has(sId)) {
+        unclassifiedLeads++;
+      }
+    }
+    const currDirect = channelStats.get("Doğrudan (Direkt)") || { visits: 0, whatsappLeads: 0 };
+    currDirect.visits += unclassifiedSessions;
+    currDirect.whatsappLeads += unclassifiedLeads;
+    channelStats.set("Doğrudan (Direkt)", currDirect);
+  }
+
+  const totalChannelVisits = Array.from(channelStats.values()).reduce((a, b) => a + b.visits, 0) || 1;
+  const trafficSources = Array.from(channelStats.entries())
+    .map(([channel, stats]) => ({
+      channel,
+      visits: stats.visits,
+      percent: Math.round((stats.visits / totalChannelVisits) * 100),
+      whatsappLeads: stats.whatsappLeads,
+      conversionRate: stats.visits > 0 ? ((stats.whatsappLeads / stats.visits) * 100).toFixed(1) + "%" : "0.0%",
+    }))
+    .sort((a, b) => b.visits - a.visits);
+
+  // 12. Conversion Funnel (Giriş -> İnceleme -> Derin İnceleme -> WhatsApp)
+  const actualTotalSessions = sessionMap.size;
+  let viewedCount = 0;
+  let engagedCount = 0;
+  let whatsappLeadCount = 0;
+
+  for (const sData of Array.from(sessionMap.values())) {
+    let hasView = false;
+    let hasEngaged = false;
+    let hasLead = false;
+
+    for (const ev of sData.events) {
+      const evName = (ev.event || "").toLowerCase();
+      const p = ev.params || {};
+      if (evName === "view_item") hasView = true;
+      if (
+        evName === "product_zoom" ||
+        (typeof p.duration_seconds === "number" && p.duration_seconds >= 30) ||
+        (typeof ev.duration_seconds === "number" && ev.duration_seconds >= 30)
+      ) {
+        hasEngaged = true;
+      }
+      if (evName.includes("whatsapp")) hasLead = true;
+    }
+
+    const firstTime = sData.events[0]?.received_at ? new Date(sData.events[0].received_at).getTime() : 0;
+    const lastTime = sData.events[sData.events.length - 1]?.received_at ? new Date(sData.events[sData.events.length - 1].received_at).getTime() : firstTime;
+    const sessionDuration = Math.max(0, Math.round((lastTime - firstTime) / 1000));
+
+    if (hasView) viewedCount++;
+    if (hasEngaged || (hasView && sessionDuration >= 30)) engagedCount++;
+    if (hasLead) whatsappLeadCount++;
+  }
+
+  const conversionFunnel = [
+    {
+      step: "1. Site Ziyareti",
+      description: "Siteye giriş yapan tüm ziyaret oturumları",
+      count: actualTotalSessions,
+      percent: 100,
+      dropRate: actualTotalSessions > 0 ? `${Math.max(0, Math.round(((actualTotalSessions - viewedCount) / actualTotalSessions) * 100))}% terk` : "0%",
+    },
+    {
+      step: "2. Ürün İnceleme",
+      description: "Katalogda en az bir ürün detayına girenler",
+      count: viewedCount,
+      percent: actualTotalSessions > 0 ? Math.round((viewedCount / actualTotalSessions) * 100) : 0,
+      dropRate: viewedCount > 0 ? `${Math.max(0, Math.round(((viewedCount - engagedCount) / viewedCount) * 100))}% terk` : "0%",
+    },
+    {
+      step: "3. Derin İnceleme (HD Zoom / 30sn+)",
+      description: "Ürün görselini büyüten veya 30 sn+ inceleyenler",
+      count: engagedCount,
+      percent: actualTotalSessions > 0 ? Math.round((engagedCount / actualTotalSessions) * 100) : 0,
+      dropRate: engagedCount > 0 ? `${Math.max(0, Math.round(((engagedCount - whatsappLeadCount) / engagedCount) * 100))}% terk` : "0%",
+    },
+    {
+      step: "4. WhatsApp Satış Görüşmesi",
+      description: "WhatsApp butonuna basıp bayiye ulaşanlar",
+      count: whatsappLeadCount,
+      percent: actualTotalSessions > 0 ? Math.round((whatsappLeadCount / actualTotalSessions) * 100) : 0,
+      dropRate: "0%",
+    },
+  ];
 
   return NextResponse.json({
     success: true,
@@ -492,7 +643,8 @@ export async function GET(req: NextRequest) {
     range,
     summary: {
       totalEvents: rawRows.length,
-      uniqueVisitors: uniqueVisitorsSet.size || Math.max(1, Math.round(rawRows.length / 3)),
+      uniqueVisitors: uniqueVisitorsSet.size,
+      activeVisitorsCount,
       totalPageViews,
       whatsappLeads,
       phoneCalls,
@@ -501,6 +653,9 @@ export async function GET(req: NextRequest) {
       zooms,
       totalCatalogProducts: catalogProducts.length,
     },
+    visitorLoyalty,
+    trafficSources,
+    conversionFunnel,
     topProducts,
     sessions: sessions.slice(0, 50),
     searchTerms: searchTerms.slice(0, 20),

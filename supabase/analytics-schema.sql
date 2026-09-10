@@ -105,3 +105,19 @@ begin
   return deleted_count;
 end;
 $$;
+
+-- 7. ACTIVE VISITORS (Canlı Ziyaretçi & Presence Heartbeat Tablosu)
+create table if not exists public.active_visitors (
+  visitor_id text primary key,
+  path text not null default '/',
+  device_type text default 'desktop',
+  product_name text,
+  last_seen timestamptz not null default now()
+);
+
+create index if not exists idx_active_visitors_last_seen on public.active_visitors (last_seen);
+
+-- Row Level Security (RLS) Etkinleştir
+alter table public.active_visitors enable row level security;
+-- Anonim roller için hiçbir kural eklenmemiştir (varsayılan RED). Yalnızca service_role erişebilir.
+

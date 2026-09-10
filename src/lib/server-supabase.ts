@@ -3,16 +3,14 @@ import crypto from "crypto";
 
 let cachedClient: SupabaseClient | null = null;
 
-export function getSupabaseAdminClient(): SupabaseClient | null {
+export function getSupabaseAdminClient(): SupabaseClient {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) {
-    return null;
+    throw new Error(
+      "[Supabase Admin] Missing required environment variables: SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY must be defined."
+    );
   }
 
   if (!cachedClient) {
