@@ -516,8 +516,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const savedKeys = await chrome.storage.local.get(["groqApiKey", "openrouterApiKey"]);
-    const currentGroqKey = savedKeys.groqApiKey || DEFAULT_GROQ_KEY;
-    const currentOpenRouterKey = savedKeys.openrouterApiKey || DEFAULT_OPENROUTER_KEY;
+    const currentGroqKey = (savedKeys.groqApiKey || DEFAULT_GROQ_KEY || "").trim();
+    const currentOpenRouterKey = (savedKeys.openrouterApiKey || DEFAULT_OPENROUTER_KEY || "").trim();
+
+    if (engine === "groq" && !currentGroqKey) {
+      showAiStatus("❌ <strong>Groq API Anahtarı Bulunamadı:</strong> Lütfen eklentinin <strong>⚙️ Ayarlar</strong> sekmesine gidip Groq API anahtarınızı (gsk_...) girin ve 'Ayarları Kaydet' butonuna basın.", "error");
+      return;
+    }
+
+    if (engine === "openrouter" && !currentOpenRouterKey) {
+      showAiStatus("❌ <strong>OpenRouter API Anahtarı Bulunamadı:</strong> Lütfen eklentinin <strong>⚙️ Ayarlar</strong> sekmesine gidip OpenRouter API anahtarınızı (sk-or-...) girin ve 'Ayarları Kaydet' butonuna basın.", "error");
+      return;
+    }
 
     showAiStatus(`🤖 Yapay zekâ (${engine === "groq" ? "Groq GPT OSS 120B" : "OpenRouter Nemotron Lightning"}) siteyi analiz ediyor...`, "loading");
 
