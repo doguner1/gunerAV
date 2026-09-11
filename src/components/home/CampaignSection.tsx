@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { getDealsProducts, getAllCategories } from "@/lib/products";
 import { Product } from "@/types/product";
 import ProductCard from "@/components/product/ProductCard";
 import { Sparkles, ChevronDown } from "lucide-react";
+
+const DEALS_COUNT_KEY = "gunerav_home_deals_count";
 
 export default function CampaignSection({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Products");
@@ -17,6 +19,40 @@ export default function CampaignSection({ products = [] }: { products?: Product[
 
   // 5 satır x 4 sütun = 20 ürün (Kullanıcı tıkladıkça 5 satır daha eklenir)
   const [visibleCount, setVisibleCount] = useState(20);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const navEntries = performance.getEntriesByType("navigation");
+    const nav = navEntries.length > 0 ? (navEntries[0] as PerformanceNavigationTiming) : undefined;
+    const isReload = nav?.type === "reload";
+
+    if (isReload) {
+      sessionStorage.removeItem(DEALS_COUNT_KEY);
+      return;
+    }
+
+    try {
+      const saved = sessionStorage.getItem(DEALS_COUNT_KEY);
+      const count = saved ? parseInt(saved, 10) : 20;
+      if (!isNaN(count) && count > 20) {
+        setVisibleCount(count);
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleShowMore = () => {
+    setVisibleCount((prev) => {
+      const next = prev + 20;
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem(DEALS_COUNT_KEY, next.toString());
+        } catch (e) {}
+      }
+      return next;
+    });
+  };
+
   const visibleDeals = deals.slice(0, visibleCount);
 
   if (deals.length === 0) return null;
@@ -64,7 +100,7 @@ export default function CampaignSection({ products = [] }: { products?: Product[
             </span>
             <button
               type="button"
-              onClick={() => setVisibleCount((prev) => prev + 20)}
+              onClick={handleShowMore}
               className="group inline-flex items-center gap-2.5 rounded-2xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white shadow-lg transition-all hover:scale-105 hover:border-[#d4af37] hover:bg-neutral-100 dark:hover:bg-neutral-850 active:scale-95 cursor-pointer"
             >
               <span>{isTr ? "Daha Fazla Göster (+5 Satır)" : "Show More (+5 Rows)"}</span>

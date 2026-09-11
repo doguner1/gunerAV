@@ -45,6 +45,12 @@ export default function ProductCard({ product, categoryName, priority = false }:
         const state = raw ? JSON.parse(raw) : {};
         state.scrollY = window.scrollY;
         sessionStorage.setItem("gunerav_catalog_state", JSON.stringify(state));
+
+        // Also save home scroll position if navigating from home page
+        const path = window.location.pathname.replace(/\/+$/, "");
+        if (path === "" || path === "/tr" || path === "/en") {
+          sessionStorage.setItem("gunerav_home_scroll", window.scrollY.toString());
+        }
       } catch (e) {}
     }
   };
