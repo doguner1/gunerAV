@@ -42,7 +42,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
     .slice(0, 3);
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-20 pb-10 lg:pt-24 lg:pb-12">
+    <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-20 pb-8 sm:pb-12 lg:pt-24 lg:pb-12">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         {/* Responsive Atmospheric Tactical Background (Single download matching device viewport, 1:1 Retina/OLED sharpness) */}
@@ -70,7 +70,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       {/* Fine Tactical Grid Overlay */}
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
 
-      <div className="relative z-10 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
+      <div className="relative z-20 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
         <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
           <div className="w-full lg:w-3/5 xl:w-1/2 space-y-6 sm:space-y-8 lg:pt-14 xl:pt-18 2xl:pt-20">
@@ -198,10 +198,10 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
         </div>
       </div>
 
-      {/* Progressive Dark Fade & Soft Atmospheric Blur (Fades from deep black at bottom up into crystal clear image) */}
-      <div className="absolute bottom-0 inset-x-0 h-40 sm:h-52 bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-10" />
+      {/* Progressive Dark Fade & Soft Atmospheric Blur (Only for desktop screens behind content) */}
+      <div className="hidden sm:block absolute bottom-0 inset-x-0 h-40 sm:h-52 bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-0" />
       <div
-        className="absolute bottom-0 inset-x-0 h-28 sm:h-36 pointer-events-none z-10"
+        className="hidden sm:block absolute bottom-0 inset-x-0 h-28 sm:h-36 pointer-events-none z-0"
         style={{
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",

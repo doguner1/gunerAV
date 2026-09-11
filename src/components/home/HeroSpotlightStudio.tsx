@@ -332,7 +332,7 @@ export default function HeroSpotlightStudio({
       {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma) */}
       <div
         ref={containerRef}
-        className="w-full sm:max-w-md lg:max-w-none lg:shrink-0 lg:self-start lg:ml-auto relative mt-6 lg:mt-0 transition-all duration-150"
+        className="w-full sm:max-w-md lg:max-w-none lg:shrink-0 lg:self-start lg:ml-auto relative mt-4 sm:mt-6 lg:mt-0 transition-all duration-150 z-20"
         style={{
           width: isDesktop ? `${Math.round(activeConfig.width * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
           height: isDesktop ? `${Math.round(530 * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
@@ -386,7 +386,7 @@ export default function HeroSpotlightStudio({
               onClick={() => trackEvent("click_hero_spotlight", { item_name: spotlightTitle, slug: featuredProductSlug, trigger: "image" })}
               className="group block relative my-3 rounded-2xl bg-white border border-neutral-200/60 overflow-hidden shadow-md p-3 transition-all duration-75"
               style={{
-                height: `${activeConfig.imageHeight}px`,
+                height: isDesktop ? `${activeConfig.imageHeight}px` : "240px",
               }}
             >
               <Image
