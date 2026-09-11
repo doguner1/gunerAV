@@ -22,8 +22,7 @@ export default function CookieBanner() {
     setShow(false);
   };
 
-  const handleDecline = () => {
-    localStorage.setItem("gunerav_cookie_consent", "declined");
+  const handleDismiss = () => {
     setShow(false);
   };
 
@@ -44,38 +43,31 @@ export default function CookieBanner() {
           </div>
           <button
             type="button"
-            onClick={handleDecline}
-            className="text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+            onClick={handleDismiss}
+            className="p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
             aria-label={t("close")}
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
         <p className="mt-2.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400 font-medium">
           {t("text")}{" "}
           <Link
-            href="/privacy"
+            href="/privacy?ref=cookie"
             className="text-neutral-950 dark:text-white underline font-semibold hover:text-neutral-700 dark:hover:text-neutral-300"
           >
             {t("policyLink")}
           </Link>
         </p>
 
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4">
           <button
             type="button"
             onClick={handleAccept}
-            className="rounded-lg bg-neutral-950 dark:bg-white px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white dark:text-black transition-colors hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-sm"
+            className="w-full rounded-xl bg-neutral-950 dark:bg-white py-2.5 px-4 text-xs font-black uppercase tracking-wider text-white dark:text-black transition-all hover:bg-neutral-800 dark:hover:bg-neutral-200 active:scale-[0.98] shadow-md cursor-pointer flex items-center justify-center gap-2"
           >
-            {t("accept")}
-          </button>
-          <button
-            type="button"
-            onClick={handleDecline}
-            className="rounded-lg border border-neutral-300 dark:border-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white"
-          >
-            {t("decline")}
+            <span>{t("accept")}</span>
           </button>
         </div>
       </div>

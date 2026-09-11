@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Metadata } from "next";
 import { STORE_INFO } from "@/lib/store";
 import { ShieldCheck, Lock, Cookie, Scale } from "lucide-react";
+import CookiePreferences from "@/components/common/CookiePreferences";
 
 export function generateStaticParams() {
   return [{ locale: "tr" }, { locale: "en" }];
@@ -111,6 +113,11 @@ export default async function PrivacyPage({ params }: {
             </div>
             <p className="text-xs sm:text-sm">{t("sec3P1")}</p>
             <p className="mt-3 text-xs sm:text-sm">{t("sec3P2")}</p>
+
+            {/* Çerez Tercihleri ve Yönetim Butonları */}
+            <Suspense fallback={null}>
+              <CookiePreferences locale={locale} />
+            </Suspense>
           </div>
 
           {/* Section 4 */}

@@ -495,7 +495,16 @@ export async function GET(req: NextRequest) {
       } else if (evName === "view_item") {
         description = `Ürün İnceleme: ${p.item_name || p.slug || "Ürün Detayı"}`;
         badge = { text: "İnceleme", color: "blue" };
-      } else if (evName === "product_time_spent" || evName === "page_time_spent") {
+      } else if (evName === "page_view") {
+        const pName = p.page_name || p.path || "Sayfa";
+        description = `Sayfa Ziyareti: ${pName} (${ev.path || p.path || "/"})`;
+        badge = { text: "Sayfa", color: "blue" };
+      } else if (evName === "page_time_spent") {
+        const sec = typeof p.duration_seconds === "number" ? p.duration_seconds : 0;
+        const pName = p.page_name || "Sayfada";
+        description = `${pName} sayfasında ${sec} sn vakit geçirdi`;
+        badge = { text: `${sec} sn`, color: "purple" };
+      } else if (evName === "product_time_spent") {
         const sec = typeof p.duration_seconds === "number" ? p.duration_seconds : 0;
         description = `${p.item_name || "Ürün sayfasında"} ${sec} sn vakit geçirdi`;
         badge = { text: `${sec} sn`, color: "purple" };
