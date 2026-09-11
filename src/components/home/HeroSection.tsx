@@ -42,7 +42,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
     .slice(0, 3);
 
   return (
-    <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-20 pb-8 sm:pb-12 lg:pt-24 lg:pb-12">
+    <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-16 pb-6 sm:pt-20 sm:pb-8 lg:pt-20 lg:pb-10">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         {/* Responsive Atmospheric Tactical Background (Single download matching device viewport, 1:1 Retina/OLED sharpness) */}
@@ -73,15 +73,15 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       <div className="relative z-20 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
         <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-6 sm:space-y-8 lg:pt-14 xl:pt-18 2xl:pt-20">
+          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-1 xl:pt-4 2xl:pt-8">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
             </div>
 
             {/* Main Headline - High contrast, powerful, balanced */}
-            <div className="space-y-4">
-              <h1 className="font-heading text-4xl font-black tracking-tight uppercase sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.08] drop-shadow-md">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="font-heading text-3xl sm:text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-black tracking-tight uppercase leading-[1.1] drop-shadow-md">
                 <span className="block text-white tracking-tight">
                   {t("titlePrefix")}
                 </span>
@@ -89,17 +89,17 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                   {t("titleHighlight")}
                 </span>
               </h1>
-              <p className="max-w-xl text-base text-neutral-200 sm:text-lg leading-relaxed font-normal drop-shadow-sm">
+              <p className="max-w-xl text-sm sm:text-base xl:text-lg text-neutral-200 leading-relaxed font-normal drop-shadow-sm">
                 {t("description")}
               </p>
             </div>
 
             {/* Streamlined Action CTA */}
-            <div className="flex flex-wrap items-center gap-3.5 pt-1">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-3.5 pt-0.5">
               <Link
                 href="/products"
                 onClick={() => clearReturnState()}
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-neutral-100 text-black px-7 sm:px-8 py-4 text-sm font-extrabold uppercase tracking-wider shadow-[0_12px_32px_rgba(255,255,255,0.25)] transition-all hover:scale-[1.02] active:scale-95 group"
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-neutral-100 text-black px-6 sm:px-8 py-3.5 sm:py-4 text-xs sm:text-sm font-extrabold uppercase tracking-wider shadow-[0_12px_32px_rgba(255,255,255,0.25)] transition-all hover:scale-[1.02] active:scale-95 group"
               >
                 <span>{t("catalogCta")}</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1.5" />
@@ -111,23 +111,31 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackMapClick("hero_desktop_maps")}
-                className="hidden lg:inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-black/40 hover:bg-black/60 px-6 py-4 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:border-[#d4af37] hover:scale-[1.02] active:scale-95 shadow-lg"
+                className="hidden lg:inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-black/40 hover:bg-black/60 px-5 sm:px-6 py-3.5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:border-[#d4af37] hover:scale-[1.02] active:scale-95 shadow-lg"
               >
                 <MapPin className="h-4 w-4 text-[#d4af37]" />
                 <span>{t("storeCta")}</span>
               </a>
             </div>
 
-            {/* Clean Authority Trust Strip */}
-            <div className="flex flex-wrap items-center gap-y-2 gap-x-4 sm:gap-6 pt-2 text-xs text-neutral-300 font-medium">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-[#d4af37] shrink-0" />
-                <span className="font-semibold text-neutral-100">{t("dealerExclusive")}</span>
+            {/* Clean Authority Trust Strip - Prestijli, Kristal Netliğinde ve Yüksek Kontrastlı Rozet */}
+            <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-white/20 bg-neutral-950/85 sm:bg-black/70 px-4 py-2.5 backdrop-blur-xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] transition-all">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#d4af37]/25 border border-[#d4af37]/50 text-[#d4af37] shrink-0 shadow-inner">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#d4af37]" />
+                </div>
+                <span className="font-extrabold text-white text-xs sm:text-[13px] tracking-wide whitespace-nowrap">
+                  {t("dealerExclusive")}
+                </span>
               </div>
-              <span className="text-white/20 hidden sm:inline">&bull;</span>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#d4af37] shrink-0" />
-                <span>{t("priceAndQuality")}</span>
+              <span className="text-amber-400/40 hidden sm:inline">&bull;</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/25 border border-amber-500/50 text-amber-300 shrink-0 shadow-inner">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                </div>
+                <span className="font-bold text-amber-200 text-xs sm:text-[13px] tracking-wide whitespace-nowrap">
+                  {t("priceAndQuality")}
+                </span>
               </div>
             </div>
 
@@ -199,19 +207,19 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       </div>
 
       {/* Progressive Dark Fade & Soft Atmospheric Blur (Only for desktop screens behind content) */}
-      <div className="hidden sm:block absolute bottom-0 inset-x-0 h-40 sm:h-52 bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-0" />
+      <div className="hidden sm:block absolute bottom-0 inset-x-0 h-24 sm:h-28 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0" />
       <div
-        className="hidden sm:block absolute bottom-0 inset-x-0 h-28 sm:h-36 pointer-events-none z-0"
+        className="hidden sm:block absolute bottom-0 inset-x-0 h-16 sm:h-20 pointer-events-none z-0"
         style={{
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
           maskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0) 100%)",
           WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0) 100%)",
         }}
       />
 
       {/* Centered Tactical Discovery Scroll Indicator */}
-      <div className="hidden sm:flex absolute bottom-3 sm:bottom-5 inset-x-0 justify-center items-center z-20 pointer-events-none">
+      <div className="hidden sm:flex absolute bottom-2 sm:bottom-3.5 inset-x-0 justify-center items-center z-20 pointer-events-none">
         <a
           href="#categories"
           onClick={() => trackEvent("click_start_hunting_arrow")}
