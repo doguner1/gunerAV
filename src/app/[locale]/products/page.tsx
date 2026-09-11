@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: {
   };
 }
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function ProductsPage({ params }: {
   params: Promise<{ locale: string }>;

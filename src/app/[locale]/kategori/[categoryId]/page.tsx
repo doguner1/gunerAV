@@ -9,7 +9,7 @@ import { BreadcrumbListJsonLd } from "@/components/seo/JsonLd";
 import { notFound } from "next/navigation";
 
 export const dynamicParams = true;
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const categories = getAllCategories();
