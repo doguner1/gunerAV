@@ -16,6 +16,7 @@ export default function MapAndHoursSection() {
   const t = useTranslations("StoreInfo");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
+  const isTr = locale === "tr";
 
   return (
     <section id="magaza-konum" className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 py-24 transition-colors">
@@ -145,16 +146,27 @@ export default function MapAndHoursSection() {
 
           {/* Interactive Map Embed */}
           <div className="relative min-h-[420px] overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-lg lg:col-span-7">
+            {/* Live Location Marker Indicator */}
+            <div className="absolute top-4 left-4 z-10 rounded-xl border border-red-500/30 bg-white/95 dark:bg-black/90 px-3 py-1.5 text-xs text-neutral-900 dark:text-white backdrop-blur-md shadow-md flex items-center gap-2 pointer-events-none">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+              </span>
+              <span className="font-bold text-[11px] tracking-wide">
+                {isTr ? "Güner Av Bayii Konumu" : "Guner AV Store Location"}
+              </span>
+            </div>
+
             <iframe
               title={STORE_INFO.name}
-              src={STORE_INFO.mapsEmbedUrl || `https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=${locale}&z=17&output=embed`}
+              src={`https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=${locale}&z=17&output=embed`}
               width="100%"
               height="100%"
               style={{ border: 0, minHeight: "420px" }}
               allowFullScreen={false}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="grayscale-[25%] contrast-105 hover:grayscale-0 transition-all duration-500"
+              className="w-full h-full transition-opacity duration-300 opacity-95 hover:opacity-100"
             />
             
             {/* Overlay tag */}

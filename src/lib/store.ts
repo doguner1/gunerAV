@@ -34,6 +34,6 @@ export const STORE_INFO = {
   mapsUrl:
     "https://www.google.com/maps/dir/?api=1&destination=38.338339299357045,38.290050394441316",
   mapsEmbedUrl:
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3131.956697858482!2d38.2874754!3d38.3383393!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4076378e90637b4f%3A0x87qr82!2s%C5%9Eeyh%20Bayram%2C%206.%20Sk.%2C%2044090%20Ye%C5%9Filyurt%2FMalatya!5e0!3m2!1str!2str!4v1700000000000!5m2!1str!2str",
+    "https://maps.google.com/maps?q=38.338339299357045,38.290050394441316&hl=tr&z=17&output=embed",
   siteUrl: (process.env.NEXT_PUBLIC_SITE_URL || "https://www.gunerav.site").replace(/\/+$/, ""),
 };

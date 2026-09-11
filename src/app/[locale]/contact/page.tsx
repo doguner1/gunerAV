@@ -207,17 +207,28 @@ export default async function ContactPage({ params }: {
             </div>
 
             {/* Map Embed */}
-            <div className="h-72 w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-md">
+            <div className="relative h-72 w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-md">
+              {/* Live Location Marker Indicator */}
+              <div className="absolute top-3 left-3 z-10 rounded-xl border border-red-500/30 bg-white/95 dark:bg-black/90 px-2.5 py-1 text-[11px] text-neutral-900 dark:text-white backdrop-blur-md shadow-md flex items-center gap-1.5 pointer-events-none">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                </span>
+                <span className="font-bold">
+                  {isTr ? "Güner Av Bayii Konumu" : "Guner AV Store Location"}
+                </span>
+              </div>
+
               <iframe
                 title={STORE_INFO.name}
-                src={STORE_INFO.mapsEmbedUrl || `https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=tr&z=17&output=embed`}
+                src={`https://maps.google.com/maps?q=${STORE_INFO.coordinates.lat},${STORE_INFO.coordinates.lng}&hl=${locale}&z=17&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
                 allowFullScreen={false}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                className="grayscale contrast-125 opacity-90 hover:grayscale-0 transition-all duration-500"
+                className="w-full h-full transition-opacity duration-300 opacity-95 hover:opacity-100"
               />
             </div>
           </div>
