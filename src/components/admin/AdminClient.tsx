@@ -317,12 +317,14 @@ export default function AdminClient() {
       totalDurationSeconds: number;
       hasWhatsAppLead: boolean;
       stepCount: number;
+      visitCount?: number;
       steps: Array<{
         time: string;
         timestamp: string;
         eventType: string;
         description: string;
         badge: { text: string; color: "green" | "blue" | "purple" | "amber" | "gray" | "red" };
+        isSeparator?: boolean;
       }>;
     }>;
     searchTerms: Array<{
@@ -481,6 +483,14 @@ export default function AdminClient() {
       const data = await res.json();
       if (data.success) {
         setDashboardData(data);
+        if (Array.isArray(data.sessions) && data.sessions.length > 0) {
+          setExpandedSessions((prev) => {
+            if (prev.size === 0) {
+              return new Set([data.sessions[0].sessionId]);
+            }
+            return prev;
+          });
+        }
         if (Array.isArray(data.recentEvents)) {
           setEvents(data.recentEvents);
         }
@@ -2030,11 +2040,11 @@ export default function AdminClient() {
               </div>
 
               <div className="space-y-3">
-                {(dashboardData?.sessions || []).map((session, idx) => {
-                  const isExpanded = expandedSessions.has(session.sessionId) || idx === 0;
+                {(dashboardData?.sessions || []).map((session) => {
+                  const isExpanded = expandedSessions.has(session.sessionId);
                   return (
                     <div
-                      key={session.sessionId || idx}
+                      key={session.sessionId}
                       className="rounded-xl border border-neutral-800 bg-black/60 overflow-hidden transition-colors hover:border-neutral-700"
                     >
                       {/* Session Header Card */}
@@ -2045,9 +2055,15 @@ export default function AdminClient() {
                       >
                         <div className="flex items-center gap-2.5">
                           <span className="font-mono text-xs font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded flex items-center gap-2">
-                            <span className="text-[#d4af37]" title="Kalıcı Cihaz Kimliği">Cihaz: {session.visitorId?.slice(0, 10)}</span>
-                            <span className="text-neutral-500">|</span>
-                            <span className="text-neutral-400" title="Oturum (Session)">{session.sessionId?.slice(0, 10)}</span>
+                            <span className="text-[#d4af37]" title="Kalıcı Cihaz / Çerez Kimliği">Cihaz: {session.visitorId?.slice(0, 10)}</span>
+                            {session.visitCount && session.visitCount > 1 ? (
+                              <>
+                                <span className="text-neutral-600">·</span>
+                                <span className="text-amber-400 font-sans text-[10px] font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                  {session.visitCount} Ziyaret
+                                </span>
+                              </>
+                            ) : null}
                           </span>
                           <span className="text-xs text-neutral-400 flex items-center gap-1">
                             {session.deviceType === "mobile" ? (
@@ -2059,8 +2075,8 @@ export default function AdminClient() {
                             )}
                             <span className="capitalize">{session.deviceType}</span>
                           </span>
-                          <span className="text-[11px] text-neutral-500 font-mono">
-                            {new Date(session.startTime).toLocaleString("tr-TR")}
+                          <span className="text-[11px] text-neutral-500 font-mono" title="Son Etkileşim Zamanı">
+                            {new Date(session.endTime || session.startTime).toLocaleString("tr-TR")}
                           </span>
                         </div>
 
@@ -2088,6 +2104,25 @@ export default function AdminClient() {
                         <div className="px-4 pb-4 pt-1 border-t border-neutral-800/60 bg-neutral-950/40">
                           <div className="relative pl-6 space-y-3 pt-3 before:absolute before:left-2.5 before:top-4 before:bottom-2 before:w-0.5 before:bg-neutral-800">
                             {session.steps.map((step, sIdx) => {
+                              if (step.isSeparator) {
+                                return (
+                                  <div
+                                    key={sIdx}
+                                    className="relative -ml-6 my-3.5 py-2.5 border-y border-amber-500/25 bg-amber-500/10 px-4 rounded-xl flex items-center justify-between gap-3 shadow-inner"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="h-4 w-4 text-amber-400 shrink-0" />
+                                      <span className="text-xs font-bold text-amber-200">
+                                        {step.description}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 whitespace-nowrap">
+                                      30+ Dk Ayraç
+                                    </span>
+                                  </div>
+                                );
+                              }
+
                               const badgeBg =
                                 step.badge.color === "green"
                                   ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"

@@ -13,6 +13,7 @@ export interface JourneyStep {
   eventType: string;
   description: string;
   badge: { text: string; color: "green" | "blue" | "purple" | "amber" | "gray" | "red" };
+  isSeparator?: boolean;
 }
 
 export interface VisitorJourneySession {
@@ -26,6 +27,7 @@ export interface VisitorJourneySession {
   totalDurationSeconds: number;
   hasWhatsAppLead: boolean;
   stepCount: number;
+  visitCount?: number;
   steps: JourneyStep[];
 }
 
@@ -294,21 +296,21 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Session Grouping
-    let sId = p.session_id || p.visitor_id || ev.client_ip || "sess_unknown";
-    if (sId === "sess_anon" || sId === "vis_anon" || sId === "sess_unknown") {
-      sId = `${sId}_${ev.client_ip}_${ev.user_agent?.substring(0, 15) || "noua"}`;
+    // Device / Visitor Grouping (Same cookie/visitor ID gathered in one block)
+    let devKey = p.visitor_id;
+    if (!devKey || devKey === "vis_anon" || devKey === "anonim" || devKey === "unknown") {
+      devKey = `anon_${ev.client_ip || "noip"}_${(ev.user_agent || "noua").replace(/\s+/g, "").substring(0, 15)}`;
     }
     
-    if (!sessionMap.has(sId)) {
-      sessionMap.set(sId, {
+    if (!sessionMap.has(devKey)) {
+      sessionMap.set(devKey, {
         events: [],
         deviceType: dev,
         clientIp: ev.client_ip || "gizli",
         visitorId: p.visitor_id || "anonim",
       });
     }
-    sessionMap.get(sId)!.events.push(ev);
+    sessionMap.get(devKey)!.events.push(ev);
   }
 
   // 5. Smart Keystroke Consolidation for Searches
@@ -412,24 +414,77 @@ export async function GET(req: NextRequest) {
   };
 
   // 9. Build Visitor Journeys
+  // 9. Build Visitor Journeys (Grouped by Device / Visitor with Session Separators)
   const sessions: VisitorJourneySession[] = [];
   const sessionsWithLead = new Set<string>();
 
-  for (const [sessionId, sessionData] of Array.from(sessionMap.entries())) {
-    const sortedEvs = [...sessionData.events].sort(
+  for (const [devKey, devData] of Array.from(sessionMap.entries())) {
+    const sortedEvs = [...devData.events].sort(
       (a, b) => new Date(a.received_at).getTime() - new Date(b.received_at).getTime()
     );
 
+    if (sortedEvs.length === 0) continue;
+
     const firstTime = sortedEvs[0]?.received_at || new Date().toISOString();
     const lastTime = sortedEvs[sortedEvs.length - 1]?.received_at || firstTime;
-    const diffSeconds = Math.max(0, Math.round((new Date(lastTime).getTime() - new Date(firstTime).getTime()) / 1000));
 
     let hasWhatsAppLead = false;
     const steps: JourneyStep[] = [];
+    let visitCount = 1;
+    let totalActiveSeconds = 0;
 
-    for (const ev of sortedEvs) {
+    for (let i = 0; i < sortedEvs.length; i++) {
+      const ev = sortedEvs[i];
+
+      // 30 DAKİKA KURALI & AYRAÇ:
+      // Eğer bir önceki hareket ile bu hareket arasında 30 dakika (1800000 ms) veya daha fazla zaman varsa:
+      // Bu YENİ BİR ZİYARETTİR! Araya belirgin bir ayraç (separator) ekle.
+      if (i > 0) {
+        const prevEv = sortedEvs[i - 1];
+        const prevTime = new Date(prevEv.received_at).getTime();
+        const currTime = new Date(ev.received_at).getTime();
+        const gapMs = !isNaN(currTime) && !isNaN(prevTime) ? currTime - prevTime : 0;
+
+        if (gapMs >= 30 * 60 * 1000) {
+          visitCount++;
+          const gapMins = Math.round(gapMs / (60 * 1000));
+          let timeGapStr = "";
+          if (gapMins < 60) {
+            timeGapStr = `${gapMins} dakika sonra`;
+          } else if (gapMins < 1440) {
+            const h = Math.floor(gapMins / 60);
+            const m = gapMins % 60;
+            timeGapStr = m > 0 ? `${h} saat ${m} dk sonra` : `${h} saat sonra`;
+          } else {
+            const d = Math.floor(gapMins / 1440);
+            timeGapStr = `${d} gün sonra`;
+          }
+
+          const visitDateStr = new Date(ev.received_at).toLocaleString("tr-TR", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          steps.push({
+            time: formatTime(ev.received_at),
+            timestamp: ev.received_at,
+            eventType: "session_break",
+            description: `YENİ ZİYARET (${timeGapStr} tekrar geldi) — ${visitDateStr}`,
+            badge: { text: `${visitCount}. ZİYARET`, color: "amber" },
+            isSeparator: true,
+          });
+        }
+      }
+
       const evName = (ev.event || "").toLowerCase();
       const p = ev.params || {};
+
+      if (typeof p.duration_seconds === "number" && p.duration_seconds > 0) {
+        totalActiveSeconds += p.duration_seconds;
+      }
 
       let description = "Sayfa Görüntülendi";
       let badge: JourneyStep["badge"] = { text: "Gezinme", color: "gray" };
@@ -488,42 +543,42 @@ export async function GET(req: NextRequest) {
     }
 
     if (hasWhatsAppLead) {
-      sessionsWithLead.add(sessionId);
+      sessionsWithLead.add(devKey);
     }
 
+    const totalDurationSeconds = totalActiveSeconds > 0
+      ? totalActiveSeconds
+      : Math.max(0, Math.round((new Date(lastTime).getTime() - new Date(firstTime).getTime()) / 1000));
+
     sessions.push({
-      sessionId: sessionId.length > 12 ? sessionId.slice(0, 10) + "..." : sessionId,
-      visitorId: sessionData.visitorId,
-      deviceType: sessionData.deviceType,
-      clientIp: sessionData.clientIp,
+      sessionId: devKey,
+      visitorId: devData.visitorId,
+      deviceType: devData.deviceType,
+      clientIp: devData.clientIp,
       startTime: firstTime,
       endTime: lastTime,
-      durationFormatted: formatDurationHuman(diffSeconds),
-      totalDurationSeconds: diffSeconds,
+      durationFormatted: formatDurationHuman(totalDurationSeconds),
+      totalDurationSeconds,
       hasWhatsAppLead,
-      stepCount: steps.length,
+      stepCount: steps.filter((s) => !s.isSeparator).length,
+      visitCount,
       steps,
     });
   }
 
-  sessions.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  // En son aktif olan cihaz en üstte yer alsın
+  sessions.sort((a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime());
 
-  // 10. Visitor Loyalty (Yeni vs Geri Dönen)
-  const visitorSessionCounts = new Map<string, number>();
-  for (const [_, sData] of Array.from(sessionMap.entries())) {
-    const vId = sData.visitorId;
-    if (vId && vId !== "anonim" && vId !== "unknown" && vId !== "gizli") {
-      visitorSessionCounts.set(vId, (visitorSessionCounts.get(vId) || 0) + 1);
-    }
-  }
-
+  // 10. Visitor Loyalty (Yeni vs Geri Dönen - 30 Dk Ziyaretlerine Göre)
   let newVisitorsCount = 0;
   let returningVisitorsCount = 0;
-  for (const count of Array.from(visitorSessionCounts.values())) {
-    if (count > 1) {
-      returningVisitorsCount++;
-    } else {
-      newVisitorsCount++;
+  for (const s of sessions) {
+    if (s.visitorId && s.visitorId !== "anonim" && s.visitorId !== "unknown" && s.visitorId !== "gizli") {
+      if ((s.visitCount || 1) > 1) {
+        returningVisitorsCount++;
+      } else {
+        newVisitorsCount++;
+      }
     }
   }
   const totalTrackedLoyalty = newVisitorsCount + returningVisitorsCount;
