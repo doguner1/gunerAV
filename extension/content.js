@@ -1,8 +1,40 @@
 // Güner AV - Tedarikçi Sayfası Gelişmiş İçerik Yakalayıcı (Content Script)
 // AvAlemi / IdeaSoft, Ticimax, T-Soft, Shopify ve standart e-ticaret siteleri ile %100 uyumlu.
 
+let cachedCustomSiteRules = {};
+if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+  chrome.storage.local.get("customSiteRules", (res) => {
+    if (res?.customSiteRules) cachedCustomSiteRules = res.customSiteRules;
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.customSiteRules) {
+      cachedCustomSiteRules = changes.customSiteRules.newValue || {};
+    }
+  });
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "GET_CLEAN_PAGE_HTML") {
+      try {
+        const info = getCleanPageHtml();
+        sendResponse({ success: true, data: info });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return true;
+    }
+
+    if (request.action === "TEST_AI_SELECTORS") {
+      try {
+        const preview = extractWithCustomRule({ selectors: request.selectors }, document);
+        sendResponse({ success: true, data: preview });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return true;
+    }
+
     if (request.action === "EXTRACT_PRODUCT") {
       try {
         const data = extractProductData();
@@ -73,6 +105,30 @@ function extractListingLinks(doc = (typeof document !== "undefined" ? document :
   if (!doc) return [];
   const foundUrls = new Set();
   const origin = typeof window !== "undefined" && window.location ? window.location.origin : "";
+
+  // 0. AI İle Öğrenilmiş Özel Liste Seçicisi Varsa
+  let pageDomain = "";
+  try {
+    const rawUrl = origin || (typeof window !== "undefined" && window.location ? window.location.href : "");
+    pageDomain = new URL(rawUrl).hostname.replace(/^www\./, "").toLowerCase();
+  } catch (e) {}
+
+  if (pageDomain && cachedCustomSiteRules[pageDomain]?.selectors?.listing_link) {
+    try {
+      const customAnchors = doc.querySelectorAll(cachedCustomSiteRules[pageDomain].selectors.listing_link);
+      customAnchors.forEach((a) => {
+        let href = a.getAttribute("href") || a.href;
+        if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+        if (href.startsWith("/")) {
+          href = (origin || "") + href;
+        }
+        const clean = href.split("#")[0].split("?")[0];
+        if (clean.startsWith("http")) foundUrls.add(clean);
+      });
+    } catch (e) {
+      console.warn("Özel listeleme seçicisi hatası:", e);
+    }
+  }
 
   // Özler Av (.uruncard, .kobi-urunlist, .urun-grid) ve genel e-ticaret seçicileri
   const candidateAnchors = doc.querySelectorAll(
@@ -159,6 +215,535 @@ function parseTurkishPrice(rawStr) {
   return isNaN(num) ? null : Math.round(num);
 }
 
+// =========================================================================
+// EVRENSEL SEMANTİK ÜRÜN VE DOM ANALİZÖRÜ (Universal Semantic Locator)
+// Hiçbir site adına, özel sınıfa veya hardcoded kurala ihtiyaç duymaz.
+// Her e-ticaret, katalog veya özel yazılmış sitede doğrudan çalışır.
+// =========================================================================
+
+function findUniversalProductHeading(doc = document) {
+  const docTitle = doc.title || "";
+  const ogTitle = doc.querySelector('meta[property="og:title"]')?.content || "";
+
+  let jsonLdName = "";
+  try {
+    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+    for (const sc of scripts) {
+      const txt = sc.textContent.trim();
+      if (!txt) continue;
+      const parsed = JSON.parse(txt);
+      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
+      for (const it of items) {
+        if (it && (it["@type"] === "Product" || it["@type"]?.includes?.("Product"))) {
+          if (it.name) jsonLdName = String(it.name).trim();
+          break;
+        }
+      }
+      if (jsonLdName) break;
+    }
+  } catch (e) {}
+
+  const headings = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, [class*='title'], [class*='name']"));
+  let bestEl = null;
+  let bestScore = -999;
+
+  const genericBlacklist = [
+    "menü", "menu", "sepet", "sepetim", "giriş", "üye", "iletişim", "kategori",
+    "kategoriler", "anasayfa", "home", "search", "ara", "benzer", "kampanya",
+    "footer", "hakkımızda", "dokümanlar", "bülten", "sosyal medya", "hesabım",
+    "sipariş", "teslimat", "iade", "yardım", "blog", "haberler", "filtre"
+  ];
+
+  for (const el of headings) {
+    if (el.closest("nav, header, footer, aside, .navbar, .header, .footer, .menu, #menu, .sidebar, #sidebar, .navigation, .megamenu")) {
+      continue;
+    }
+
+    const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (!txt || txt.length < 2 || txt.length > 180) continue;
+
+    const lower = txt.toLowerCase();
+    if (genericBlacklist.some(g => lower === g || (g.length > 4 && lower.includes(g)))) continue;
+
+    let score = 0;
+    const tag = el.tagName.toLowerCase();
+    if (tag === "h1") score += 60;
+    else if (tag === "h2") score += 35;
+    else if (tag === "h3") score += 25;
+    else if (tag === "h4") score += 20;
+    else if (tag === "h5") score += 10;
+    else score += 5;
+
+    const cls = (el.className || "").toLowerCase();
+    if (cls.includes("product") || cls.includes("title") || cls.includes("name") || cls.includes("urun")) {
+      score += 25;
+    }
+
+    if (jsonLdName) {
+      const jl = jsonLdName.toLowerCase();
+      if (lower === jl) score += 150;
+      else if (jl.includes(lower) || lower.includes(jl)) score += 100;
+    }
+
+    const dtLower = docTitle.toLowerCase();
+    const ogLower = ogTitle.toLowerCase();
+    if (dtLower.includes(lower) || ogLower.includes(lower)) {
+      score += 80;
+    } else {
+      const words = lower.split(/\s+/).filter(w => w.length > 2);
+      if (words.length > 0) {
+        const matched = words.filter(w => dtLower.includes(w) || ogLower.includes(w));
+        score += Math.round((matched.length / words.length) * 60);
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestEl = el;
+    }
+  }
+
+  return bestEl;
+}
+
+function findUniversalProductContainer(headingEl, doc = document) {
+  if (!headingEl) {
+    return doc.querySelector("main, article, #content, .content") || doc.body;
+  }
+
+  let curr = headingEl.parentElement;
+  let bestContainer = curr;
+
+  while (curr && curr.tagName !== "BODY" && curr.tagName !== "HTML") {
+    if (["NAV", "HEADER", "FOOTER", "ASIDE"].includes(curr.tagName)) break;
+
+    const imgs = curr.querySelectorAll("img");
+    const hasImages = Array.from(imgs).some(img => {
+      const w = img.naturalWidth || img.width || 0;
+      const h = img.naturalHeight || img.height || 0;
+      const src = img.getAttribute("src") || "";
+      return !src.includes("logo") && !src.includes("icon") && (w > 60 || h > 60 || (!w && !h));
+    });
+
+    if (hasImages) {
+      bestContainer = curr;
+      const hasPriceOrDesc = curr.querySelector("p, .price, [class*='price'], [class*='fiyat'], button, .btn");
+      if (hasPriceOrDesc) {
+        bestContainer = curr;
+        break;
+      }
+    }
+
+    curr = curr.parentElement;
+  }
+
+  return bestContainer || headingEl.parentElement;
+}
+
+function findUniversalSpecsContainer(doc = document, heroContainer = null) {
+  const tables = doc.querySelectorAll("table");
+  for (const t of tables) {
+    if (t.closest("nav, header, footer, aside, .cart, .sepet")) continue;
+    if (t.querySelectorAll("tr").length >= 2) return t;
+  }
+
+  const dls = doc.querySelectorAll("dl");
+  for (const dl of dls) {
+    if (dl.closest("nav, header, footer, aside")) continue;
+    if (dl.querySelectorAll("dt").length >= 2) return dl;
+  }
+
+  const specCandidates = doc.querySelectorAll(
+    "[id*='spec'], [id*='ozellik'], [id*='teknik'], [id*='detail'], [id*='param'], " +
+    "[class*='spec'], [class*='ozellik'], [class*='teknik'], [class*='feature-box'], [class*='attribute']"
+  );
+  for (const el of specCandidates) {
+    if (el.closest("nav, header, footer, aside, script, style")) continue;
+    if (heroContainer && heroContainer.contains(el)) continue;
+    const text = el.textContent.trim();
+    if (text.length > 50 && text.length < 5000) {
+      return el;
+    }
+  }
+
+  return null;
+}
+
+function generateCleanCssSelector(el, doc = document) {
+  if (!el || el === doc.body || el === doc.documentElement) return "";
+
+  if (el.id && !/\d{4,}/.test(el.id)) {
+    try {
+      if (doc.querySelectorAll("#" + CSS.escape(el.id)).length === 1) {
+        return "#" + CSS.escape(el.id);
+      }
+    } catch (e) {}
+  }
+
+  if (el.classList && el.classList.length > 0) {
+    const validClasses = Array.from(el.classList).filter(c =>
+      !c.startsWith("ng-") && !c.startsWith("v-") && !c.includes("active") &&
+      !c.includes("show") && !c.includes("focus") && !c.includes("hover") &&
+      c.length > 2 && !/^[0-9_-]+$/.test(c)
+    );
+    for (const c of validClasses) {
+      const candidate = el.tagName.toLowerCase() + "." + CSS.escape(c);
+      try {
+        if (doc.querySelectorAll(candidate).length === 1) {
+          return candidate;
+        }
+      } catch (e) {}
+    }
+  }
+
+  const tag = el.tagName.toLowerCase();
+  const parent = el.parentElement;
+  if (parent && parent !== doc.body) {
+    const parentSel = generateCleanCssSelector(parent, doc);
+    if (parentSel) {
+      return `${parentSel} ${tag}`;
+    }
+  }
+
+  return tag;
+}
+
+// AI Destekli Site Analizi İçin Temizlenmiş ve Odaklanmış HTML İskeleti Çıkarıcı
+function getCleanPageHtml() {
+  const doc = document;
+
+  // 1. Zengin Metadata Taraması (JSON-LD, OpenGraph, Meta)
+  const referenceMeta = {
+    title: "",
+    brand: "",
+    category: "",
+    image: "",
+    price: null,
+    specsSample: [],
+  };
+
+  try {
+    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+    for (const sc of scripts) {
+      const txt = sc.textContent.trim();
+      if (!txt) continue;
+      const parsed = JSON.parse(txt);
+      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
+      for (const item of items) {
+        if (item && (item["@type"] === "Product" || item["@type"]?.includes?.("Product"))) {
+          if (item.name) referenceMeta.title = String(item.name).trim();
+          if (item.brand?.name || item.brand) referenceMeta.brand = String(item.brand?.name || item.brand).trim();
+          if (item.category) referenceMeta.category = String(item.category).trim();
+          if (item.image) {
+            referenceMeta.image = typeof item.image === "string" ? item.image : (Array.isArray(item.image) ? item.image[0] : item.image?.url);
+          }
+          if (item.offers) {
+            const p = item.offers.price || (Array.isArray(item.offers) ? item.offers[0]?.price : null);
+            if (p) referenceMeta.price = p;
+          }
+          if (Array.isArray(item.additionalProperty)) {
+            referenceMeta.specsSample = item.additionalProperty.slice(0, 5).map(p => `${p.name}: ${p.value}`);
+          }
+          break;
+        }
+      }
+      if (referenceMeta.title) break;
+    }
+  } catch (e) {}
+
+  if (!referenceMeta.title) {
+    referenceMeta.title = doc.querySelector('meta[property="og:title"]')?.content || doc.title || "";
+  }
+  if (!referenceMeta.image) {
+    referenceMeta.image = doc.querySelector('meta[property="og:image"]')?.content || "";
+  }
+  if (!referenceMeta.brand) {
+    referenceMeta.brand = doc.querySelector('meta[property="og:site_name"]')?.content || "";
+  }
+
+  // 2. Evrensel Algoritma ile Sayfanın Ürün Başlığını ve Konteynerini Keşfet
+  const headingEl = findUniversalProductHeading(doc);
+  const heroContainer = findUniversalProductContainer(headingEl, doc);
+  const specsContainer = findUniversalSpecsContainer(doc, heroContainer);
+  const suggestedHeadingSelector = headingEl ? generateCleanCssSelector(headingEl, doc) : "";
+
+  // 3. Konteyneri Klonla ve Token Optimizasyonu Yap
+  const clone = heroContainer ? heroContainer.cloneNode(true) : doc.body.cloneNode(true);
+
+  const removeSelectors = [
+    "script", "style", "svg", "noscript", "iframe", "nav", ".navbar", ".menu",
+    ".cookie-banner", ".modal", "#modal", ".search", "#search", ".comments",
+    ".reviews", ".similar-products", ".related-products", ".benzer-urunler",
+    ".megamenu", ".sub-menu", ".navigation", ".share", ".social", "footer"
+  ];
+  removeSelectors.forEach((sel) => {
+    clone.querySelectorAll(sel).forEach((el) => el.remove());
+  });
+
+  // Slider ve galeri tekrarlarını buda (en fazla 2 adet bırak)
+  clone.querySelectorAll(".swiper-wrapper, .slick-track, .carousel-inner, .owl-stage, .gallery-boxes, [class*='thumb']").forEach((wrapper) => {
+    const children = Array.from(wrapper.children);
+    if (children.length > 2) {
+      children.slice(2).forEach((c) => c.remove());
+    }
+  });
+
+  // Nitelikleri filtrele
+  clone.querySelectorAll("*").forEach((el) => {
+    const allowedAttrs = ["class", "id", "src", "data-src", "data-zoom-image", "data-large", "itemprop", "href"];
+    Array.from(el.attributes).forEach((attr) => {
+      if (!allowedAttrs.includes(attr.name)) {
+        el.removeAttribute(attr.name);
+      }
+    });
+
+    if (el.tagName === "IMG") {
+      const src = el.getAttribute("src") || "";
+      if (src.startsWith("data:")) {
+        el.setAttribute("src", "[base64_gorsel]");
+      }
+    }
+  });
+
+  let html = clone.innerHTML;
+
+  // Varsa specs konteynerini de ekle
+  if (specsContainer && (!heroContainer || !heroContainer.contains(specsContainer))) {
+    const specsClone = specsContainer.cloneNode(true);
+    specsClone.querySelectorAll("script, style, svg").forEach(e => e.remove());
+    html += "\n<!-- TEKNIK OZELLIKLER BOLUMU -->\n" + specsClone.outerHTML;
+  }
+
+  html = html.replace(/\s+/g, " ").trim();
+  if (html.length > 4800) {
+    html = html.slice(0, 4800) + "... [HTML kısaltıldı]";
+  }
+
+  return {
+    url: window.location.href,
+    domain: window.location.hostname.replace(/^www\./, "").toLowerCase(),
+    title: doc.title || "",
+    referenceMeta,
+    suggestedHeadingSelector,
+    htmlSnippet: html,
+  };
+}
+
+// AI ile Üretilmiş Özel Seçicileri (Selectors) Sayfada Çalıştırıp Veri Çekme
+function extractWithCustomRule(customRule, doc = (typeof document !== "undefined" ? document : null)) {
+  if (!doc || !customRule || !customRule.selectors) return null;
+  const sel = customRule.selectors;
+  const origin = (doc.location && doc.location.origin) || (typeof window !== "undefined" && window.location ? window.location.origin : "");
+
+  const result = {
+    title: "",
+    price: null,
+    images: [],
+    specs: {},
+    brand: "",
+    description: "",
+  };
+
+  // 1. JSON-LD Temel Verilerini Ön Yükle (Varsa en doğru temel bilgileri sağlar)
+  try {
+    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+    for (const sc of scripts) {
+      const txt = sc.textContent.trim();
+      if (!txt) continue;
+      const parsed = JSON.parse(txt);
+      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
+      for (const item of items) {
+        if (item && (item["@type"] === "Product" || item["@type"]?.includes?.("Product"))) {
+          if (item.name) result.title = String(item.name).trim();
+          if (item.brand?.name || item.brand) result.brand = String(item.brand?.name || item.brand).trim();
+          if (item.description) result.description = String(item.description).trim();
+          if (item.offers) {
+            const p = item.offers.price || (Array.isArray(item.offers) ? item.offers[0]?.price : null);
+            if (p) result.price = parseTurkishPrice(p);
+          }
+          if (item.image) {
+            const imList = Array.isArray(item.image) ? item.image : [item.image];
+            imList.forEach((im) => {
+              const u = typeof im === "string" ? im : im?.url;
+              if (u) {
+                const fullUrl = u.startsWith("http") ? u : (origin + u);
+                const cl = cleanImageUrl(fullUrl);
+                if (cl && !result.images.includes(cl)) result.images.push(cl);
+              }
+            });
+          }
+          if (Array.isArray(item.additionalProperty)) {
+            item.additionalProperty.forEach((prop) => {
+              if (prop.name && prop.value) {
+                result.specs[String(prop.name).trim()] = String(prop.value).trim();
+              }
+            });
+          }
+          break;
+        }
+      }
+      if (result.title) break;
+    }
+  } catch (e) {}
+
+  // 2. Custom Selector: Title
+  if (sel.title) {
+    try {
+      const el = doc.querySelector(sel.title);
+      if (el && el.textContent.trim()) result.title = el.textContent.trim();
+    } catch (e) {}
+  }
+  if (!result.title) {
+    const fallbackTitle = doc.querySelector("h1, h2, h4.product_name, [class*='product_name'], [class*='product-title'], meta[property='og:title']");
+    if (fallbackTitle) {
+      result.title = (fallbackTitle.getAttribute("content") || fallbackTitle.textContent || "").trim();
+    }
+  }
+
+  // 3. Custom Selector: Price
+  if (sel.price) {
+    try {
+      const el = doc.querySelector(sel.price);
+      if (el) {
+        const parsed = parseTurkishPrice(el.textContent.trim());
+        if (parsed !== null) result.price = parsed;
+      }
+    } catch (e) {}
+  }
+
+  // 4. Custom Selector: Brand
+  if (sel.brand) {
+    try {
+      const el = doc.querySelector(sel.brand);
+      if (el && el.textContent.trim()) result.brand = el.textContent.trim();
+    } catch (e) {}
+  }
+  if (!result.brand) {
+    const ogSite = doc.querySelector('meta[property="og:site_name"]');
+    if (ogSite && ogSite.content) result.brand = ogSite.content.trim();
+  }
+
+  // 5. Custom Selector: Description
+  if (sel.description) {
+    try {
+      const el = doc.querySelector(sel.description);
+      if (el && el.textContent.trim()) result.description = el.textContent.trim();
+    } catch (e) {}
+  }
+
+  // 6. Custom Selector: Images
+  if (sel.images) {
+    try {
+      const attr = sel.image_attr || "src";
+      const imgs = doc.querySelectorAll(sel.images);
+      imgs.forEach((img) => {
+        let rawSrc = img.getAttribute(attr) || img.getAttribute("data-src") || img.getAttribute("src") || img.getAttribute("data-zoom-image") || img.getAttribute("href");
+        if (rawSrc && !rawSrc.startsWith("data:") && !rawSrc.includes("blank.gif")) {
+          let fullSrc = rawSrc;
+          try {
+            fullSrc = new URL(rawSrc, origin || (typeof window !== "undefined" ? window.location.origin : "")).href;
+          } catch (e) {}
+          const clean = cleanImageUrl(fullSrc);
+          if (clean && !result.images.includes(clean)) result.images.push(clean);
+        }
+      });
+    } catch (e) {}
+  }
+
+  // 7. Custom Selector: Specs Table / Rows / Lists
+  if (sel.specs_table || sel.specs_row) {
+    try {
+      const container = sel.specs_table ? doc.querySelector(sel.specs_table) : doc;
+      if (container) {
+        const rowSelector = sel.specs_row || "tr, li, .row, .spec-item";
+        const rows = container.querySelectorAll(rowSelector);
+        rows.forEach((row) => {
+          let keyEl = sel.specs_key ? row.querySelector(sel.specs_key) : null;
+          let valEl = sel.specs_val ? row.querySelector(sel.specs_val) : null;
+
+          if (!keyEl) keyEl = row.querySelector("th, td:first-child, dt, strong, .col-lg-4, .col-md-4, .col-4, .spec-title, .title");
+          if (!valEl) valEl = row.querySelector("td:last-child, dd, span, .col-lg-8, .col-md-8, .col-8, .spec-value, .val");
+
+          if (keyEl && valEl && keyEl !== valEl) {
+            let k = keyEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").replace(/[:：]$/, "").trim();
+            let v = valEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").trim();
+            if (k && v && k !== v && k.length < 60 && v.length < 400) {
+              result.specs[k] = v;
+            }
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
+  // Feature boxes fallback (örn: Sarsılmaz .feature-box-content)
+  if (Object.keys(result.specs).length === 0) {
+    try {
+      const fBoxes = doc.querySelectorAll(".feature-box-content");
+      fBoxes.forEach((fb) => {
+        const txt = fb.innerText || fb.textContent || "";
+        const lines = txt.split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length >= 2) {
+          result.specs[lines[1]] = lines[0];
+        }
+      });
+    } catch (e) {}
+  }
+
+  // =========================================================================
+  // EVRENSEL OTOMATİK TAMAMLAMA & KENDİ KENDİNİ İYİLEŞTİRME (Self-Healing)
+  // AI seçicisi herhangi bir alanda boş dönerse, evrensel algılayıcı devreye girer.
+  // =========================================================================
+  if (!result.title) {
+    const autoH = findUniversalProductHeading(doc);
+    if (autoH && autoH.textContent.trim()) {
+      result.title = autoH.textContent.trim();
+    }
+  }
+
+  if (result.images.length === 0) {
+    const hero = findUniversalProductContainer(findUniversalProductHeading(doc), doc);
+    if (hero) {
+      const imgs = hero.querySelectorAll("img");
+      imgs.forEach((img) => {
+        let src = img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-zoom-image");
+        if (src && !src.startsWith("data:") && !src.includes("logo") && !src.includes("icon")) {
+          let full = src;
+          try {
+            full = new URL(src, origin || (typeof window !== "undefined" ? window.location.origin : "")).href;
+          } catch (e) {}
+          const cl = cleanImageUrl(full);
+          if (cl && !result.images.includes(cl)) result.images.push(cl);
+        }
+      });
+    }
+  }
+
+  if (Object.keys(result.specs).length === 0) {
+    const specCont = findUniversalSpecsContainer(doc);
+    if (specCont) {
+      const rows = specCont.querySelectorAll("tr, dl, li, .row");
+      rows.forEach((r) => {
+        const kEl = r.querySelector("th, td:first-child, dt, strong, .col-4, .col-md-4, .col-lg-4");
+        const vEl = r.querySelector("td:last-child, dd, span, .col-8, .col-md-8, .col-lg-8");
+        if (kEl && vEl && kEl !== vEl) {
+          let k = kEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").replace(/[:：]$/, "").trim();
+          let v = vEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").trim();
+          if (k && v && k !== v && k.length < 60 && v.length < 400) {
+            result.specs[k] = v;
+          }
+        }
+      });
+    }
+  }
+
+  if (result.images && result.images.length > 0) {
+    result.images = dedupeImages(result.images);
+  }
+
+  return result;
+}
+
 function extractProductData(doc = (typeof document !== "undefined" ? document : null), pageUrl = "") {
   if (!doc) return {};
   const currentUrl = pageUrl || (typeof window !== "undefined" && window.location ? window.location.href : "");
@@ -173,6 +758,85 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     specs: {},
     description: "",
   };
+
+  // =========================================================================
+  // 0. AI İle Öğrenilmiş Özel Site Kuralları (Varsa En Öncelikli Çalışır)
+  // =========================================================================
+  let pageDomain = "";
+  try {
+    pageDomain = new URL(currentUrl).hostname.replace(/^www\./, "").toLowerCase();
+  } catch (e) {}
+
+  if (pageDomain && cachedCustomSiteRules[pageDomain]) {
+    try {
+      const customExtracted = extractWithCustomRule(cachedCustomSiteRules[pageDomain], doc);
+      if (customExtracted) {
+        if (customExtracted.title) result.title = customExtracted.title;
+        if (customExtracted.price !== null && customExtracted.price !== undefined) result.price = customExtracted.price;
+        if (customExtracted.brand) result.brand = customExtracted.brand;
+        if (customExtracted.description) result.description = customExtracted.description;
+        if (Array.isArray(customExtracted.images) && customExtracted.images.length > 0) {
+          result.images = [...customExtracted.images];
+        }
+        if (customExtracted.specs && Object.keys(customExtracted.specs).length > 0) {
+          result.specs = { ...customExtracted.specs };
+        }
+      }
+    } catch (ruleErr) {
+      console.warn("Özel kural çalıştırma uyarısı:", ruleErr);
+    }
+  }
+
+  // =========================================================================
+  // 0.5. Schema.org JSON-LD Product Taraması (Sarsılmaz, Shopify, Modern Siteler)
+  // =========================================================================
+  try {
+    const jsonLdScripts = doc.querySelectorAll('script[type="application/ld+json"]');
+    for (const sc of jsonLdScripts) {
+      const txt = sc.textContent.trim();
+      if (!txt) continue;
+      const parsed = JSON.parse(txt);
+      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
+      for (const item of items) {
+        if (item && (item["@type"] === "Product" || item["@type"]?.includes?.("Product"))) {
+          if (!result.title && item.name) result.title = String(item.name).trim();
+          if (!result.brand && (item.brand?.name || item.brand)) {
+            result.brand = String(item.brand?.name || item.brand).trim();
+          }
+          if (!result.category && item.category) result.category = String(item.category).trim();
+          if (!result.description && item.description) result.description = String(item.description).trim();
+          if (result.price === null && item.offers) {
+            const p = item.offers.price || (Array.isArray(item.offers) ? item.offers[0]?.price : null);
+            if (p) result.price = parseTurkishPrice(p);
+          }
+          if (item.image) {
+            const imList = Array.isArray(item.image) ? item.image : [item.image];
+            imList.forEach((im) => {
+              const u = typeof im === "string" ? im : im?.url;
+              if (u) {
+                const fullUrl = u.startsWith("http") ? u : ((doc.location?.origin || "") + u);
+                const cl = cleanImageUrl(fullUrl);
+                if (cl && !result.images.includes(cl)) result.images.push(cl);
+              }
+            });
+          }
+          if (Array.isArray(item.additionalProperty)) {
+            item.additionalProperty.forEach((prop) => {
+              if (prop.name && prop.value) {
+                const pk = String(prop.name).trim();
+                const pv = String(prop.value).trim();
+                if (pk && pv && !result.specs[pk]) result.specs[pk] = pv;
+              }
+            });
+          }
+          break;
+        }
+      }
+      if (result.title) break;
+    }
+  } catch (e) {
+    console.warn("JSON-LD parsing fallback:", e);
+  }
 
   const html = (doc.documentElement && doc.documentElement.innerHTML) || "";
 
@@ -218,7 +882,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // 2. Ürün Başlığı (Title)
   // =========================================================================
   if (!result.title) {
-    const titleEl = doc.querySelector("h1, h5.font-weight-bold, .col-12 h5.font-weight-bold, h5, .urunadi");
+    const titleEl = doc.querySelector("h1, h2.product-title, h4.product_name, .product_name, [class*='product_name'], [class*='product-title'], h5.font-weight-bold, .col-12 h5.font-weight-bold, h5, .urunadi");
     const ogTitle = doc.querySelector('meta[property="og:title"]');
     if (titleEl && titleEl.textContent.trim()) {
       result.title = titleEl.textContent.trim();
@@ -273,6 +937,15 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
         result.brand = b;
         break;
       }
+    }
+  }
+
+  // Başlıkta marka yoksa başa ekle (örn: sadece "MAGIC" yazıyorsa "Sarsılmaz MAGIC" yap)
+  if (result.brand && result.title) {
+    const titleLow = result.title.toLowerCase();
+    const brandLow = result.brand.toLowerCase();
+    if (!titleLow.includes(brandLow) && !brandLow.includes(titleLow)) {
+      result.title = `${result.brand} ${result.title}`;
     }
   }
 

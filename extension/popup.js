@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const sharedForm = document.getElementById("sharedProductForm");
       if (sharedForm) {
-        if (targetId === "tabBatch" || targetId === "tabSettings") {
+        if (targetId === "tabBatch" || targetId === "tabSettings" || targetId === "tabAiLearner") {
           sharedForm.style.display = "none";
         } else {
           sharedForm.style.display = "block";
@@ -133,17 +133,77 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (sharedForm) sharedForm.style.display = "none";
   });
 
-  // 2. Supabase Ayarlarını Yükle
-  const cfg = await chrome.storage.local.get(["supabaseUrl", "supabaseKey"]);
+  document.getElementById("btnGoToAi")?.addEventListener("click", () => {
+    tabs.forEach((t) => t.classList.remove("active"));
+    tabPanes.forEach((p) => p.classList.remove("active"));
+    const aiTab = document.querySelector('[data-tab="tabAiLearner"]');
+    aiTab?.classList.add("active");
+    document.getElementById("tabAiLearner")?.classList.add("active");
+
+    const sharedForm = document.getElementById("sharedProductForm");
+    if (sharedForm) sharedForm.style.display = "none";
+  });
+
+  // 2. Supabase & AI Ayarlarını Yükle
+  const DEFAULT_GROQ_KEY = "";
+  const DEFAULT_OPENROUTER_KEY = "";
+
+  const cfg = await chrome.storage.local.get([
+    "supabaseUrl",
+    "supabaseKey",
+    "groqApiKey",
+    "openrouterApiKey",
+    "aiEngine",
+    "customSiteRules",
+  ]);
   if (cfg.supabaseUrl) document.getElementById("cfgSupabaseUrl").value = cfg.supabaseUrl;
   if (cfg.supabaseKey) document.getElementById("cfgSupabaseKey").value = cfg.supabaseKey;
+
+  const currentGroqKey = cfg.groqApiKey || DEFAULT_GROQ_KEY;
+  const currentOpenRouterKey = cfg.openrouterApiKey || DEFAULT_OPENROUTER_KEY;
+  const currentAiEngine = cfg.aiEngine || "groq";
+
+  if (document.getElementById("cfgGroqKey")) document.getElementById("cfgGroqKey").value = currentGroqKey;
+  if (document.getElementById("cfgOpenRouterKey")) document.getElementById("cfgOpenRouterKey").value = currentOpenRouterKey;
+  if (document.getElementById("selAiEngine")) document.getElementById("selAiEngine").value = currentAiEngine;
+
+  document.getElementById("selAiEngine")?.addEventListener("change", (e) => {
+    chrome.storage.local.set({ aiEngine: e.target.value });
+  });
+
+  renderSavedRulesList(cfg.customSiteRules || {});
+
+  // Aktif Sekme Domain Tespiti
+  let activeTabUrl = "";
+  let activeTabDomain = "";
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (activeTab && activeTab.url) {
+      activeTabUrl = activeTab.url;
+      try {
+        activeTabDomain = new URL(activeTab.url).hostname.replace(/^www\./, "").toLowerCase();
+      } catch (e) {}
+    }
+  } catch (e) {}
+
+  const domainBadge = document.getElementById("aiActiveDomainBadge");
+  if (domainBadge) {
+    domainBadge.textContent = activeTabDomain || "Sekme Açık Değil";
+  }
 
   document.getElementById("btnSaveConfig")?.addEventListener("click", async () => {
     const url = document.getElementById("cfgSupabaseUrl").value.trim().replace(/\/+$/, "");
     const key = document.getElementById("cfgSupabaseKey").value.trim();
+    const groqK = document.getElementById("cfgGroqKey")?.value.trim() || DEFAULT_GROQ_KEY;
+    const openRK = document.getElementById("cfgOpenRouterKey")?.value.trim() || DEFAULT_OPENROUTER_KEY;
 
-    await chrome.storage.local.set({ supabaseUrl: url, supabaseKey: key });
-    showStatus("✅ Supabase ayarları başarıyla kaydedildi!", "success");
+    await chrome.storage.local.set({
+      supabaseUrl: url,
+      supabaseKey: key,
+      groqApiKey: groqK,
+      openrouterApiKey: openRK,
+    });
+    showStatus("✅ Supabase ve AI ayarları başarıyla kaydedildi!", "success");
   });
 
   // 2b. Supabase Bağlantısını Test Et
@@ -387,6 +447,227 @@ document.addEventListener("DOMContentLoaded", async () => {
       showStatus("✅ JSON başarıyla forma aktarıldı!", "success");
     } catch (e) {
       showStatus("Geçersiz JSON formatı: " + e.message, "error");
+    }
+  });
+
+  // =========================================================================
+  // 9b. AI Destekli Site Analizi ve Kural Çıkarma
+  // =========================================================================
+  let lastAiAnalysisResult = null;
+
+  document.getElementById("btnAiAnalyzeSite")?.addEventListener("click", async () => {
+    const statusBox = document.getElementById("aiStatusBox");
+    const resultCard = document.getElementById("aiResultCard");
+    const engine = document.getElementById("selAiEngine")?.value || "groq";
+    const customPrompt = document.getElementById("inpAiCustomPrompt")?.value.trim() || "";
+
+    const showAiStatus = (msg, type = "info") => {
+      if (!statusBox) return;
+      statusBox.style.display = "block";
+      if (type === "loading") {
+        statusBox.style.background = "rgba(99, 102, 241, 0.15)";
+        statusBox.style.color = "#a5b4fc";
+        statusBox.style.border = "1px solid #6366f1";
+      } else if (type === "success") {
+        statusBox.style.background = "rgba(34, 197, 94, 0.15)";
+        statusBox.style.color = "#4ade80";
+        statusBox.style.border = "1px solid #22c55e";
+      } else {
+        statusBox.style.background = "rgba(239, 68, 68, 0.15)";
+        statusBox.style.color = "#f87171";
+        statusBox.style.border = "1px solid #ef4444";
+      }
+      statusBox.innerHTML = msg;
+    };
+
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) {
+      showAiStatus("❌ Açık aktif bir sekme bulunamadı.", "error");
+      return;
+    }
+
+    showAiStatus("⏳ Sayfa HTML yapısı okunuyor ve optimize ediliyor...", "loading");
+
+    const getHtmlPromise = () =>
+      new Promise((resolve) => {
+        chrome.tabs.sendMessage(tab.id, { action: "GET_CLEAN_PAGE_HTML" }, async (res) => {
+          if (chrome.runtime.lastError || !res?.success) {
+            try {
+              await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ["content.js"],
+              });
+              chrome.tabs.sendMessage(tab.id, { action: "GET_CLEAN_PAGE_HTML" }, (retryRes) => {
+                resolve(retryRes?.success ? retryRes.data : null);
+              });
+            } catch (err) {
+              resolve(null);
+            }
+          } else {
+            resolve(res.data);
+          }
+        });
+      });
+
+    const pageInfo = await getHtmlPromise();
+    if (!pageInfo || !pageInfo.htmlSnippet) {
+      showAiStatus("❌ Sayfa içeriği okunamadı. Lütfen sayfayı bir kez yenileyip (F5) tekrar deneyin.", "error");
+      return;
+    }
+
+    const savedKeys = await chrome.storage.local.get(["groqApiKey", "openrouterApiKey"]);
+    const currentGroqKey = savedKeys.groqApiKey || DEFAULT_GROQ_KEY;
+    const currentOpenRouterKey = savedKeys.openrouterApiKey || DEFAULT_OPENROUTER_KEY;
+
+    showAiStatus(`🤖 Yapay zekâ (${engine === "groq" ? "Groq GPT OSS 120B" : "OpenRouter Nemotron Lightning"}) siteyi analiz ediyor...`, "loading");
+
+    try {
+      const aiData = await callAiSiteAnalyzer({
+        engine,
+        groqKey: currentGroqKey,
+        openRouterKey: currentOpenRouterKey,
+        pageInfo,
+        customPrompt,
+      });
+
+      showAiStatus("🔍 Seçici kuralları sekmedeki canlı sayfada test ediliyor...", "loading");
+
+      // 1. Canlı DOM üzerinde bulunan seçicileri hemen test et
+      let liveData = null;
+      try {
+        const testRes = await new Promise((resolve) => {
+          chrome.tabs.sendMessage(tab.id, {
+            action: "TEST_AI_SELECTORS",
+            selectors: aiData.selectors,
+          }, (res) => resolve(res));
+        });
+        if (testRes?.success && testRes.data) {
+          liveData = testRes.data;
+        }
+      } catch (e) {
+        console.warn("TEST_AI_SELECTORS uyarısı:", e);
+      }
+
+      const finalPreview = {
+        ...(liveData || {}),
+        ...(aiData.perfect_product_data || {}),
+      };
+
+      // Ensure images from liveData (which handles arrays/cleaning well) aren't completely lost
+      if (liveData && liveData.images && liveData.images.length > 0) {
+        if (!finalPreview.images || finalPreview.images.length === 0 || (typeof finalPreview.images === 'string')) {
+          finalPreview.images = liveData.images;
+        } else if (Array.isArray(finalPreview.images) && finalPreview.images.length > 0 && !finalPreview.images[0].startsWith("http")) {
+          finalPreview.images = liveData.images;
+        }
+      }
+
+      lastAiAnalysisResult = {
+        ...aiData,
+        extracted_preview: finalPreview,
+      };
+
+      showAiStatus(`🎉 Başarılı! Yapay zekâ <strong>${pageInfo.domain}</strong> için seçici kurallarını tespit etti ve başarıyla doğruladı.`, "success");
+
+      if (resultCard) resultCard.style.display = "block";
+      const domainEl = document.getElementById("aiExtractedDomain");
+      if (domainEl) domainEl.textContent = pageInfo.domain;
+
+      const sel = aiData.selectors || {};
+      const lblT = document.getElementById("lblRuleTitle");
+      const lblP = document.getElementById("lblRulePrice");
+      const lblI = document.getElementById("lblRuleImages");
+      const lblS = document.getElementById("lblRuleSpecs");
+
+      if (lblT) lblT.textContent = sel.title || "(otomatik)";
+      if (lblP) lblP.textContent = sel.price || (finalPreview.price ? "Tespit Edildi" : "(Katalog / Doğrudan Satış Fiyatı Yok)");
+      if (lblI) lblI.textContent = `${sel.images || "(otomatik)"} [attr: ${sel.image_attr || "src"}]`;
+      if (lblS) lblS.textContent = sel.specs_table || sel.specs_row || "(otomatik)";
+
+      const prevEl = document.getElementById("aiSamplePreview");
+      if (prevEl) {
+        const hasPrice = finalPreview.price !== null && finalPreview.price !== undefined;
+        const priceDisplay = hasPrice
+          ? `<span style="color:#4ade80; font-weight:700;">${Number(finalPreview.price).toLocaleString("tr-TR")} ₺</span>`
+          : `<span style="color:#94a3b8; font-style:italic;">Belirtilmemiş (Katalog / Fiyatsız Ürün)</span>`;
+
+        const specsCount = finalPreview.specs ? Object.keys(finalPreview.specs).length : 0;
+        const specsSampleList = specsCount > 0
+          ? `<div style="font-size:10px; color:#cbd5e1; margin-top:4px; background:rgba(15,23,42,0.6); padding:4px 6px; border-radius:4px;"><b>Örnek Özellikler:</b> ${Object.entries(finalPreview.specs).slice(0, 4).map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join(" • ")}</div>`
+          : "";
+
+        prevEl.innerHTML = `
+          <div><b>📌 Başlık:</b> <span style="color:#38bdf8; font-weight:600;">${finalPreview.title || "(Boş)"}</span></div>
+          <div><b>💰 Fiyat:</b> ${priceDisplay}</div>
+          <div><b>🏷️ Marka:</b> <span style="color:#fcd34d;">${finalPreview.brand || "(Boş)"}</span></div>
+          <div><b>🖼️ Görseller:</b> <span style="color:#4ade80; font-weight:600;">${Array.isArray(finalPreview.images) ? finalPreview.images.length + " adet görsel yakalandı" : "0"}</span></div>
+          <div><b>📋 Özellikler:</b> ${specsCount > 0 ? `<span style="color:#a78bfa; font-weight:600;">${specsCount} adet teknik parametre çıkarıldı</span>` : "Yok"}${specsSampleList}</div>
+          ${aiData.notes ? `<div style="margin-top:6px; color:#38bdf8; font-size:10.5px; border-top:1px dashed #334155; padding-top:4px;">💡 <em>${aiData.notes}</em></div>` : ""}
+        `;
+      }
+    } catch (err) {
+      showAiStatus(`❌ AI Analiz Hatası: ${err.message}`, "error");
+    }
+  });
+
+  // AI Kurallarını Hafızaya Kaydet
+  document.getElementById("btnSaveAiRules")?.addEventListener("click", async () => {
+    if (!lastAiAnalysisResult || !lastAiAnalysisResult.selectors) {
+      showStatus("Önce geçerli bir analiz sonucu olmalıdır.", "error");
+      return;
+    }
+
+    const domain = (lastAiAnalysisResult.domain || activeTabDomain || "").toLowerCase();
+    if (!domain) {
+      showStatus("Domain belirlenemedi.", "error");
+      return;
+    }
+
+    const { customSiteRules = {} } = await chrome.storage.local.get("customSiteRules");
+    customSiteRules[domain] = {
+      domain,
+      updatedAt: new Date().toISOString(),
+      selectors: lastAiAnalysisResult.selectors,
+      notes: lastAiAnalysisResult.notes || "",
+    };
+
+    await chrome.storage.local.set({ customSiteRules });
+    renderSavedRulesList(customSiteRules);
+    showStatus(`✅ '${domain}' kuralları hafızaya kaydedildi! Artık tekli ve toplu çekimlerde otomatik kullanılacak.`, "success");
+  });
+
+  // AI Önizleme Verisini Doğrudan Forma Aktar
+  document.getElementById("btnApplyAiToForm")?.addEventListener("click", () => {
+    if (!lastAiAnalysisResult) return;
+    const prev = lastAiAnalysisResult.extracted_preview || {};
+    populateForm({
+      title: prev.title || "",
+      brand: prev.brand || "",
+      price: prev.price || null,
+      images: Array.isArray(prev.images) ? prev.images : [],
+      specs: prev.specs || {},
+      description: prev.description || "",
+      url: activeTabUrl,
+    });
+    saveFormDraft();
+
+    tabs.forEach((t) => t.classList.remove("active"));
+    tabPanes.forEach((p) => p.classList.remove("active"));
+    const scrapeTab = document.querySelector('[data-tab="tabScrape"]');
+    scrapeTab?.classList.add("active");
+    document.getElementById("tabScrape")?.classList.add("active");
+
+    const sharedForm = document.getElementById("sharedProductForm");
+    if (sharedForm) sharedForm.style.display = "block";
+    showStatus("✅ AI verisi forma başarıyla aktarıldı!", "success");
+  });
+
+  // Tüm Kayıtlı AI Kurallarını Temizle
+  document.getElementById("btnClearAllAiRules")?.addEventListener("click", async () => {
+    if (confirm("Tüm kayıtlı AI site kurallarını silmek istediğinize emin misiniz?")) {
+      await chrome.storage.local.set({ customSiteRules: {} });
+      renderSavedRulesList({});
+      showStatus("🗑️ Tüm özel site kuralları temizlendi.", "info");
     }
   });
 
@@ -2422,5 +2703,190 @@ async function runBatchScrape() {
   } finally {
     finishBatchUI();
   }
+}
+
+// =========================================================================
+// AI Site Çözücü Yardımcı Fonksiyonları (Groq & OpenRouter Entegrasyonu)
+// =========================================================================
+
+async function callAiSiteAnalyzer({ engine, groqKey, openRouterKey, pageInfo, customPrompt }) {
+  const systemPrompt = `Sen evrensel bir Web Scraper, Veri Analisti ve Çevirmen Uzmanısın. Herhangi bir e-ticaret, B2B veya üretici web sitesi (${pageInfo.domain}) için hem CSS seçicilerini çıkar hem de sayfadaki ürünü kusursuz bir şekilde analiz edip Türkçe'ye çevir.
+
+ÖNEMLİ EVRENSEL KURALLAR:
+1. CSS Seçicileri (selectors): Sitedeki diğer ürünlerde de çalışacak en temiz kuralları bul.
+2. Kusursuz Ürün Verisi (perfect_product_data): HTML içeriğini OKU. Marka ve modeli ürün başlığında, açıklamasında veya özelliklerinde mantıksal olarak ara. 
+   - Başlık (title) her zaman [Marka] + [Model] şeklinde birleştirilmiş tam bir isim olmalıdır. (örn: Eğer sitede başlık sadece "MAGIC" ise ve sayfanın başka bir yerinde veya sitenin kendisinde marka "Sarsılmaz" ise başlık "Sarsılmaz Magic" olmalıdır).
+   - Özellikler (specs) İSTİSNASIZ TÜRKÇE olmalıdır. İngilizce olan (örn: "Caliber", "Barrel Length", "Semi Auto") tüm anahtarları ve değerleri Türkçe'ye çevir ("Kalibre", "Namlu Uzunluğu", "Yarı Otomatik"). 
+   - Tüm gereksiz boşlukları ve HTML taglerini temizle.
+   - Bu "perfect_product_data" objesi, kullanıcının o anki ürünü anında forma aktarabilmesi için kusursuz hazırlanmış bir önizlemedir.
+
+SADECE AŞAĞIDAKİ JSON ŞEMASINI DÖNDÜR:
+{
+  "domain": "${pageInfo.domain}",
+  "selectors": {
+    "title": "...",
+    "price": null,
+    "brand": null,
+    "images": "...",
+    "image_attr": "src",
+    "specs_table": "...",
+    "specs_row": "...",
+    "specs_key": "...",
+    "specs_val": "...",
+    "description": "...",
+    "listing_link": "..."
+  },
+  "perfect_product_data": {
+    "title": "Marka ve Model Birleştirilmiş Tam Başlık",
+    "brand": "Sadece Marka",
+    "model": "Sadece Model",
+    "price": "15000",
+    "specs": {
+      "Kalibre": "12 GA",
+      "Namlu Uzunluğu": "71 cm"
+    },
+    "description": "..."
+  },
+  "notes": "Kısa analiz ve çalışma mantığı notu"
+}`;
+
+  let endpoint = "";
+  let authHeader = "";
+  let candidates = [];
+  let extraHeaders = {};
+
+  if (engine === "groq") {
+    endpoint = "https://api.groq.com/openai/v1/chat/completions";
+    authHeader = `Bearer ${groqKey}`;
+    candidates = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
+  } else {
+    endpoint = "https://openrouter.ai/api/v1/chat/completions";
+    authHeader = `Bearer ${openRouterKey}`;
+    candidates = ["nvidia/nemotron-3.5-lightning:free", "google/gemma-4-26b-a4b-it:free"];
+    extraHeaders = {
+      "HTTP-Referer": "https://gunerav.site",
+      "X-Title": "Guner AV Scraper",
+    };
+  }
+
+  let lastError = null;
+  let parsed = null;
+
+  // Başlangıçta 5000 karakter, TPM hatası durumunda 2500 karaktere indirilip otomatik tekrarlanır
+  const snippetLengths = [5000, 2500];
+
+  for (const snippetLen of snippetLengths) {
+    const snippetToUse = (pageInfo.htmlSnippet || "").slice(0, snippetLen);
+    let metaRefTxt = "";
+    if (pageInfo.referenceMeta) {
+      const ref = pageInfo.referenceMeta;
+      metaRefTxt = `\nSAYFA REFERANS BİLGİLERİ (Doğrulama ve Eşleştirme İçin):
+- Hedef Ürün Başlığı: "${ref.title || ""}"
+- Varsa Marka: "${ref.brand || ""}"
+- Varsa Ana Görsel: "${ref.image || ""}"
+- Varsa Fiyat: "${ref.price !== null && ref.price !== undefined ? ref.price : "Doğrudan Satış Fiyatı Yok / Katalog"}"
+${ref.specsSample && ref.specsSample.length ? "- Örnek Özellikler: " + ref.specsSample.join(", ") : ""}
+${pageInfo.suggestedHeadingSelector ? `- Başlık Eleman Adayı: "${pageInfo.suggestedHeadingSelector}"` : ""}\n`;
+    }
+    const userPrompt = `Domain: ${pageInfo.domain}\nURL: ${pageInfo.url}${metaRefTxt}\n${customPrompt ? "Özel İstek: " + customPrompt + "\n" : ""}HTML İÇERİĞİ:\n${snippetToUse}`;
+
+    for (const modelName of candidates) {
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: authHeader,
+            ...extraHeaders,
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.1,
+            max_tokens: 1000,
+            response_format: { type: "json_object" },
+          }),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.text();
+          lastError = new Error(`HTTP ${res.status}: ${errBody}`);
+          // Eğer token limiti hatasıysa (413 / TPM), daha küçük snippet ile tekrar dene
+          if (res.status === 413 || errBody.includes("TPM") || errBody.includes("too large")) {
+            break;
+          }
+          continue;
+        }
+
+        const data = await res.json();
+        const rawContent = data.choices?.[0]?.message?.content || "";
+        try {
+          parsed = JSON.parse(rawContent);
+        } catch (e) {
+          const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+          }
+        }
+
+        if (parsed) break;
+      } catch (netErr) {
+        lastError = netErr;
+      }
+    }
+
+    if (parsed) break;
+  }
+
+  if (!parsed) {
+    throw lastError || new Error("Yapay zekâ yanıtı geçerli JSON formatına dönüştürülemedi.");
+  }
+
+  return parsed;
+}
+
+function renderSavedRulesList(rules) {
+  const container = document.getElementById("savedRulesList");
+  if (!container) return;
+  const domains = Object.keys(rules || {});
+  if (domains.length === 0) {
+    container.innerHTML = "<em>Henüz özel kural kaydedilmemiş.</em>";
+    return;
+  }
+
+  container.innerHTML = "";
+  domains.forEach((dom) => {
+    const rule = rules[dom];
+    const item = document.createElement("div");
+    item.style.display = "flex";
+    item.style.justifyContent = "space-between";
+    item.style.alignItems = "center";
+    item.style.padding = "4px 0";
+    item.style.borderBottom = "1px solid #1e293b";
+
+    const dateStr = rule.updatedAt ? new Date(rule.updatedAt).toLocaleDateString("tr-TR") : "";
+    item.innerHTML = `
+      <div style="font-size: 11px;">
+        <span style="color:#38bdf8; font-weight:700;">🌐 ${dom}</span>
+        ${dateStr ? `<span style="color:#64748b; font-size:9.5px; margin-left:4px;">(${dateStr})</span>` : ""}
+      </div>
+      <button data-del-domain="${dom}" style="background:none; border:none; color:#f87171; font-size:10px; cursor:pointer; font-weight:bold; padding: 2px 4px;">Sil ✖</button>
+    `;
+    container.appendChild(item);
+  });
+
+  container.querySelectorAll("[data-del-domain]").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      const delDom = e.target.dataset.delDomain;
+      const { customSiteRules = {} } = await chrome.storage.local.get("customSiteRules");
+      delete customSiteRules[delDom];
+      await chrome.storage.local.set({ customSiteRules });
+      renderSavedRulesList(customSiteRules);
+      showStatus(`🗑️ '${delDom}' kuralları silindi.`, "info");
+    });
+  });
 }
 

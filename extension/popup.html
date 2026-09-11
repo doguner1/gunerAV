@@ -98,18 +98,22 @@
   <div class="tabs">
     <div class="tab active" data-tab="tabScrape">⚡ Tekli Çek</div>
     <div class="tab" data-tab="tabBatch">📦 Toplu Çekim</div>
+    <div class="tab" data-tab="tabAiLearner">🤖 AI Çözücü</div>
     <div class="tab" data-tab="tabManual">📋 Manuel / JSON</div>
-    <div class="tab" data-tab="tabSettings">⚙️ Supabase</div>
+    <div class="tab" data-tab="tabSettings">⚙️ Ayarlar</div>
   </div>
 
   <div class="content">
     <!-- TAB 1: Sayfadan Çek (Scraper) -->
     <div class="tab-pane active" id="tabScrape">
       <div class="row" style="gap: 6px; margin-bottom: 8px;">
-        <button class="btn-secondary" id="btnScrapePage" style="margin-bottom: 0; flex: 2.5;">
-          🔍 Açık Olan Tedarikçi Sayfasını Tara
+        <button class="btn-secondary" id="btnScrapePage" style="margin-bottom: 0; flex: 2.2;">
+          🔍 Sayfayı Tara
         </button>
-        <button class="icon-btn" id="btnResetForm" style="flex: 1; padding: 8px; font-weight: 700; background: #1e2430;" title="Formu ve taslağı tamamen temizle">
+        <button class="btn-secondary" id="btnGoToAi" style="margin-bottom: 0; flex: 1.5; background: #1e1b4b; border-color: #6366f1; color: #c7d2fe; font-weight: 700;" title="Yapay zeka ile bu sitenin kurallarını öğren">
+          🤖 AI ile Çöz
+        </button>
+        <button class="icon-btn" id="btnResetForm" style="flex: 0.8; padding: 8px; font-weight: 700; background: #1e2430;" title="Formu ve taslağı tamamen temizle">
           🗑️ Temizle
         </button>
       </div>
@@ -281,7 +285,89 @@
       <div class="console-log" id="batchConsoleLog" style="display: none;"></div>
     </div>
 
-    <!-- TAB 3: Manuel / JSON Modu -->
+    <!-- TAB 3: AI Site Çözücü -->
+    <div class="tab-pane" id="tabAiLearner">
+      <div style="background: linear-gradient(135deg, #141824, #1a1b35); border: 1px solid #3b4261; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;">
+        <div style="font-size: 12px; font-weight: 800; color: #a5b4fc; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+          <span>🤖 AI Akıllı Site Analizi &amp; Öğrenme</span>
+          <span class="batch-badge" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.3);">Llama 3.3 / DeepSeek</span>
+        </div>
+        <div style="font-size: 11px; color: #94a3b8; line-height: 1.4;">
+          Eklentinin otomatik okuyamadığı yeni bir tedarikçi sitesindeyken bu butona basın. Yapay zekâ sitenin yapısını <strong>1 kez</strong> analiz eder, başlık/fiyat/görsel kurallarını çıkarır ve tarayıcıya kaydeder. Sonrasında o siteden binlerce ürünü <strong>0 maliyetle</strong> ve anında çekebilirsiniz!
+        </div>
+      </div>
+
+      <!-- Aktif Sayfa & Model Seçimi -->
+      <div class="form-group" style="margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <label style="margin-bottom: 0; font-weight: 700; color: #38bdf8;">🌐 Hedef Site / Sayfa:</label>
+          <span id="aiActiveDomainBadge" style="font-size: 10.5px; font-family: monospace; background: #0f172a; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; color: #38bdf8;">Tespit ediliyor...</span>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 8px;">
+        <label>Yapay Zekâ Motoru:</label>
+        <select id="selAiEngine">
+          <option value="groq" selected>⚡ GROQ - GPT OSS 120B (Süper Hızlı &amp; Ücretsiz - Önerilen)</option>
+          <option value="openrouter">🧠 OpenRouter - Nemotron Lightning (Ücretsiz)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 8px;">
+        <label>Özel Talimat / İpucu (İsteğe Bağlı):</label>
+        <input type="text" id="inpAiCustomPrompt" placeholder="Örn: Fiyatı KDV dahil al, görsellerde data-zoom alanını seç...">
+      </div>
+
+      <button class="btn-primary" id="btnAiAnalyzeSite" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; margin-top: 4px; margin-bottom: 10px;">
+        ⚡ Bu Sayfayı AI ile Analiz Et &amp; Kural Çıkar
+      </button>
+
+      <!-- AI Durum ve Yükleme Göstergesi -->
+      <div id="aiStatusBox" style="display: none; padding: 8px 10px; border-radius: 6px; font-size: 11px; margin-bottom: 8px;"></div>
+
+      <!-- AI Sonuç ve Önizleme Kutusu -->
+      <div id="aiResultCard" style="display: none; background: #0e131d; border: 1px solid #293548; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+        <div style="font-size: 11px; font-weight: 800; color: #10b981; margin-bottom: 6px; display: flex; justify-content: space-between;">
+          <span>✅ Kurallar Başarıyla Çıkarıldı!</span>
+          <span id="aiExtractedDomain" style="color: #94a3b8; font-family: monospace;"></span>
+        </div>
+        
+        <!-- Çıkarılan Seçiciler Özeti -->
+        <div style="font-size: 10.5px; background: #07090e; padding: 8px; border-radius: 6px; border: 1px solid #1e293b; margin-bottom: 8px;">
+          <div style="color: #cbd5e1; margin-bottom: 2px;">📌 <strong>Başlık:</strong> <span id="lblRuleTitle" style="color: #38bdf8; font-family: monospace;"></span></div>
+          <div style="color: #cbd5e1; margin-bottom: 2px;">💰 <strong>Fiyat:</strong> <span id="lblRulePrice" style="color: #38bdf8; font-family: monospace;"></span></div>
+          <div style="color: #cbd5e1; margin-bottom: 2px;">🖼️ <strong>Görseller:</strong> <span id="lblRuleImages" style="color: #38bdf8; font-family: monospace;"></span></div>
+          <div style="color: #cbd5e1;">📋 <strong>Özellikler:</strong> <span id="lblRuleSpecs" style="color: #38bdf8; font-family: monospace;"></span></div>
+        </div>
+
+        <!-- Anlık Ürün Önizlemesi -->
+        <div style="font-size: 11px; font-weight: 700; color: #d4af37; margin-bottom: 4px;">Örnek Ürün Önizlemesi:</div>
+        <div id="aiSamplePreview" style="font-size: 10.5px; color: #94a3b8; background: #07090e; padding: 8px; border-radius: 6px; border: 1px solid #1e293b; max-height: 120px; overflow-y: auto; line-height: 1.4;">
+        </div>
+
+        <div class="row" style="margin-top: 8px; gap: 6px;">
+          <button class="btn-primary" id="btnSaveAiRules" style="flex: 1; padding: 8px; font-size: 11px; margin-top: 0; background: #059669; color: #fff;">
+            💾 Kuralları Kalıcı Kaydet
+          </button>
+          <button class="btn-secondary" id="btnApplyAiToForm" style="flex: 1; padding: 8px; font-size: 11px; margin-bottom: 0; background: #1e293b;">
+            📝 Forma Doldur
+          </button>
+        </div>
+      </div>
+
+      <!-- Kayıtlı Kurallar Listesi -->
+      <div style="background: #11151f; border: 1px solid #1e293b; border-radius: 8px; padding: 8px 10px; margin-top: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 11px; font-weight: 700; color: #cbd5e1;">💾 Hafızadaki Özel Kurallar:</span>
+          <button id="btnClearAllAiRules" style="background: none; border: none; color: #ef4444; font-size: 10px; cursor: pointer; text-decoration: underline;">Tümünü Temizle</button>
+        </div>
+        <div id="savedRulesList" style="font-size: 10.5px; color: #64748b;">
+          Henüz özel kural kaydedilmemiş.
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: Manuel / JSON Modu -->
     <div class="tab-pane" id="tabManual">
       <div class="form-group">
         <label>Yapay Zeka (AI) JSON Yapıştır:</label>
@@ -292,7 +378,7 @@
       </div>
     </div>
 
-    <!-- TAB 3: Supabase Ayarları -->
+    <!-- TAB 5: Supabase & AI Ayarları -->
     <div class="tab-pane" id="tabSettings">
       <div class="form-group">
         <label>Supabase Project URL:</label>
@@ -305,6 +391,21 @@
           ⚠️ <strong>RLS Hatası Almamak İçin:</strong> Eklentide ürün eklemek için Supabase panelinizdeki (<em>Project Settings &rarr; API</em>) <strong>service_role (secret)</strong> anahtarını kullanınız. (Anon key kullanırsanız RLS yazma izni kısıtlamasına takılırsınız).
         </div>
       </div>
+
+      <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #232a3b;">
+        <div style="font-size: 11px; font-weight: 800; color: #a5b4fc; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          🤖 Yapay Zekâ (AI) API Anahtarları
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label>GROQ API Key (GPT OSS 120B):</label>
+          <input type="password" id="cfgGroqKey" placeholder="gsk_...">
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label>OpenRouter API Key (Nemotron Lightning):</label>
+          <input type="password" id="cfgOpenRouterKey" placeholder="sk-or-v1-...">
+        </div>
+      </div>
+
       <div class="row" style="margin-top: 10px;">
         <div class="col">
           <button class="btn-primary" id="btnSaveConfig" style="margin-top: 0;">💾 Ayarları Kaydet</button>
