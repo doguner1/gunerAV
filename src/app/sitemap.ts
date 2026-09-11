@@ -2,6 +2,8 @@ import { MetadataRoute } from "next";
 import { getAllProducts, getAllCategories } from "@/lib/products";
 import { STORE_INFO } from "@/lib/store";
 
+export const revalidate = 3600; // 1 saatte bir arka planda veritabanından otomatik güncellenir
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = STORE_INFO.siteUrl;
   const products = await getAllProducts();
