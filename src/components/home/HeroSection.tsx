@@ -71,9 +71,9 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
 
       <div className="relative z-20 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
+        <div className="flex flex-col lg:flex-row gap-8 sm:gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="w-full lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-1 xl:pt-4 2xl:pt-8">
+          <div className="w-full max-w-2xl lg:max-w-none lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-1 xl:pt-4 2xl:pt-8">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
@@ -105,16 +105,26 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1.5" />
               </Link>
 
-              {/* PC / Masaüstü ve Tablet Yatay Modda: Sadece Mağaza Konum Butonu */}
+              {/* Mağaza Konum Butonu (Tüm Cihazlarda Şık & Uyumlu) */}
               <a
                 href={STORE_INFO.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackMapClick("hero_desktop_maps")}
-                className="hidden lg:inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-black/40 hover:bg-black/60 px-5 sm:px-6 py-3.5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:border-[#d4af37] hover:scale-[1.02] active:scale-95 shadow-lg"
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-black/40 hover:bg-black/60 px-5 sm:px-6 py-3.5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:border-[#d4af37] hover:scale-[1.02] active:scale-95 shadow-lg"
               >
                 <MapPin className="h-4 w-4 text-[#d4af37]" />
                 <span>{t("storeCta")}</span>
+              </a>
+
+              {/* Hemen Ara Butonu (Tablet ve Mobilde Doğrudan İletişim) */}
+              <a
+                href={`tel:${STORE_INFO.phoneIntl || STORE_INFO.phone}`}
+                onClick={() => trackPhoneClick("hero_tablet_call")}
+                className="inline-flex lg:hidden items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/15 hover:bg-emerald-500/25 px-4 sm:px-5 py-3.5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300 backdrop-blur-md transition-all hover:border-emerald-400 hover:scale-[1.02] active:scale-95 shadow-lg"
+              >
+                <PhoneCall className="h-4 w-4 text-emerald-400 animate-pulse" />
+                <span>{t("heroCall")}</span>
               </a>
             </div>
 
@@ -136,53 +146,6 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
                 <span className="font-bold text-amber-200 text-xs sm:text-[13px] tracking-wide whitespace-nowrap">
                   {t("priceAndQuality")}
                 </span>
-              </div>
-            </div>
-
-            {/* TABLET DİKEY MOD: Ürünün Üstünde Yer Alan Prestijli Konum & Arama Butonları */}
-            <div className="hidden sm:flex lg:hidden items-center pt-2">
-              <div className="inline-flex items-center p-2 rounded-2xl bg-neutral-950/90 dark:bg-black/90 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.25)] gap-3 w-full sm:w-auto">
-                {/* Konuma Git Butonu */}
-                <a
-                  href={STORE_INFO.mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackMapClick("hero_tablet_directions")}
-                  className="group flex-1 sm:flex-initial flex items-center gap-3.5 px-5 sm:px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] group-hover:scale-110 transition-transform shadow-inner shrink-0">
-                    <MapPin className="h-5 w-5 fill-[#d4af37]/30 text-[#d4af37]" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#d4af37]">
-                      {t("heroDirections")}
-                    </div>
-                    <div className="text-sm font-heading font-black text-white tracking-wide">
-                      {t("heroDirectionsDesc")}
-                    </div>
-                  </div>
-                </a>
-
-                <div className="h-8 w-[1px] bg-white/15" />
-
-                {/* Hemen Ara Butonu */}
-                <a
-                  href={`tel:${STORE_INFO.phoneIntl || STORE_INFO.phone}`}
-                  onClick={() => trackPhoneClick("hero_tablet_call")}
-                  className="group flex-1 sm:flex-initial flex items-center gap-3.5 px-5 sm:px-6 py-3.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-white transition-all hover:scale-[1.02] active:scale-95 shadow-md"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 text-white group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30 shrink-0">
-                    <PhoneCall className="h-5 w-5 animate-pulse" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
-                      {t("heroCall")}
-                    </div>
-                    <div className="text-sm font-heading font-black text-white tracking-wide">
-                      {STORE_INFO.phone} · {t("directCall")}
-                    </div>
-                  </div>
-                </a>
               </div>
             </div>
           </div>

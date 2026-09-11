@@ -332,7 +332,7 @@ export default function HeroSpotlightStudio({
       {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma) */}
       <div
         ref={containerRef}
-        className="w-full sm:max-w-md lg:max-w-none lg:shrink-0 lg:self-start lg:ml-auto relative mt-4 sm:mt-6 lg:mt-0 transition-all duration-150 z-20"
+        className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-none lg:shrink-0 lg:self-start lg:ml-auto relative mt-4 sm:mt-6 lg:mt-0 transition-all duration-150 z-20"
         style={{
           width: isDesktop ? `${Math.round(activeConfig.width * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
           height: isDesktop ? `${Math.round(530 * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
@@ -441,13 +441,13 @@ export default function HeroSpotlightStudio({
             </div>
           </div>
 
-          {/* 3. FLOATING TRUST INDICATOR PILL (Google Haritalar 5.0 Star Badge) */}
+          {/* 3. FLOATING TRUST INDICATOR PILL (Google Haritalar 5.0 Star Badge - Sadece Masaüstünde) */}
           <a
             href={mapsUrl || "https://maps.google.com"}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackMapClick("hero_spotlight_google_badge")}
-            className="hidden sm:flex items-center gap-2.5 absolute -bottom-10 -left-4 z-20 rounded-2xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-2 px-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-105 group cursor-pointer"
+            className="hidden lg:flex items-center gap-2.5 absolute -bottom-10 -left-4 z-20 rounded-2xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-2 px-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-105 group cursor-pointer"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-[#d4af37] group-hover:scale-110 transition-transform shrink-0">
               <Star className="h-4 w-4 fill-[#d4af37] text-[#d4af37]" />
