@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { getSupabaseAdminClient, hashIp } from "@/lib/server-supabase";
 import { detectDeviceType } from "@/lib/device-detect";
 
+// In-memory cache to deduplicate identical events arriving within 1200ms
+const recentServerEvents = new Map<string, number>();
+
 /**
  * Core event ingestion engine.
  * Receives raw HTTP request, processes metadata, logs to console,
@@ -30,6 +33,24 @@ export async function recordAnalyticsEvent(
 
   const eventName = body.event || "unknown";
   const p = body.params || {};
+  const visitorId = p.visitor_id || "anon";
+
+  // Server-side deduplication: ignore duplicate packet within 1200ms from the same visitor/IP
+  const dedupeKey = `${eventName}:${visitorId}:${p.source || p.item_id || p.whatsapp_source || p.path || ""}`;
+  const now = Date.now();
+  const lastRecorded = recentServerEvents.get(dedupeKey) || 0;
+  if (now - lastRecorded < 1200) {
+    console.log("[analytics server dedupe] Ignored duplicate event within 1.2s:", dedupeKey);
+    return { success: true, persisted: "supabase", id: "duplicate_ignored" };
+  }
+  recentServerEvents.set(dedupeKey, now);
+
+  // Periodic cleanup
+  if (recentServerEvents.size > 300) {
+    recentServerEvents.forEach((t, k) => {
+      if (now - t > 10000) recentServerEvents.delete(k);
+    });
+  }
 
   // Tek doğruluk kaynağı: sunucu tarafı User-Agent (+ dar kapsamlı iPad Pro donanım ipucu)
   const isIpadProHint = Boolean(body.is_ipad_pro_hint ?? p.is_ipad_pro_hint);

@@ -68,11 +68,30 @@ export function getSessionId(): string {
   }
 }
 
+const recentClientEvents = new Map<string, number>();
+
 /**
  * Core event tracking dispatcher
  */
 export function trackEvent(eventName: string, params: AnalyticsEventParams = {}) {
   if (typeof window === "undefined") return;
+
+  // Deduplicate identical events triggered in rapid succession (under 800ms)
+  // Prevents rapid double taps, accidental touch+click ghost clicks, etc.
+  const dedupeKey = `${eventName}_${params.source || ""}_${params.item_id || params.id || ""}_${params.category_id || ""}_${params.trigger || ""}`;
+  const now = Date.now();
+  const lastTime = recentClientEvents.get(dedupeKey) || 0;
+  if (now - lastTime < 800) {
+    return;
+  }
+  recentClientEvents.set(dedupeKey, now);
+
+  // Periodic cleanup
+  if (recentClientEvents.size > 80) {
+    recentClientEvents.forEach((t, k) => {
+      if (now - t > 5000) recentClientEvents.delete(k);
+    });
+  }
 
   const timestamp = new Date().toISOString();
   // NOT: Cihaz tipi artık client-side ekran genişliğiyle HESAPLANMAZ.
@@ -263,7 +282,7 @@ export function trackSearch(query: string, resultsCount: number) {
  * 4. WhatsApp Direct Contact Click (Conversion Event)
  */
 export function trackWhatsAppClick(source: string, product?: { id?: string; name?: string }) {
-  trackExternalClick("contact_whatsapp", {
+  trackEvent("contact_whatsapp", {
     source,
     item_id: product?.id,
     item_name: product?.name,
@@ -295,50 +314,14 @@ export function trackVariantSelect(product: { id: string; name: string }, varian
  * 7. Phone Call Click
  */
 export function trackPhoneClick(source: string, details: Record<string, any> = {}) {
-  trackExternalClick("click_phone", { source, ...details });
+  trackEvent("click_phone", { source, ...details });
 }
 
 /**
  * 8. Map & Store Directions Click
  */
 export function trackMapClick(source: string, details: Record<string, any> = {}) {
-  trackExternalClick("click_map_directions", { source, ...details });
+  trackEvent("click_map_directions", { source, ...details });
 }
 
-/**
- * Helper to force sendBeacon for external links (tel:, maps:, wa.me:)
- * to avoid WebKit cancelling fetch requests when app switches.
- */
-function trackExternalClick(eventName: string, params: AnalyticsEventParams = {}) {
-  // First record the event properly with standard trackEvent
-  trackEvent(eventName, params);
-
-  // Then forcefully try sendBeacon regardless of OS to ensure delivery 
-  // before the browser suspends the context.
-  try {
-    if (typeof window !== "undefined" && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-      const isProbablyIpadPro = 
-        /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1;
-      
-      const eventPayload = {
-        session_id: getSessionId(),
-        visitor_id: getVisitorId(),
-        timestamp: new Date().toISOString(),
-        path: window.location.pathname,
-        ...params,
-      };
-
-      const bodyStr = JSON.stringify({ 
-        event: eventName, 
-        is_ipad_pro_hint: isProbablyIpadPro, 
-        params: eventPayload 
-      });
-      
-      const blob = new Blob([bodyStr], { type: "application/json" });
-      navigator.sendBeacon("/api/collect", blob);
-    }
-  } catch (e) {
-    // silently fail
-  }
-}
 
