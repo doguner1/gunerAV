@@ -52,7 +52,7 @@ export function checkRateLimit(
 ): RateLimitResult {
   const cleanIp = (ip || "unknown").split(",")[0].trim();
   const cleanVisitor = (visitorId || "anon").trim().slice(0, 64);
-  const key = `${prefix}:${cleanIp}:${cleanVisitor}`;
+  const key = `${prefix}:${cleanIp}`; // Fixed: ignore visitor_id to prevent rate-limit bypass
 
   const now = Date.now();
   const windowMs = windowSeconds * 1000;

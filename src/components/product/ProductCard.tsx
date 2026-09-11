@@ -9,6 +9,7 @@ import { formatPrice, generateWhatsAppLink } from "@/lib/utils";
 import { STORE_INFO } from "@/lib/store";
 import { MessageCircle, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
 import { trackEvent, trackWhatsAppClick } from "@/lib/analytics";
+import { recordProductNavigation } from "@/lib/navigation-state";
 
 interface ProductCardProps {
   product: Product;
@@ -39,23 +40,9 @@ export default function ProductCard({ product, categoryName, priority = false }:
   const waLink = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
   const handleProductNavigate = () => {
-    if (typeof window !== "undefined") {
-      try {
-        const raw = sessionStorage.getItem("gunerav_catalog_state");
-        const state = raw ? JSON.parse(raw) : {};
-        state.scrollY = window.scrollY;
-        state.lastProductId = product.id;
-        sessionStorage.setItem("gunerav_catalog_state", JSON.stringify(state));
-
-        // Also save home scroll position if navigating from home page
-        const path = window.location.pathname.replace(/\/+$/, "");
-        if (path === "" || path === "/tr" || path === "/en") {
-          sessionStorage.setItem("gunerav_home_scroll", window.scrollY.toString());
-          sessionStorage.setItem("gunerav_home_last_product_id", String(product.id));
-          sessionStorage.setItem("gunerav_from_home", "1");
-        }
-      } catch (e) {}
-    }
+    recordProductNavigation(product.id, {
+      catalogCategory: product.category,
+    });
   };
 
   return (

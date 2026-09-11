@@ -6,6 +6,7 @@ import { getDealsProducts, getAllCategories } from "@/lib/products";
 import { Product } from "@/types/product";
 import ProductCard from "@/components/product/ProductCard";
 import { Sparkles, ChevronDown } from "lucide-react";
+import { getReturnStateForCurrentPage } from "@/lib/navigation-state";
 
 const DEALS_COUNT_KEY = "gunerav_home_deals_count";
 
@@ -24,14 +25,12 @@ export default function CampaignSection({ products = [] }: { products?: Product[
     if (typeof window === "undefined") return;
 
     try {
-      const isFromProduct = sessionStorage.getItem("gunerav_from_home") === "1";
-      const saved = sessionStorage.getItem(DEALS_COUNT_KEY);
-      const count = saved ? parseInt(saved, 10) : 20;
+      const returnState = getReturnStateForCurrentPage();
+      const count = returnState?.homeDealsCount;
 
-      if (isFromProduct && !isNaN(count) && count > 20) {
+      if (returnState && returnState.source === "home" && count && count > 20) {
         setVisibleCount(count);
-      } else if (!isFromProduct) {
-        // Fresh visit / reload: reset back to default 20
+      } else {
         sessionStorage.removeItem(DEALS_COUNT_KEY);
       }
     } catch (e) {}

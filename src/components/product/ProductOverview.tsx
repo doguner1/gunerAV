@@ -18,6 +18,7 @@ import { sendPresenceHeartbeat } from "@/lib/presence";
 import { usePageEngagementTracker } from "@/hooks/usePageEngagementTracker";
 import ProductGallery from "@/components/product/ProductGallery";
 import LicenseNotice from "@/components/product/LicenseNotice";
+import { clearReturnState } from "@/lib/navigation-state";
 import {
   MessageCircle,
   Phone,
@@ -119,6 +120,7 @@ export default function ProductOverview({
             {categoryName && (
               <Link
                 href={`/products?category=${product.category}`}
+                onClick={() => clearReturnState()}
                 className="rounded-md border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-1 text-xs font-bold text-neutral-800 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-700 hover:text-black dark:hover:text-white shadow-sm transition-colors"
               >
                 {categoryName}

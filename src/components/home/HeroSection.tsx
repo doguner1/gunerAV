@@ -18,6 +18,7 @@ import {
 
 import StoreStatusBadge from "@/components/common/StoreStatusBadge";
 import { getHeroSpotlightProduct } from "@/lib/products";
+import { clearReturnState } from "@/lib/navigation-state";
 import { Product } from "@/types/product";
 import HeroSpotlightStudio from "@/components/home/HeroSpotlightStudio";
 
@@ -97,6 +98,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
             <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <Link
                 href="/products"
+                onClick={() => clearReturnState()}
                 className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-neutral-100 text-black px-7 sm:px-8 py-4 text-sm font-extrabold uppercase tracking-wider shadow-[0_12px_32px_rgba(255,255,255,0.25)] transition-all hover:scale-[1.02] active:scale-95 group"
               >
                 <span>{t("catalogCta")}</span>

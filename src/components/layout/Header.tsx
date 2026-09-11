@@ -9,6 +9,7 @@ import { STORE_INFO } from "@/lib/store";
 import { Menu, X, Phone, ChevronDown, ChevronRight } from "lucide-react";
 import { getAllCategories } from "@/lib/products";
 import { trackPhoneClick } from "@/lib/analytics";
+import { clearReturnState } from "@/lib/navigation-state";
 
 export default function Header() {
   const t = useTranslations("Navigation");
@@ -43,8 +44,8 @@ export default function Header() {
     { href: "/contact", label: t("contact") },
   ];
 
-  const isHome = pathname === "/" || pathname === "/tr" || pathname === "/en" || pathname === "";
-  const isHeroOverlay = !scrolled && isHome;
+  const isHome = pathname === "/" || pathname === "";
+  const isHeroOverlay = isHome && !scrolled;
 
   return (
     <>
@@ -61,12 +62,7 @@ export default function Header() {
           {/* Logo */}
           <Link
             href="/"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                sessionStorage.removeItem("gunerav_from_home");
-                sessionStorage.removeItem("gunerav_home_scroll");
-              }
-            }}
+            onClick={() => clearReturnState()}
             className="group flex items-center gap-2.5 shrink-0"
           >
             <div className="flex flex-col">
@@ -91,12 +87,7 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={() => {
-                    if (link.href === "/" && typeof window !== "undefined") {
-                      sessionStorage.removeItem("gunerav_from_home");
-                      sessionStorage.removeItem("gunerav_home_scroll");
-                    }
-                  }}
+                  onClick={() => clearReturnState()}
                   className={`px-3 py-1.5 text-[13px] transition-colors ${
                     isActive
                       ? isHeroOverlay
@@ -141,7 +132,10 @@ export default function Header() {
                         <div key={cat.id} className="relative group/sub">
                           <Link
                             href={`/products?category=${cat.id}`}
-                            onClick={() => setCategoriesOpen(false)}
+                            onClick={() => {
+                              setCategoriesOpen(false);
+                              clearReturnState();
+                            }}
                             className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                           >
                             <span className="flex items-center gap-1.5">
@@ -162,7 +156,10 @@ export default function Header() {
                             </div>
                             <Link
                               href={`/products?category=${cat.id}`}
-                              onClick={() => setCategoriesOpen(false)}
+                              onClick={() => {
+                                setCategoriesOpen(false);
+                                clearReturnState();
+                              }}
                               className="block rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-[#d4af37]"
                             >
                               {isTr ? "Tüm Tüfekler" : "All Shotguns"}
@@ -171,7 +168,10 @@ export default function Header() {
                               <Link
                                 key={sub.id}
                                 href={`/products?category=${sub.id}`}
-                                onClick={() => setCategoriesOpen(false)}
+                                onClick={() => {
+                                  setCategoriesOpen(false);
+                                  clearReturnState();
+                                }}
                                 className="block rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                               >
                                 {isTr ? sub.name_tr : sub.name_en}
@@ -186,7 +186,10 @@ export default function Header() {
                       <Link
                         key={cat.id}
                         href={`/products?category=${cat.id}`}
-                        onClick={() => setCategoriesOpen(false)}
+                        onClick={() => {
+                          setCategoriesOpen(false);
+                          clearReturnState();
+                        }}
                         className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                       >
                         <span>{categoryName}</span>
@@ -303,10 +306,8 @@ export default function Header() {
                     key={link.href}
                     href={link.href}
                     onClick={() => {
-                      if (link.href === "/" && typeof window !== "undefined") {
-                        sessionStorage.removeItem("gunerav_from_home");
-                        sessionStorage.removeItem("gunerav_home_scroll");
-                      }
+                      setIsOpen(false);
+                      clearReturnState();
                     }}
                     className={`rounded-lg px-3 py-2.5 text-sm transition-colors ${
                       pathname === link.href
@@ -334,6 +335,10 @@ export default function Header() {
                         <div className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white">
                           <Link
                             href={`/products?category=${cat.id}`}
+                            onClick={() => {
+                              setIsOpen(false);
+                              clearReturnState();
+                            }}
                             className="flex-1 flex items-center justify-between"
                           >
                             <span>{categoryName}</span>
@@ -357,6 +362,10 @@ export default function Header() {
                           <div className="ml-4 pl-2 border-l border-neutral-200 dark:border-neutral-800 flex flex-col gap-1 my-1 animate-in fade-in duration-150">
                             <Link
                               href={`/products?category=${cat.id}`}
+                              onClick={() => {
+                                setIsOpen(false);
+                                clearReturnState();
+                              }}
                               className="px-2.5 py-1 text-xs font-bold text-neutral-900 dark:text-white hover:text-[#d4af37]"
                             >
                               {isTr ? "• Tüm Tüfekler" : "• All Shotguns"}
@@ -365,6 +374,10 @@ export default function Header() {
                               <Link
                                 key={sub.id}
                                 href={`/products?category=${sub.id}`}
+                                onClick={() => {
+                                  setIsOpen(false);
+                                  clearReturnState();
+                                }}
                                 className="px-2.5 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
                               >
                                 {isTr ? `• ${sub.name_tr}` : `• ${sub.name_en}`}
@@ -380,6 +393,10 @@ export default function Header() {
                     <Link
                       key={cat.id}
                       href={`/products?category=${cat.id}`}
+                      onClick={() => {
+                        setIsOpen(false);
+                        clearReturnState();
+                      }}
                       className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white"
                     >
                       <span>{categoryName}</span>
@@ -396,6 +413,10 @@ export default function Header() {
               {/* CTA */}
               <Link
                 href="/products"
+                onClick={() => {
+                  setIsOpen(false);
+                  clearReturnState();
+                }}
                 className="rounded-xl bg-neutral-900 dark:bg-white p-3 text-center text-sm font-bold uppercase tracking-wider text-white dark:text-black"
               >
                 {t("viewCatalog")}

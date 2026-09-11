@@ -8,6 +8,12 @@ import ProductCard from "@/components/product/ProductCard";
 import { useLocale, useTranslations } from "next-intl";
 import { AlertCircle, ChevronDown } from "lucide-react";
 import { trackSearch, trackCategoryClick } from "@/lib/analytics";
+import {
+  getReturnStateForCurrentPage,
+  consumeReturnState,
+  clearReturnState,
+  restoreScrollPosition,
+} from "@/lib/navigation-state";
 
 interface CatalogClientProps {
   initialProducts: Product[];
@@ -28,8 +34,6 @@ export default function CatalogClient({
   const tCommon = useTranslations("Common");
   const isTr = locale === "tr";
 
-  const SESSION_KEY = "gunerav_catalog_state";
-
   // Initial read from URL query params
   const categoryParam = initialCategory || searchParams.get("category") || "all";
   const queryParam = searchParams.get("q") || "";
@@ -44,77 +48,37 @@ export default function CatalogClient({
   const [visibleCount, setVisibleCount] = useState<number>(isNaN(countParam) ? 20 : countParam);
 
   const isRestoredRef = useRef(false);
-  const isRestoringScrollRef = useRef(false);
 
-  // Helper to accurately and smoothly restore scroll position without jumping
-  const restoreScrollPos = useCallback((targetY: number) => {
-    if (targetY <= 0) return;
-    isRestoringScrollRef.current = true;
-
-    // Immediate attempt
-    window.scrollTo({ top: targetY, behavior: "instant" });
-
-    // Repeated check across frames to accommodate images & layout settling
-    let attempts = 0;
-    const maxAttempts = 6;
-    const timer = setInterval(() => {
-      attempts++;
-      if (Math.abs(window.scrollY - targetY) < 15 || attempts >= maxAttempts) {
-        clearInterval(timer);
-        setTimeout(() => {
-          isRestoringScrollRef.current = false;
-        }, 120);
-      } else {
-        window.scrollTo({ top: targetY, behavior: "instant" });
-      }
-    }, 40);
-  }, []);
-
-  // 1. Mount effect: Restore from sessionStorage if URL has no parameters, and restore scroll
+  // 1. Mount effect: ONLY restore scroll if returning from a product detail page!
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const origScrollRestoration = window.history.scrollRestoration;
-    window.history.scrollRestoration = "manual";
+    const returnState = getReturnStateForCurrentPage();
 
-    try {
-      const raw = sessionStorage.getItem(SESSION_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        const hasUrlParams =
-          searchParams.has("category") ||
-          searchParams.has("q") ||
-          searchParams.has("license") ||
-          searchParams.has("deals");
-
-        // If user came to /products without explicit params, restore their active session filter
-        if (!hasUrlParams) {
-          if (saved.category && saved.category !== "all") setSelectedCategory(saved.category);
-          if (saved.q) setSearchQuery(saved.q);
-          if (typeof saved.license === "boolean") setLicenseOnly(saved.license);
-          if (typeof saved.deals === "boolean") setDealsOnly(saved.deals);
-          if (typeof saved.count === "number" && saved.count >= 20) setVisibleCount(saved.count);
-        }
-
-        // Restore scroll position after DOM renders
-        if (typeof saved.scrollY === "number" && saved.scrollY > 0) {
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              restoreScrollPos(saved.scrollY);
-            }, 60);
-          });
-        }
+    if (returnState && returnState.source === "catalog") {
+      if (returnState.catalogCategory && !initialCategory && !searchParams.has("category")) {
+        setSelectedCategory(returnState.catalogCategory);
       }
-    } catch (e) {
-      console.warn("Session restore error:", e);
+      if (returnState.catalogVisibleCount && returnState.catalogVisibleCount >= 20) {
+        setVisibleCount(returnState.catalogVisibleCount);
+      }
+
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          restoreScrollPosition(
+            returnState.scrollY,
+            returnState.productId ? `product-card-${returnState.productId}` : undefined
+          );
+          consumeReturnState();
+        }, 50);
+      });
+    } else {
+      // Fresh intentional navigation or category click: ALWAYS start cleanly at the top!
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
 
     isRestoredRef.current = true;
-
-    return () => {
-      window.history.scrollRestoration = origScrollRestoration;
-    };
-  }, [restoreScrollPos]);
+  }, [initialCategory, searchParams]);
 
   // 2. PopState effect: when user clicks browser Back / Forward buttons
   useEffect(() => {
@@ -122,7 +86,7 @@ export default function CatalogClient({
 
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const cat = params.get("category") || "all";
+      const cat = params.get("category") || initialCategory || "all";
       const q = params.get("q") || "";
       const lic = params.get("license") === "1";
       const deals = params.get("deals") === "1";
@@ -134,26 +98,24 @@ export default function CatalogClient({
       setDealsOnly(deals);
       setVisibleCount(isNaN(count) ? 20 : count);
 
-      // Restore scroll if saved
-      try {
-        const raw = sessionStorage.getItem(SESSION_KEY);
-        if (raw) {
-          const saved = JSON.parse(raw);
-          if (typeof saved.scrollY === "number" && saved.scrollY > 0) {
-            restoreScrollPos(saved.scrollY);
-          }
-        }
-      } catch (e) {}
+      const returnState = getReturnStateForCurrentPage();
+      if (returnState) {
+        restoreScrollPosition(
+          returnState.scrollY,
+          returnState.productId ? `product-card-${returnState.productId}` : undefined
+        );
+        consumeReturnState();
+      }
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [restoreScrollPos]);
+  }, [initialCategory]);
 
-  // 2b. Sync state if searchParams changes via Next.js router navigation (e.g. Header dropdown links)
+  // 2b. Sync state if searchParams changes via Next.js router navigation
   useEffect(() => {
     if (!isRestoredRef.current) return;
-    const cat = searchParams.get("category") || "all";
+    const cat = searchParams.get("category") || initialCategory || "all";
     const q = searchParams.get("q") || "";
     const lic = searchParams.get("license") === "1";
     const deals = searchParams.get("deals") === "1";
@@ -164,34 +126,9 @@ export default function CatalogClient({
     setLicenseOnly((prev) => (prev !== lic ? lic : prev));
     setDealsOnly((prev) => (prev !== deals ? deals : prev));
     setVisibleCount((prev) => (prev !== count ? (isNaN(count) ? 20 : count) : prev));
-  }, [searchParams]);
+  }, [searchParams, initialCategory]);
 
-  // 3. Scroll tracker: continuously record scroll position in sessionStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let scrollTimeout: NodeJS.Timeout;
-    const handleScroll = () => {
-      if (isRestoringScrollRef.current) return;
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        try {
-          const raw = sessionStorage.getItem(SESSION_KEY);
-          const state = raw ? JSON.parse(raw) : {};
-          state.scrollY = window.scrollY;
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
-        } catch (e) {}
-      }, 100);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      clearTimeout(scrollTimeout);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  // 4. Sync state to URL & sessionStorage whenever filters change
+  // 3. Sync state to URL whenever filters change
   useEffect(() => {
     if (!isRestoredRef.current) return;
     if (typeof window === "undefined") return;
@@ -220,20 +157,7 @@ export default function CatalogClient({
 
     // Update URL via replaceState so back button returns to this exact filtered view
     window.history.replaceState(null, "", newUrl);
-
-    // Save to sessionStorage
-    try {
-      const stateToSave = {
-        category: selectedCategory,
-        q: searchQuery,
-        license: licenseOnly,
-        deals: dealsOnly,
-        count: visibleCount,
-        scrollY: window.scrollY,
-      };
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(stateToSave));
-    } catch (e) {}
-  }, [selectedCategory, searchQuery, licenseOnly, dealsOnly, visibleCount]);
+  }, [selectedCategory, searchQuery, licenseOnly, dealsOnly, visibleCount, basePath]);
 
   // Real-time filtering logic
   const filteredProducts = useMemo(() => {
@@ -529,11 +453,16 @@ export default function CatalogClient({
   }, [searchQuery, filteredProducts.length]);
 
   const handleSelectCategory = (cat: string) => {
+    clearReturnState();
     setSelectedCategory(cat);
     setVisibleCount(20);
     trackCategoryClick(cat);
-    if (typeof window !== "undefined" && window.scrollY > 280) {
-      window.scrollTo({ top: 220, behavior: "smooth" });
+    if (typeof window !== "undefined") {
+      if (window.scrollY > 280) {
+        window.scrollTo({ top: 220, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
     }
   };
 
