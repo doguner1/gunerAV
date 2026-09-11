@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { getFeaturedProducts, getAllCategories } from "@/lib/products";
@@ -9,7 +9,6 @@ import ProductCard from "@/components/product/ProductCard";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
 const FEATURED_COUNT_KEY = "gunerav_home_featured_count";
-const HOME_SCROLL_KEY = "gunerav_home_scroll";
 
 export default function FeaturedProducts({ products = [] }: { products?: Product[] }) {
   const t = useTranslations("Products");
@@ -21,129 +20,23 @@ export default function FeaturedProducts({ products = [] }: { products?: Product
 
   // 5 satır x 4 sütun = 20 ürün (Kullanıcı tıkladıkça 5 satır daha eklenir)
   const [visibleCount, setVisibleCount] = useState(20);
-  const isRestoringScrollRef = useRef(false);
 
-  // Helper to accurately restore scroll position without jumping or glitched animations
-  const restoreScrollPos = useCallback((targetY: number) => {
-    if (targetY <= 0) return;
-    isRestoringScrollRef.current = true;
-
-    // Immediate attempt with instant behavior to prevent smooth-scroll disorientation
-    window.scrollTo({ top: targetY, behavior: "instant" });
-
-    let attempts = 0;
-    const maxAttempts = 6;
-    const timer = setInterval(() => {
-      attempts++;
-      if (Math.abs(window.scrollY - targetY) < 20 || attempts >= maxAttempts) {
-        clearInterval(timer);
-        setTimeout(() => {
-          isRestoringScrollRef.current = false;
-        }, 120);
-      } else {
-        window.scrollTo({ top: targetY, behavior: "instant" });
-      }
-    }, 40);
-  }, []);
-
-  // 1. Mount effect: Restore visible count and scroll position if returning from product detail
+  // Restore visible count if returning from product detail
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Check if this was a hard page reload (F5 / browser reload)
-    const navEntries = performance.getEntriesByType("navigation");
-    const nav = navEntries.length > 0 ? (navEntries[0] as PerformanceNavigationTiming) : undefined;
-    const isReload = nav?.type === "reload";
-
-    if (isReload) {
-      // User refreshed the page: reset back to default 20 as requested ("sayfa yenilenene kadar")
-      sessionStorage.removeItem(FEATURED_COUNT_KEY);
-      sessionStorage.removeItem(HOME_SCROLL_KEY);
-      return;
-    }
-
-    let origScrollRestoration: ScrollRestoration = "auto";
-
     try {
+      const isFromProduct = sessionStorage.getItem("gunerav_from_home") === "1";
       const savedCountRaw = sessionStorage.getItem(FEATURED_COUNT_KEY);
       const savedCount = savedCountRaw ? parseInt(savedCountRaw, 10) : 20;
 
-      if (!isNaN(savedCount) && savedCount > 20) {
+      if (isFromProduct && !isNaN(savedCount) && savedCount > 20) {
         setVisibleCount(savedCount);
+      } else if (!isFromProduct) {
+        // Fresh visit / reload: reset back to default 20
+        sessionStorage.removeItem(FEATURED_COUNT_KEY);
       }
-
-      const savedScrollRaw = sessionStorage.getItem(HOME_SCROLL_KEY);
-      const savedScroll = savedScrollRaw ? parseFloat(savedScrollRaw) : 0;
-
-      if (!isNaN(savedScroll) && savedScroll > 0) {
-        origScrollRestoration = window.history.scrollRestoration;
-        window.history.scrollRestoration = "manual";
-
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            restoreScrollPos(savedScroll);
-          }, 60);
-        });
-      }
-    } catch (e) {
-      console.warn("Home state restore error:", e);
-    }
-
-    return () => {
-      window.history.scrollRestoration = origScrollRestoration;
-    };
-  }, [restoreScrollPos]);
-
-  // 2. PopState effect: when user clicks browser Back / Forward buttons
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handlePopState = () => {
-      try {
-        const savedCountRaw = sessionStorage.getItem(FEATURED_COUNT_KEY);
-        const savedCount = savedCountRaw ? parseInt(savedCountRaw, 10) : 20;
-        if (!isNaN(savedCount) && savedCount > 20) {
-          setVisibleCount(savedCount);
-        }
-
-        const savedScrollRaw = sessionStorage.getItem(HOME_SCROLL_KEY);
-        const savedScroll = savedScrollRaw ? parseFloat(savedScrollRaw) : 0;
-        if (!isNaN(savedScroll) && savedScroll > 0) {
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              restoreScrollPos(savedScroll);
-            }, 60);
-          });
-        }
-      } catch (e) {}
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [restoreScrollPos]);
-
-  // 3. Continuous scroll tracker for home page
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let scrollTimeout: NodeJS.Timeout;
-    const handleScroll = () => {
-      if (isRestoringScrollRef.current) return;
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        try {
-          if (window.scrollY > 100) {
-            sessionStorage.setItem(HOME_SCROLL_KEY, window.scrollY.toString());
-          }
-        } catch (e) {}
-      }, 100);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      clearTimeout(scrollTimeout);
-      window.removeEventListener("scroll", handleScroll);
-    };
+    } catch (e) {}
   }, []);
 
   const handleShowMore = () => {

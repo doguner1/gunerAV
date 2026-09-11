@@ -44,19 +44,25 @@ export default function ProductCard({ product, categoryName, priority = false }:
         const raw = sessionStorage.getItem("gunerav_catalog_state");
         const state = raw ? JSON.parse(raw) : {};
         state.scrollY = window.scrollY;
+        state.lastProductId = product.id;
         sessionStorage.setItem("gunerav_catalog_state", JSON.stringify(state));
 
         // Also save home scroll position if navigating from home page
         const path = window.location.pathname.replace(/\/+$/, "");
         if (path === "" || path === "/tr" || path === "/en") {
           sessionStorage.setItem("gunerav_home_scroll", window.scrollY.toString());
+          sessionStorage.setItem("gunerav_home_last_product_id", String(product.id));
+          sessionStorage.setItem("gunerav_from_home", "1");
         }
       } catch (e) {}
     }
   };
 
   return (
-    <article className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800/90 bg-white dark:bg-neutral-950 transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 dark:hover:border-neutral-700 shadow-sm hover:shadow-xl">
+    <article
+      id={`product-card-${product.id}`}
+      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800/90 bg-white dark:bg-neutral-950 transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 dark:hover:border-neutral-700 shadow-sm hover:shadow-xl"
+    >
       {/* Top Media Area */}
       <div>
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-white border-b border-neutral-200 dark:border-neutral-800/80">

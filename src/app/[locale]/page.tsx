@@ -1,6 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { getAllProducts } from "@/lib/products";
+import HomeScrollRestorer from "@/components/home/HomeScrollRestorer";
 import HeroSection from "@/components/home/HeroSection";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
@@ -25,6 +26,7 @@ export default async function HomePage({ params }: {
 
   return (
     <>
+      <HomeScrollRestorer />
       <HeroSection products={products} />
       <FeaturedCategories products={products} />
       <FeaturedProducts products={products} />

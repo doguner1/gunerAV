@@ -23,20 +23,16 @@ export default function CampaignSection({ products = [] }: { products?: Product[
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const navEntries = performance.getEntriesByType("navigation");
-    const nav = navEntries.length > 0 ? (navEntries[0] as PerformanceNavigationTiming) : undefined;
-    const isReload = nav?.type === "reload";
-
-    if (isReload) {
-      sessionStorage.removeItem(DEALS_COUNT_KEY);
-      return;
-    }
-
     try {
+      const isFromProduct = sessionStorage.getItem("gunerav_from_home") === "1";
       const saved = sessionStorage.getItem(DEALS_COUNT_KEY);
       const count = saved ? parseInt(saved, 10) : 20;
-      if (!isNaN(count) && count > 20) {
+
+      if (isFromProduct && !isNaN(count) && count > 20) {
         setVisibleCount(count);
+      } else if (!isFromProduct) {
+        // Fresh visit / reload: reset back to default 20
+        sessionStorage.removeItem(DEALS_COUNT_KEY);
       }
     } catch (e) {}
   }, []);

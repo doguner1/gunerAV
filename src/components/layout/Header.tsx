@@ -59,7 +59,16 @@ export default function Header() {
       >
         <div className="mx-auto flex h-16 max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
           {/* Logo */}
-          <Link href="/" className="group flex items-center gap-2.5 shrink-0">
+          <Link
+            href="/"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                sessionStorage.removeItem("gunerav_from_home");
+                sessionStorage.removeItem("gunerav_home_scroll");
+              }
+            }}
+            className="group flex items-center gap-2.5 shrink-0"
+          >
             <div className="flex flex-col">
               <span className={`font-heading text-lg font-black tracking-wider uppercase sm:text-xl ${
                 isHeroOverlay ? "text-white" : "text-neutral-950 dark:text-white"
@@ -82,6 +91,12 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => {
+                    if (link.href === "/" && typeof window !== "undefined") {
+                      sessionStorage.removeItem("gunerav_from_home");
+                      sessionStorage.removeItem("gunerav_home_scroll");
+                    }
+                  }}
                   className={`px-3 py-1.5 text-[13px] transition-colors ${
                     isActive
                       ? isHeroOverlay
@@ -287,6 +302,12 @@ export default function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    onClick={() => {
+                      if (link.href === "/" && typeof window !== "undefined") {
+                        sessionStorage.removeItem("gunerav_from_home");
+                        sessionStorage.removeItem("gunerav_home_scroll");
+                      }
+                    }}
                     className={`rounded-lg px-3 py-2.5 text-sm transition-colors ${
                       pathname === link.href
                         ? "bg-neutral-100 dark:bg-neutral-900 text-neutral-950 dark:text-white font-bold"
