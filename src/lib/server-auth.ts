@@ -1,13 +1,12 @@
 import { NextRequest } from "next/server";
 import crypto from "crypto";
+import { getSupabaseAdminClient } from "@/lib/server-supabase";
 
 const SESSION_COOKIE_NAME = "gunerav_admin_token";
 const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 saat
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 dakika
 const MAX_FAILED_ATTEMPTS = 5;
 
-// In-memory rate limiting map for login attempts: ip -> { count, resetAt }
-const loginRateLimit = new Map<string, { count: number; resetAt: number }>();
 
 /**
  * Constant-time comparison to prevent timing attacks
@@ -31,48 +30,79 @@ export function verifyPassword(inputPassword: string): boolean {
 /**
  * Check if IP exceeded brute-force limit
  */
-export function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetInSec: number } {
-  const now = Date.now();
-  const entry = loginRateLimit.get(ip);
+export async function checkRateLimit(ip: string): Promise<{ allowed: boolean; remaining: number; resetInSec: number }> {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return { allowed: true, remaining: MAX_FAILED_ATTEMPTS, resetInSec: 0 };
 
-  if (!entry || now > entry.resetAt) {
+  const { data, error } = await supabase
+    .from("admin_login_attempts")
+    .select("attempts, reset_at")
+    .eq("ip", ip)
+    .single();
+
+  if (error || !data) {
     return { allowed: true, remaining: MAX_FAILED_ATTEMPTS, resetInSec: 0 };
   }
 
-  if (entry.count >= MAX_FAILED_ATTEMPTS) {
+  const now = Date.now();
+  const resetAtMs = new Date(data.reset_at).getTime();
+
+  if (now > resetAtMs) {
+    // expired
+    return { allowed: true, remaining: MAX_FAILED_ATTEMPTS, resetInSec: 0 };
+  }
+
+  if (data.attempts >= MAX_FAILED_ATTEMPTS) {
     return {
       allowed: false,
       remaining: 0,
-      resetInSec: Math.ceil((entry.resetAt - now) / 1000),
+      resetInSec: Math.ceil((resetAtMs - now) / 1000),
     };
   }
 
   return {
     allowed: true,
-    remaining: MAX_FAILED_ATTEMPTS - entry.count,
-    resetInSec: Math.ceil((entry.resetAt - now) / 1000),
+    remaining: MAX_FAILED_ATTEMPTS - data.attempts,
+    resetInSec: Math.ceil((resetAtMs - now) / 1000),
   };
 }
 
 /**
  * Register a failed login attempt for rate limiting
  */
-export function registerFailedAttempt(ip: string): void {
-  const now = Date.now();
-  const entry = loginRateLimit.get(ip);
+export async function registerFailedAttempt(ip: string): Promise<void> {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return;
 
-  if (!entry || now > entry.resetAt) {
-    loginRateLimit.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+  const now = Date.now();
+  
+  // Try to fetch existing
+  const { data } = await supabase
+    .from("admin_login_attempts")
+    .select("attempts, reset_at")
+    .eq("ip", ip)
+    .single();
+
+  if (!data || now > new Date(data.reset_at).getTime()) {
+    await supabase.from("admin_login_attempts").upsert({
+      ip,
+      attempts: 1,
+      reset_at: new Date(now + RATE_LIMIT_WINDOW_MS).toISOString()
+    });
   } else {
-    entry.count += 1;
+    await supabase.from("admin_login_attempts").update({
+      attempts: data.attempts + 1
+    }).eq("ip", ip);
   }
 }
 
 /**
  * Clear rate limit on successful authentication
  */
-export function clearRateLimit(ip: string): void {
-  loginRateLimit.delete(ip);
+export async function clearRateLimit(ip: string): Promise<void> {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return;
+  await supabase.from("admin_login_attempts").delete().eq("ip", ip);
 }
 
 /**

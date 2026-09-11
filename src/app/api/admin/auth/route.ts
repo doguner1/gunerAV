@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const ip = rawIp.split(",")[0].trim();
 
     // 1. Rate Limiting Check (5 attempts per 5 minutes per IP)
-    const rateCheck = checkRateLimit(ip);
+    const rateCheck = await checkRateLimit(ip);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const isValid = verifyPassword(inputPassword);
 
     if (!isValid) {
-      registerFailedAttempt(ip);
+      await registerFailedAttempt(ip);
       return NextResponse.json(
         {
           success: false,
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Clear rate limit upon success & create stateless session token
-    clearRateLimit(ip);
+    await clearRateLimit(ip);
     const sessionToken = createSessionToken();
 
     const response = NextResponse.json({
