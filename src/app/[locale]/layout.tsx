@@ -110,6 +110,8 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={`${inter.variable} ${heading.variable} dark`} suppressHydrationWarning>
       <head>
+        <link rel="preload" as="image" href="/images/hero-bg-poster.jpg" fetchPriority="high" />
+        <link rel="preload" as="video" href="/videos/hero-bg.mp4" type="video/mp4" fetchPriority="high" />
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: `
               try {
                 const t = localStorage.getItem('gunerav_theme');

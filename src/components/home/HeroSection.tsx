@@ -51,7 +51,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
           muted
           playsInline
           preload="auto"
-          poster="/images/hero-bg-hd.webp"
+          poster="/images/hero-bg-poster.jpg"
           className="absolute inset-0 w-full h-full object-cover object-center scale-100"
         >
           <source src="/videos/hero-bg.mp4" type="video/mp4" />
