@@ -138,11 +138,37 @@ export default function HeroSpotlightStudio({
         return;
       }
 
-      // Kullanıcının onayladığı tam/yarım ekran koordinatları
+      // 1. ÜST SINIR KORUMASI (Header Navbar):
+      // Header navbar h-16 (64px). Pencere küçülünce üst barın içine girmemesi için koruma.
+      const topSafeLimit = w >= 1600 ? 84 : 76;
+      let safeOffsetY = activeConfig.offsetY;
+
+      if (containerRef.current) {
+        const parentRow = containerRef.current.parentElement;
+        const parentTop = parentRow
+          ? parentRow.getBoundingClientRect().top + window.scrollY
+          : containerRef.current.getBoundingClientRect().top + window.scrollY;
+
+        const calculatedTop = parentTop + activeConfig.offsetY;
+        if (calculatedTop < topSafeLimit) {
+          safeOffsetY = Math.round(topSafeLimit - parentTop);
+        }
+      }
+
+      // 2. Kademeli Ölçekleme (Pencere küçüldükçe kart orantılı uyum sağlasın)
+      const bottomSafeLimit = h - 60;
+      const availableHeight = Math.max(260, bottomSafeLimit - topSafeLimit);
+      const baseCardHeight = 440;
+      const scaleH = Math.min(1.0, availableHeight / baseCardHeight);
+      const scaleW = w >= 1800
+        ? 1.0
+        : Math.min(1.0, 0.75 + ((Math.max(1024, w) - 1024) / (1800 - 1024)) * 0.25);
+      const effectiveScale = Math.max(0.65, Math.min(scaleH, scaleW, 1.0));
+
       setDynamicLayout({
-        offsetY: activeConfig.offsetY,
+        offsetY: safeOffsetY,
         offsetX: activeConfig.offsetX,
-        scale: 1,
+        scale: effectiveScale,
       });
     };
 
