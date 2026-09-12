@@ -380,6 +380,8 @@ export default function AdminClient() {
   >([]);
   const [activeCount, setActiveCount] = useState<number>(0);
   const [showActiveVisitorsTable, setShowActiveVisitorsTable] = useState<boolean>(false);
+  const [isRevalidating, setIsRevalidating] = useState<boolean>(false);
+  const [revalidateMsg, setRevalidateMsg] = useState<string | null>(null);
 
   // Active visitors live polling (every 6s)
   useEffect(() => {
@@ -525,6 +527,27 @@ export default function AdminClient() {
     setEditedProducts({});
     setEvents([]);
     setDashboardData(null);
+  };
+
+  // On-demand Site & Cache Revalidation
+  const handleRevalidateSite = async () => {
+    setIsRevalidating(true);
+    setRevalidateMsg(null);
+    try {
+      const res = await fetch("/api/revalidate?secret=gunerav_revalidate_secret_2026");
+      const data = await res.json();
+      if (data.success) {
+        setRevalidateMsg("✓ Site önbelleği başarıyla temizlendi, ürünler anında yayında!");
+        setTimeout(() => setRevalidateMsg(null), 5000);
+        await fetchProducts(password);
+      } else {
+        setRevalidateMsg("Hata: " + (data.error || "Önbellek yenilenemedi"));
+      }
+    } catch {
+      setRevalidateMsg("Bağlantı hatası oluştu.");
+    } finally {
+      setIsRevalidating(false);
+    }
   };
 
   // Export Analytics as Excel/Sheets-compatible CSV (UTF-8 BOM)
@@ -907,6 +930,17 @@ export default function AdminClient() {
             </button>
           </div>
 
+          {/* On-demand Cache & Site Revalidate Button */}
+          <button
+            onClick={handleRevalidateSite}
+            disabled={isRevalidating}
+            title="Supabase'deki ürün değişikliklerini anında yayına alır ve önbelleği temizler"
+            className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-[#d4af37] px-3.5 py-2 text-xs font-bold transition-all disabled:opacity-50 shadow-sm"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRevalidating ? "animate-spin text-[#d4af37]" : ""}`} />
+            <span className="hidden sm:inline">{isRevalidating ? "Yenileniyor..." : "Siteyi Yenile"}</span>
+          </button>
+
           <button
             onClick={handleLogout}
             title="Güvenli Çıkış"
@@ -917,6 +951,22 @@ export default function AdminClient() {
           </button>
         </div>
       </div>
+
+      {/* Revalidation Toast Notice */}
+      {revalidateMsg && (
+        <div
+          className={`mb-6 p-3 rounded-xl border text-xs font-bold flex items-center justify-between ${
+            revalidateMsg.startsWith("✓")
+              ? "bg-emerald-950/70 border-emerald-500/50 text-emerald-300 shadow-lg"
+              : "bg-red-950/70 border-red-500/50 text-red-300 shadow-lg"
+          }`}
+        >
+          <span>{revalidateMsg}</span>
+          <button onClick={() => setRevalidateMsg(null)} className="text-white/60 hover:text-white ml-3">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* =========================================================================
           TAB 1: PRODUCT MANAGEMENT & SQL GENERATOR
