@@ -15,7 +15,7 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export const revalidate = 60;
+export const revalidate = 86400; // 24 saatte bir veya on-demand /api/revalidate
 
 export default async function HomePage({ params }: {
   params: Promise<{ locale: string }>;

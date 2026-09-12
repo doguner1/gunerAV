@@ -24,7 +24,7 @@ export async function getSupabaseProducts(): Promise<Product[]> {
           apikey: SUPABASE_KEY,
           Authorization: `Bearer ${SUPABASE_KEY}`,
         },
-        next: { revalidate: 60 }, // 1 dakikada bir otomatik güncellenir
+        next: { revalidate: 86400, tags: ["products"] }, // Günde bir veya on-demand /api/revalidate ile anında
       }
     );
 
@@ -56,7 +56,7 @@ export async function getSupabaseProductBySlug(slug: string): Promise<Product | 
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
       },
-      next: { revalidate: 60 },
+      next: { revalidate: 86400, tags: ["products"] },
     });
 
     if (!res.ok) return null;

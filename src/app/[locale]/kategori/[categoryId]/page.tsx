@@ -9,7 +9,7 @@ import { BreadcrumbListJsonLd, CollectionPageJsonLd, ItemListJsonLd } from "@/co
 import { notFound } from "next/navigation";
 
 export const dynamicParams = true;
-export const revalidate = 60;
+export const revalidate = 86400; // 24 saatte bir veya on-demand /api/revalidate
 
 export async function generateStaticParams() {
   const categories = getAllCategories();

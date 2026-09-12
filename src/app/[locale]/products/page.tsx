@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: {
   };
 }
 
-export const revalidate = 60;
+export const revalidate = 86400; // 24 saatte bir veya on-demand /api/revalidate
 
 export default async function ProductsPage({ params }: {
   params: Promise<{ locale: string }>;

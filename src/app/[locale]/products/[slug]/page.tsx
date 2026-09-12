@@ -16,7 +16,7 @@ import { ProductJsonLd, BreadcrumbListJsonLd } from "@/components/seo/JsonLd";
 import { ChevronRight } from "lucide-react";
 
 export const dynamicParams = true;
-export const revalidate = 3600;
+export const revalidate = 86400; // 24 saatte bir veya on-demand /api/revalidate
 
 export async function generateStaticParams() {
   const products = await getAllProducts();
