@@ -1,6 +1,9 @@
 import crypto from "crypto";
 
-const SECRET_SEED = process.env.IMAGE_PROXY_SECRET || "";
+const SECRET_SEED = process.env.IMAGE_PROXY_SECRET;
+if (!SECRET_SEED || SECRET_SEED.length < 32) {
+  throw new Error("IMAGE_PROXY_SECRET en az 32 karakter olmalı ve .env.local'de tanımlı olmalı");
+}
 
 // Derive fixed 32-byte key for AES-256 if secret is set
 const KEY = SECRET_SEED ? crypto.createHash("sha256").update(SECRET_SEED).digest() : null;

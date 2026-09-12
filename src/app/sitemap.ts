@@ -53,32 +53,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic category pages
   categories.forEach((category) => {
-    sitemapEntries.push({
-      url: `${siteUrl}/tr/kategori/${category.id}`,
-      lastModified: currentDate,
-      changeFrequency: "weekly",
-      priority: 0.8,
-      alternates: {
-        languages: {
-          tr: `${siteUrl}/tr/kategori/${category.id}`,
-          en: `${siteUrl}/en/kategori/${category.id}`,
-          "x-default": `${siteUrl}/tr/kategori/${category.id}`,
-        },
-      },
-    });
+    const categoryEntries = [category];
+    if (category.subcategories && category.subcategories.length > 0) {
+      categoryEntries.push(...category.subcategories as any);
+    }
 
-    sitemapEntries.push({
-      url: `${siteUrl}/en/kategori/${category.id}`,
-      lastModified: currentDate,
-      changeFrequency: "weekly",
-      priority: 0.8,
-      alternates: {
-        languages: {
-          tr: `${siteUrl}/tr/kategori/${category.id}`,
-          en: `${siteUrl}/en/kategori/${category.id}`,
-          "x-default": `${siteUrl}/tr/kategori/${category.id}`,
+    categoryEntries.forEach((cat) => {
+      sitemapEntries.push({
+        url: `${siteUrl}/tr/kategori/${cat.id}`,
+        lastModified: currentDate,
+        changeFrequency: "weekly",
+        priority: 0.8,
+        alternates: {
+          languages: {
+            tr: `${siteUrl}/tr/kategori/${cat.id}`,
+            en: `${siteUrl}/en/kategori/${cat.id}`,
+            "x-default": `${siteUrl}/tr/kategori/${cat.id}`,
+          },
         },
-      },
+      });
+
+      sitemapEntries.push({
+        url: `${siteUrl}/en/kategori/${cat.id}`,
+        lastModified: currentDate,
+        changeFrequency: "weekly",
+        priority: 0.8,
+        alternates: {
+          languages: {
+            tr: `${siteUrl}/tr/kategori/${cat.id}`,
+            en: `${siteUrl}/en/kategori/${cat.id}`,
+            "x-default": `${siteUrl}/tr/kategori/${cat.id}`,
+          },
+        },
+      });
     });
   });
 

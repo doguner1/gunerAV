@@ -5,7 +5,7 @@ import { getAllProducts, getAllCategories, getCategoryById } from "@/lib/product
 import CatalogClient from "@/components/catalog/CatalogClient";
 import { STORE_INFO } from "@/lib/store";
 import { Suspense } from "react";
-import { BreadcrumbListJsonLd } from "@/components/seo/JsonLd";
+import { BreadcrumbListJsonLd, CollectionPageJsonLd } from "@/components/seo/JsonLd";
 import { notFound } from "next/navigation";
 
 export const dynamicParams = true;
@@ -86,6 +86,11 @@ export default async function CategoryPage({ params }: {
           { name: t("heading"), url: `/${locale}/products` },
           { name: catName || category.id, url: `/${locale}/kategori/${categoryId}` },
         ]}
+      />
+      <CollectionPageJsonLd
+        name={catName || category.id}
+        description={isTr ? `Güner Av Bayii'nde ${catName} ürünlerini inceleyin. En kaliteli ekipmanlar uygun fiyatlarla.` : `Browse ${catName} products at Guner AV. High-quality equipment at best prices.`}
+        url={`${STORE_INFO.siteUrl}/${locale}/kategori/${categoryId}`}
       />
       
       <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">

@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "sync-images": "node scripts/sync-static-images.js"
+    "sync-images": "node scripts/sync-static-images.js",
+    "validate": "npx tsx scripts/validate-products.ts"
   },
   "dependencies": {
+    "@next/third-parties": "^16.3.3",
     "@supabase/supabase-js": "^2.116.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
@@ -22,7 +24,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sharp": "^0.35.4",
-    "tailwind-merge": "^2.5.4"
+    "tailwind-merge": "^2.5.4",
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",

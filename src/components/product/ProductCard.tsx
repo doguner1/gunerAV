@@ -66,7 +66,7 @@ export default function ProductCard({ product, categoryName, priority = false }:
             )}
             <Image
               src={mainImage}
-              alt={name}
+              alt={name || "Product image"}
               fill
               priority={priority}
               unoptimized={true}

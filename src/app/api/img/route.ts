@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decryptImageUrl } from "@/lib/image-crypto";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,15 @@ function isPrivateHost(hostname: string): boolean {
 }
 
 export async function GET(req: NextRequest) {
+  const rawIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+  const clientIp = rawIp.split(",")[0].trim();
+
+  // Rate Limiting: Max 100 requests per 60 seconds per IP
+  const rateCheck = checkRateLimit("img", clientIp, null, 100, 60);
+  if (!rateCheck.success) {
+    return new NextResponse("Too many requests", { status: 429 });
+  }
+
   const token = req.nextUrl.searchParams.get("token");
 
   if (!token) {

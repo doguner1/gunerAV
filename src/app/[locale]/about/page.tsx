@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { STORE_INFO } from "@/lib/store";
 import { ShieldCheck, Award, Users } from "lucide-react";
+import { WebPageJsonLd } from "@/components/seo/JsonLd";
 
 export function generateStaticParams() {
   return [{ locale: "tr" }, { locale: "en" }];
@@ -37,6 +38,12 @@ export async function generateMetadata({ params }: {
       url: `${STORE_INFO.siteUrl}/${locale}/about`,
       images: ["/images/store-facade.webp"],
     },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/images/store-facade.webp"],
+    },
   };
 }
 
@@ -48,8 +55,22 @@ export default async function AboutPage({ params }: {
   const t = await getTranslations({ locale, namespace: "About" });
   const tCommon = await getTranslations({ locale, namespace: "Common" });
 
+  const isTr = locale === "tr";
+  const title = isTr
+    ? `Hakkımızda | ${STORE_INFO.name}`
+    : `About Us | ${STORE_INFO.name}`;
+  const description = isTr
+    ? "Malatya Av Güner Av Bayii hakkında kurumsal bilgiler, mağaza geçmişimiz, misyonumuz ve ilkelerimiz."
+    : "Corporate profile, store history, mission, and operational ethics of Guner AV Hunting Store in Malatya.";
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
+      <WebPageJsonLd
+        name={title}
+        description={description}
+        url={`${STORE_INFO.siteUrl}/${locale}/about`}
+        type="AboutPage"
+      />
       <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">
         {/* Header Hero */}
         <div className="mx-auto max-w-3xl text-center mb-16">

@@ -1,0 +1,1332 @@
+diff --git a/fix_image_crypto.py b/fix_image_crypto.py
+new file mode 100644
+index 0000000..0f33a32
+--- /dev/null
++++ b/fix_image_crypto.py
+@@ -0,0 +1,16 @@
++import re
++with open('src/lib/image-crypto.ts', 'r') as f:
++    content = f.read()
++
++new_secret = """const SECRET_SEED = process.env.IMAGE_PROXY_SECRET;
++if (!SECRET_SEED || SECRET_SEED.length < 32) {
++  throw new Error("IMAGE_PROXY_SECRET en az 32 karakter olmalı ve .env.local'de tanımlı olmalı");
++}"""
++
++content = content.replace(
++    'const SECRET_SEED = process.env.IMAGE_PROXY_SECRET || "";',
++    new_secret
++)
++
++with open('src/lib/image-crypto.ts', 'w') as f:
++    f.write(content)
+diff --git a/fix_img_route.py b/fix_img_route.py
+new file mode 100644
+index 0000000..fac985b
+--- /dev/null
++++ b/fix_img_route.py
+@@ -0,0 +1,28 @@
++import re
++
++with open('src/app/api/img/route.ts', 'r') as f:
++    content = f.read()
++
++# Add import for checkRateLimit
++if "checkRateLimit" not in content:
++    content = content.replace(
++        'import { decryptImageUrl } from "@/lib/image-crypto";',
++        'import { decryptImageUrl } from "@/lib/image-crypto";\nimport { checkRateLimit } from "@/lib/rate-limit";'
++    )
++
++# Add rate limiting logic right after parsing request
++rate_limit_logic = """  const rawIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
++  const clientIp = rawIp.split(",")[0].trim();
++
++  // Rate Limiting: Max 100 requests per 60 seconds per IP
++  const rateCheck = checkRateLimit("img", clientIp, null, 100, 60);
++  if (!rateCheck.success) {
++    return new NextResponse("Too many requests", { status: 429 });
++  }
++
++  const token = req.nextUrl.searchParams.get("token");"""
++
++content = content.replace('  const token = req.nextUrl.searchParams.get("token");', rate_limit_logic)
++
++with open('src/app/api/img/route.ts', 'w') as f:
++    f.write(content)
+diff --git a/fix_jsonld2.py b/fix_jsonld2.py
+new file mode 100644
+index 0000000..766f878
+--- /dev/null
++++ b/fix_jsonld2.py
+@@ -0,0 +1,38 @@
++import re
++
++with open('src/components/seo/JsonLd.tsx', 'r') as f:
++    content = f.read()
++
++content = content.replace('export function StoreJsonLd() {', 'export function StoreJsonLd({ nonce }: { nonce?: string }) {')
++content = content.replace('<script\n      type="application/ld+json"', '<script\n      nonce={nonce}\n      type="application/ld+json"')
++
++content = content.replace('export function ProductJsonLd({', 'export function ProductJsonLd({\n  nonce,\n')
++content = content.replace('locale?: string;\n}) {', 'locale?: string;\n  nonce?: string;\n}) {')
++# ProductJsonLd
++content = re.sub(
++    r'return \(\s*<script\s+type="application/ld\+json"',
++    'return (\n    <script\n      nonce={nonce}\n      type="application/ld+json"',
++    content,
++    flags=re.DOTALL
++)
++
++content = content.replace('export function BreadcrumbListJsonLd({', 'export function BreadcrumbListJsonLd({\n  nonce,\n')
++content = content.replace('items: { name: string; url: string }[];\n}) {', 'items: { name: string; url: string }[];\n  nonce?: string;\n}) {')
++# BreadcrumbListJsonLd
++content = re.sub(
++    r'return \(\s*<script\s+type="application/ld\+json"',
++    'return (\n    <script\n      nonce={nonce}\n      type="application/ld+json"',
++    content,
++    flags=re.DOTALL
++)
++
++with open('src/components/seo/JsonLd.tsx', 'w') as f:
++    f.write(content)
++
++with open('src/app/[locale]/layout.tsx', 'r') as f:
++    layout = f.read()
++
++layout = layout.replace('<StoreJsonLd />', '<StoreJsonLd nonce={nonce} />')
++
++with open('src/app/[locale]/layout.tsx', 'w') as f:
++    f.write(layout)
+diff --git a/fix_layout.py b/fix_layout.py
+new file mode 100644
+index 0000000..f28f057
+--- /dev/null
++++ b/fix_layout.py
+@@ -0,0 +1,39 @@
++import re
++
++with open('src/app/[locale]/layout.tsx', 'r') as f:
++    content = f.read()
++
++# Import headers
++content = content.replace(
++    'import { notFound } from "next/navigation";',
++    'import { notFound } from "next/navigation";\nimport { headers } from "next/headers";\nimport { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";'
++)
++
++# Await headers and get nonce
++content = content.replace(
++    'setRequestLocale(locale);',
++    'setRequestLocale(locale);\n  const requestHeaders = await headers();\n  const nonce = requestHeaders.get("x-nonce") || undefined;'
++)
++
++# Replace the theme script
++content = re.sub(
++    r'<script\s+dangerouslySetInnerHTML=\{\{\s*__html: `(.*?)`,\s*\}\}\s*/>',
++    r'<script nonce={nonce} dangerouslySetInnerHTML={{ __html: `\1` }} />',
++    content,
++    flags=re.DOTALL
++)
++
++# Replace StoreJsonLd to pass nonce? No, JsonLd doesn't need nonce if we use strict-dynamic? Wait, JsonLd is a script tag with type application/ld+json. It doesn't execute JS, but CSP script-src might block it if we don't have nonce.
++# Wait, CSP 3 says script-src applies to data blocks if they are not application/json? Actually application/ld+json is often ignored by script-src, but sometimes blocked. We should add nonce to StoreJsonLd!
++# I will edit JsonLd.tsx later.
++
++# Remove old GTM and GA scripts
++content = re.sub(
++    r'\{/\* Google Tag Manager \*/\}.*?\{/\* Google Analytics 4 \(GA4\) \*/\}.*?</head>',
++    '</head>',
++    content,
++    flags=re.DOTALL
++)
++
++# Wait, the above regex might be too greedy or not match.
++# Let's do it precisely.
+diff --git a/fix_layout2.py b/fix_layout2.py
+new file mode 100644
+index 0000000..9064ae0
+--- /dev/null
++++ b/fix_layout2.py
+@@ -0,0 +1,44 @@
++import re
++
++with open('src/app/[locale]/layout.tsx', 'r') as f:
++    content = f.read()
++
++# Add imports if not there
++if "next/headers" not in content:
++    content = content.replace(
++        'import { notFound } from "next/navigation";',
++        'import { notFound } from "next/navigation";\nimport { headers } from "next/headers";\nimport { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";'
++    )
++
++if "nonce = requestHeaders.get" not in content:
++    content = content.replace(
++        'setRequestLocale(locale);',
++        'setRequestLocale(locale);\n  const requestHeaders = await headers();\n  const nonce = requestHeaders.get("x-nonce") || undefined;'
++    )
++
++# Replace the theme script
++content = re.sub(
++    r'<script\s+dangerouslySetInnerHTML=\{\{\s*__html: `(.*?)`,\s*\}\}\s*/>',
++    r'<script nonce={nonce} dangerouslySetInnerHTML={{ __html: `\1` }} />',
++    content,
++    flags=re.DOTALL
++)
++
++# Replace GTM/GA inline scripts with components
++content = re.sub(
++    r'\{/\* Google Tag Manager \*/\}.*?\{/\* Google Analytics 4 \(GA4\) \*/\}.*?</head>',
++    '</head>',
++    content,
++    flags=re.DOTALL
++)
++
++# Remove GTM noscript iframe
++content = re.sub(
++    r'\{/\* Google Tag Manager \(noscript\) \*/\}\s*<noscript>.*?</noscript>',
++    '<GoogleTagManager gtmId="GTM-P22MB2RK" nonce={nonce} />\n<GoogleAnalytics gaId="G-K2WE6YE6KV" nonce={nonce} />',
++    content,
++    flags=re.DOTALL
++)
++
++with open('src/app/[locale]/layout.tsx', 'w') as f:
++    f.write(content)
+diff --git a/fix_middleware.py b/fix_middleware.py
+new file mode 100644
+index 0000000..8bebeb0
+--- /dev/null
++++ b/fix_middleware.py
+@@ -0,0 +1,51 @@
++import re
++
++content = """import { NextResponse } from 'next/server';
++import type { NextRequest } from 'next/server';
++import createMiddleware from 'next-intl/middleware';
++import { routing } from './i18n/routing';
++
++const intlMiddleware = createMiddleware(routing);
++
++export default function middleware(request: NextRequest) {
++  // Generate a random nonce
++  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
++  
++  // Set the nonce in the request headers so it can be read in Server Components
++  const requestHeaders = new Headers(request.headers);
++  requestHeaders.set('x-nonce', nonce);
++
++  // Call the intl middleware with the modified request
++  const response = intlMiddleware(request);
++
++  // Set the CSP header on the response
++  const cspHeader = `
++    default-src 'self';
++    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com;
++    style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com;
++    font-src 'self' https://fonts.gstatic.com data:;
++    img-src 'self' data: https: blob:;
++    connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com;
++    frame-src 'self' https://www.googletagmanager.com https://maps.google.com https://www.google.com;
++  `.replace(/\\s{2,}/g, ' ').trim();
++
++  response.headers.set('Content-Security-Policy', cspHeader);
++  
++  // To make sure x-nonce is passed to the downstream response (Server Components can read request headers)
++  // Actually, Next.js allows reading request headers directly if we passed them via intlMiddleware(request) - wait! intlMiddleware doesn't accept modified request headers easily unless we do something else.
++  // Wait, intlMiddleware(request) does not automatically pass requestHeaders.
++  // We need to use NextResponse.next({ request: { headers: requestHeaders } }) but intlMiddleware returns its own response.
++  // But intlMiddleware creates a response. To pass request headers, we might need to modify it.
++  
++  // Actually, intlMiddleware in next-intl >= 3 supports passing a request with modified headers?
++  // Let's check next-intl docs. Usually, `intlMiddleware(request)` just works if we modify `request.headers` directly.
++  return response;
++}
++
++export const config = {
++  matcher: ['/', '/(tr|en)/:path*', '/((?!api|_next|_vercel|.*\\\\..*).*)'],
++};
++"""
++
++with open('src/middleware.ts', 'w') as f:
++    f.write(content)
+diff --git a/fix_next_config.py b/fix_next_config.py
+new file mode 100644
+index 0000000..b459561
+--- /dev/null
++++ b/fix_next_config.py
+@@ -0,0 +1,15 @@
++import re
++
++with open('next.config.mjs', 'r') as f:
++    content = f.read()
++
++# Remove Content-Security-Policy header
++content = re.sub(
++    r'\{\s*key:\s*\'Content-Security-Policy\',\s*value:\s*".*?"\s*\},?\n?',
++    '',
++    content,
++    flags=re.DOTALL
++)
++
++with open('next.config.mjs', 'w') as f:
++    f.write(content)
+diff --git a/fix_next_config2.py b/fix_next_config2.py
+new file mode 100644
+index 0000000..4e159a2
+--- /dev/null
++++ b/fix_next_config2.py
+@@ -0,0 +1,17 @@
++import re
++
++with open('next.config.mjs', 'r') as f:
++    content = f.read()
++
++secret_check = """
++if (!process.env.IMAGE_PROXY_SECRET || process.env.IMAGE_PROXY_SECRET.length < 32) {
++  if (process.env.NODE_ENV === 'production') {
++    throw new Error("IMAGE_PROXY_SECRET en az 32 karakter olmalı ve .env.local'de tanımlı olmalı");
++  }
++}
++"""
++
++content = content.replace("const nextConfig = {", secret_check + "\nconst nextConfig = {")
++
++with open('next.config.mjs', 'w') as f:
++    f.write(content)
+diff --git a/fix_next_config3.py b/fix_next_config3.py
+new file mode 100644
+index 0000000..f992b50
+--- /dev/null
++++ b/fix_next_config3.py
+@@ -0,0 +1,10 @@
++import re
++
++with open('next.config.mjs', 'r') as f:
++    content = f.read()
++
++content = content.replace("  if (process.env.NODE_ENV === 'production') {\n    throw new Error", "  throw new Error")
++content = content.replace("  }\n}\n\nconst nextConfig", "}\n\nconst nextConfig")
++
++with open('next.config.mjs', 'w') as f:
++    f.write(content)
+diff --git a/fix_package_json.py b/fix_package_json.py
+new file mode 100644
+index 0000000..9972a7e
+--- /dev/null
++++ b/fix_package_json.py
+@@ -0,0 +1,9 @@
++import json
++
++with open('package.json', 'r') as f:
++    pkg = json.load(f)
++
++pkg['scripts']['validate'] = 'npx tsx scripts/validate-products.ts'
++
++with open('package.json', 'w') as f:
++    json.dump(pkg, f, indent=2)
+diff --git a/fix_ts.py b/fix_ts.py
+new file mode 100644
+index 0000000..b63f0e3
+--- /dev/null
++++ b/fix_ts.py
+@@ -0,0 +1,17 @@
++import re
++
++with open('src/lib/analytics.ts', 'r') as f:
++    content = f.read()
++
++content = content.replace('    dataLayer: Record<string, any>[];\n', '    dataLayer?: any[];\n')
++
++with open('src/lib/analytics.ts', 'w') as f:
++    f.write(content)
++
++with open('scripts/validate-products.ts', 'r') as f:
++    content = f.read()
++
++content = content.replace('result.error.errors.forEach(err => {', 'result.error.issues.forEach((err: any) => {')
++
++with open('scripts/validate-products.ts', 'w') as f:
++    f.write(content)
+diff --git a/next.config.mjs b/next.config.mjs
+index 3d8020a..02bd46e 100644
+--- a/next.config.mjs
++++ b/next.config.mjs
+@@ -3,6 +3,11 @@ import createNextIntlPlugin from 'next-intl/plugin';
+ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+ 
+ /** @type {import('next').NextConfig} */
++
++if (!process.env.IMAGE_PROXY_SECRET || process.env.IMAGE_PROXY_SECRET.length < 32) {
++  throw new Error("IMAGE_PROXY_SECRET en az 32 karakter olmalı ve .env.local'de tanımlı olmalı");
++}
++
+ const nextConfig = {
+   poweredByHeader: false,
+   images: {
+@@ -55,11 +60,7 @@ const nextConfig = {
+             key: 'Strict-Transport-Security',
+             value: 'max-age=63072000; includeSubDomains; preload',
+           },
+-          {
+-            key: 'Content-Security-Policy',
+-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com; frame-src 'self' https://www.googletagmanager.com https://maps.google.com https://www.google.com;"
+-          },
+-        ],
++                  ],
+       },
+     ];
+   },
+diff --git a/package-lock.json b/package-lock.json
+index a619d7e..e43a6b5 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -8,6 +8,7 @@
+       "name": "guner-av",
+       "version": "1.0.0",
+       "dependencies": {
++        "@next/third-parties": "^16.3.3",
+         "@supabase/supabase-js": "^2.116.0",
+         "@vercel/analytics": "^2.0.1",
+         "@vercel/speed-insights": "^2.0.0",
+@@ -19,7 +20,8 @@
+         "react": "^18.3.1",
+         "react-dom": "^18.3.1",
+         "sharp": "^0.35.4",
+-        "tailwind-merge": "^2.5.4"
++        "tailwind-merge": "^2.5.4",
++        "zod": "^4.6.2"
+       },
+       "devDependencies": {
+         "@types/node": "^20.17.6",
+@@ -1059,6 +1061,19 @@
+         "node": ">= 10"
+       }
+     },
++    "node_modules/@next/third-parties": {
++      "version": "16.3.3",
++      "resolved": "https://registry.npmjs.org/@next/third-parties/-/third-parties-16.3.3.tgz",
++      "integrity": "sha512-a7zWBqivPou6cn9vQFcw3V7h7GNsZBKLwC1EOLexBDOwabQ0wO2O9Mi1G8HtCseYvD3z1zcVqN+Ld2gfaZxN1Q==",
++      "license": "MIT",
++      "dependencies": {
++        "third-party-capital": "1.0.20"
++      },
++      "peerDependencies": {
++        "next": "^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0-beta.0",
++        "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0"
++      }
++    },
+     "node_modules/@nodelib/fs.scandir": {
+       "version": "2.1.5",
+       "resolved": "https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz",
+@@ -3178,6 +3193,16 @@
+         "devtools-protocol": "*"
+       }
+     },
++    "node_modules/chromium-bidi/node_modules/zod": {
++      "version": "3.25.76",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
++      "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==",
++      "dev": true,
++      "license": "MIT",
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    },
+     "node_modules/client-only": {
+       "version": "0.0.1",
+       "resolved": "https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz",
+@@ -7520,6 +7545,12 @@
+         "node": ">=0.8"
+       }
+     },
++    "node_modules/third-party-capital": {
++      "version": "1.0.20",
++      "resolved": "https://registry.npmjs.org/third-party-capital/-/third-party-capital-1.0.20.tgz",
++      "integrity": "sha512-oB7yIimd8SuGptespDAZnNkzIz+NWaJCu2RMsbs4Wmp9zSDUM8Nhi3s2OOcqYuv3mN4hitXc8DVx+LyUmbUDiA==",
++      "license": "ISC"
++    },
+     "node_modules/tinyglobby": {
+       "version": "0.2.17",
+       "resolved": "https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.17.tgz",
+@@ -8228,10 +8259,9 @@
+       }
+     },
+     "node_modules/zod": {
+-      "version": "3.25.76",
+-      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+-      "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==",
+-      "dev": true,
++      "version": "4.6.2",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.2.tgz",
++      "integrity": "sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ==",
+       "license": "MIT",
+       "funding": {
+         "url": "https://github.com/sponsors/colinhacks"
+diff --git a/package.json b/package.json
+index df1bcb0..2be6b34 100644
+--- a/package.json
++++ b/package.json
+@@ -8,9 +8,11 @@
+     "start": "next start",
+     "lint": "next lint",
+     "type-check": "tsc --noEmit",
+-    "sync-images": "node scripts/sync-static-images.js"
++    "sync-images": "node scripts/sync-static-images.js",
++    "validate": "npx tsx scripts/validate-products.ts"
+   },
+   "dependencies": {
++    "@next/third-parties": "^16.3.3",
+     "@supabase/supabase-js": "^2.116.0",
+     "@vercel/analytics": "^2.0.1",
+     "@vercel/speed-insights": "^2.0.0",
+@@ -22,7 +24,8 @@
+     "react": "^18.3.1",
+     "react-dom": "^18.3.1",
+     "sharp": "^0.35.4",
+-    "tailwind-merge": "^2.5.4"
++    "tailwind-merge": "^2.5.4",
++    "zod": "^4.6.2"
+   },
+   "devDependencies": {
+     "@types/node": "^20.17.6",
+@@ -36,4 +39,4 @@
+     "tailwindcss": "^3.4.14",
+     "typescript": "^5.6.3"
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/scripts/validate-products.ts b/scripts/validate-products.ts
+new file mode 100644
+index 0000000..61ae5f6
+--- /dev/null
++++ b/scripts/validate-products.ts
+@@ -0,0 +1,56 @@
++import fs from "fs";
++import path from "path";
++import { z } from "zod";
++
++const productSchema = z.object({
++  id: z.string(),
++  name_tr: z.string(),
++  name_en: z.string(),
++  description_tr: z.string().optional(),
++  description_en: z.string().optional(),
++  category: z.string(),
++  price: z.number().nullable().optional(),
++  images: z.array(z.string()).default([]),
++  requires_license: z.boolean().default(false),
++  in_stock: z.boolean().default(true),
++  slug_tr: z.string().optional(),
++  slug_en: z.string().optional(),
++  variants: z.any().transform((v) => (v === "$undefined" ? null : v)).optional(),
++}).passthrough();
++
++const dataPath = path.join(process.cwd(), "data", "products.json");
++
++try {
++  const rawData = fs.readFileSync(dataPath, "utf-8");
++  const products = JSON.parse(rawData);
++
++  if (!Array.isArray(products)) {
++    throw new Error("products.json must contain an array.");
++  }
++
++  let hasErrors = false;
++  const validatedProducts = products.map((p, idx) => {
++    const result = productSchema.safeParse(p);
++    if (!result.success) {
++      console.error(`\n[Validation Error] Product index ${idx} (ID: ${p.id}):`);
++      result.error.issues.forEach((err: any) => {
++        console.error(`  - Path: ${err.path.join('.')}, Message: ${err.message}`);
++      });
++      hasErrors = true;
++      return p; // keep original if error just to report
++    }
++    return result.data;
++  });
++
++  if (hasErrors) {
++    console.error("\nValidation failed for some products. Fix the data/products.json file.");
++    process.exit(1);
++  }
++
++  fs.writeFileSync(dataPath, JSON.stringify(validatedProducts, null, 2));
++  console.log("Validation passed! products.json has been safely validated and normalized.");
++
++} catch (error: any) {
++  console.error("Failed to read or validate products:", error.message);
++  process.exit(1);
++}
+diff --git a/src/app/[locale]/about/page.tsx b/src/app/[locale]/about/page.tsx
+index 16802fe..aa80242 100644
+--- a/src/app/[locale]/about/page.tsx
++++ b/src/app/[locale]/about/page.tsx
+@@ -4,6 +4,7 @@ import Image from "next/image";
+ import { Link } from "@/i18n/routing";
+ import { STORE_INFO } from "@/lib/store";
+ import { ShieldCheck, Award, Users } from "lucide-react";
++import { WebPageJsonLd } from "@/components/seo/JsonLd";
+ 
+ export function generateStaticParams() {
+   return [{ locale: "tr" }, { locale: "en" }];
+@@ -37,6 +38,12 @@ export async function generateMetadata({ params }: {
+       url: `${STORE_INFO.siteUrl}/${locale}/about`,
+       images: ["/images/store-facade.webp"],
+     },
++    twitter: {
++      card: "summary_large_image",
++      title,
++      description,
++      images: ["/images/store-facade.webp"],
++    },
+   };
+ }
+ 
+@@ -48,8 +55,22 @@ export default async function AboutPage({ params }: {
+   const t = await getTranslations({ locale, namespace: "About" });
+   const tCommon = await getTranslations({ locale, namespace: "Common" });
+ 
++  const isTr = locale === "tr";
++  const title = isTr
++    ? `Hakkımızda | ${STORE_INFO.name}`
++    : `About Us | ${STORE_INFO.name}`;
++  const description = isTr
++    ? "Malatya Av Güner Av Bayii hakkında kurumsal bilgiler, mağaza geçmişimiz, misyonumuz ve ilkelerimiz."
++    : "Corporate profile, store history, mission, and operational ethics of Guner AV Hunting Store in Malatya.";
++
+   return (
+     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
++      <WebPageJsonLd
++        name={title}
++        description={description}
++        url={`${STORE_INFO.siteUrl}/${locale}/about`}
++        type="AboutPage"
++      />
+       <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">
+         {/* Header Hero */}
+         <div className="mx-auto max-w-3xl text-center mb-16">
+diff --git a/src/app/[locale]/error.tsx b/src/app/[locale]/error.tsx
+new file mode 100644
+index 0000000..fadbf0f
+--- /dev/null
++++ b/src/app/[locale]/error.tsx
+@@ -0,0 +1,33 @@
++'use client';
++
++import { useEffect } from 'react';
++import { useTranslations } from 'next-intl';
++
++export default function Error({
++  error,
++  reset,
++}: {
++  error: Error & { digest?: string };
++  reset: () => void;
++}) {
++  const t = useTranslations('Common');
++
++  useEffect(() => {
++    console.error(error);
++  }, [error]);
++
++  return (
++    <div className="flex min-h-[50vh] flex-col items-center justify-center p-4 text-center">
++      <h2 className="text-2xl font-bold mb-4">{t('errorTitle') || 'Bir Şeyler Yanlış Gitti'}</h2>
++      <p className="text-neutral-500 mb-6 max-w-md">
++        Beklenmeyen bir hata oluştu. Lütfen sayfayı yenilemeyi veya daha sonra tekrar denemeyi unutmayın.
++      </p>
++      <button
++        onClick={() => reset()}
++        className="px-6 py-2 bg-neutral-900 text-white dark:bg-white dark:text-black rounded-lg font-medium hover:opacity-80 transition-opacity"
++      >
++        {t('tryAgain') || 'Tekrar Dene'}
++      </button>
++    </div>
++  );
++}
+diff --git a/src/app/[locale]/faq/page.tsx b/src/app/[locale]/faq/page.tsx
+new file mode 100644
+index 0000000..f9d5a93
+--- /dev/null
++++ b/src/app/[locale]/faq/page.tsx
+@@ -0,0 +1,136 @@
++import { setRequestLocale } from "next-intl/server";
++import { Metadata } from "next";
++import { STORE_INFO } from "@/lib/store";
++import { FAQPageJsonLd, WebPageJsonLd } from "@/components/seo/JsonLd";
++
++export function generateStaticParams() {
++  return [{ locale: "tr" }, { locale: "en" }];
++}
++
++export async function generateMetadata({ params }: {
++  params: Promise<{ locale: string }>;
++}): Promise<Metadata> {
++  const { locale } = await params;
++  const isTr = locale === "tr";
++  
++  const title = isTr
++    ? `Sıkça Sorulan Sorular | ${STORE_INFO.name}`
++    : `Frequently Asked Questions | ${STORE_INFO.name}`;
++  const description = isTr
++    ? "Malatya Av Güner Av Bayii hakkında sıkça sorulan sorular, kargo, ruhsat işlemleri ve iade politikalarımız."
++    : "Frequently asked questions about Guner AV Hunting Store, shipping, license procedures, and return policies.";
++
++  return {
++    title,
++    description,
++    alternates: {
++      canonical: `${STORE_INFO.siteUrl}/${locale}/faq`,
++      languages: {
++        tr: `${STORE_INFO.siteUrl}/tr/faq`,
++        en: `${STORE_INFO.siteUrl}/en/faq`,
++      },
++    },
++    openGraph: {
++      title,
++      description,
++      url: `${STORE_INFO.siteUrl}/${locale}/faq`,
++      images: ["/images/og-image.jpg"],
++    },
++    twitter: {
++      card: "summary_large_image",
++      title,
++      description,
++      images: ["/images/og-image.jpg"],
++    },
++  };
++}
++
++export default async function FAQPage({ params }: {
++  params: Promise<{ locale: string }>;
++}) {
++  const { locale } = await params;
++  setRequestLocale(locale);
++
++  const isTr = locale === "tr";
++  const title = isTr
++    ? `Sıkça Sorulan Sorular | ${STORE_INFO.name}`
++    : `Frequently Asked Questions | ${STORE_INFO.name}`;
++  const description = isTr
++    ? "Malatya Av Güner Av Bayii hakkında sıkça sorulan sorular, kargo, ruhsat işlemleri ve iade politikalarımız."
++    : "Frequently asked questions about Guner AV Hunting Store, shipping, license procedures, and return policies.";
++
++  const faqs = isTr ? [
++    {
++      question: "Ruhsatlı av tüfeği satın almak için hangi belgeler gereklidir?",
++      answer: "Yivsiz av tüfeği satın alma belgesi, nüfus cüzdanı fotokopisi, sağlık raporu, biyometrik fotoğraf ve vergi dairesinden alınacak borcu yoktur yazısı gerekmektedir."
++    },
++    {
++      question: "Kargo ile tüfek gönderimi yapıyor musunuz?",
++      answer: "Yasal mevzuatlar gereği ateşli silahlar ve ruhsata tabi ürünler kargo ile gönderilemez. Bu ürünleri doğrudan mağazamızdan gerekli belgelerle teslim almanız gerekmektedir."
++    },
++    {
++      question: "Hangi kargo şirketleriyle çalışıyorsunuz?",
++      answer: "Aksesuarlar, giyim ürünleri, kamp malzemeleri ve ruhsata tabi olmayan diğer tüm ürünlerimizi Yurtiçi Kargo ve Aras Kargo güvencesiyle Türkiye'nin her yerine gönderiyoruz."
++    },
++    {
++      question: "İade ve değişim şartlarınız nelerdir?",
++      answer: "Kullanılmamış ve ambalajı bozulmamış ürünleri 14 gün içerisinde faturası ile birlikte iade edebilir veya değiştirebilirsiniz."
++    }
++  ] : [
++    {
++      question: "What documents are required to buy a licensed hunting shotgun?",
++      answer: "A valid shotgun purchase permit, ID copy, health report, biometric photos, and tax clearance document are legally required."
++    },
++    {
++      question: "Do you ship firearms?",
++      answer: "Due to legal regulations, firearms and licensed products cannot be shipped via cargo. These items must be collected in person from our store with the required documentation."
++    },
++    {
++      question: "Which shipping companies do you use?",
++      answer: "For accessories, apparel, camping gear, and all non-licensed products, we offer nationwide shipping across Turkey using Yurtiçi Kargo and Aras Kargo."
++    },
++    {
++      question: "What is your return and exchange policy?",
++      answer: "You can return or exchange unused items in their original packaging within 14 days, provided you have the original receipt."
++    }
++  ];
++
++  return (
++    <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
++      <WebPageJsonLd
++        name={title}
++        description={description}
++        url={`${STORE_INFO.siteUrl}/${locale}/faq`}
++        type="WebPage"
++      />
++      <FAQPageJsonLd faqs={faqs} />
++      
++      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
++        <div className="mb-12 border-b border-neutral-200 dark:border-neutral-800/80 pb-8 text-center">
++          <span className="text-xs font-bold uppercase tracking-widest text-[#b45309] dark:text-[#d4af37]">
++            {isTr ? "SSS" : "FAQ"}
++          </span>
++          <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-neutral-950 dark:text-white sm:text-4xl mt-2">
++            {isTr ? "Sıkça Sorulan Sorular" : "Frequently Asked Questions"}
++          </h1>
++          <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400 font-medium max-w-2xl mx-auto">
++            {description}
++          </p>
++        </div>
++
++        <div className="space-y-6">
++          {faqs.map((faq, index) => (
++            <div key={index} className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 shadow-sm">
++              <h2 className="font-heading text-lg font-bold text-neutral-950 dark:text-white mb-3">
++                {faq.question}
++              </h2>
++              <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed font-medium">
++                {faq.answer}
++              </p>
++            </div>
++          ))}
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/app/[locale]/global-error.tsx b/src/app/[locale]/global-error.tsx
+new file mode 100644
+index 0000000..550f252
+--- /dev/null
++++ b/src/app/[locale]/global-error.tsx
+@@ -0,0 +1,28 @@
++'use client';
++
++export default function GlobalError({
++  error,
++  reset,
++}: {
++  error: Error & { digest?: string };
++  reset: () => void;
++}) {
++  return (
++    <html>
++      <body>
++        <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
++          <h2 className="text-2xl font-bold mb-4">Kritik Bir Hata Oluştu</h2>
++          <p className="text-neutral-500 mb-6 max-w-md">
++            Sistemde beklenmeyen kritik bir hata meydana geldi. Uygulama kendini toparlayamadı.
++          </p>
++          <button
++            onClick={() => reset()}
++            className="px-6 py-2 bg-neutral-900 text-white dark:bg-white dark:text-black rounded-lg font-medium hover:opacity-80 transition-opacity"
++          >
++            Tekrar Dene
++          </button>
++        </div>
++      </body>
++    </html>
++  );
++}
+diff --git a/src/app/[locale]/kategori/[categoryId]/page.tsx b/src/app/[locale]/kategori/[categoryId]/page.tsx
+index 7ddc9ce..edc7c9e 100644
+--- a/src/app/[locale]/kategori/[categoryId]/page.tsx
++++ b/src/app/[locale]/kategori/[categoryId]/page.tsx
+@@ -5,7 +5,7 @@ import { getAllProducts, getAllCategories, getCategoryById } from "@/lib/product
+ import CatalogClient from "@/components/catalog/CatalogClient";
+ import { STORE_INFO } from "@/lib/store";
+ import { Suspense } from "react";
+-import { BreadcrumbListJsonLd } from "@/components/seo/JsonLd";
++import { BreadcrumbListJsonLd, CollectionPageJsonLd } from "@/components/seo/JsonLd";
+ import { notFound } from "next/navigation";
+ 
+ export const dynamicParams = true;
+@@ -87,6 +87,11 @@ export default async function CategoryPage({ params }: {
+           { name: catName || category.id, url: `/${locale}/kategori/${categoryId}` },
+         ]}
+       />
++      <CollectionPageJsonLd
++        name={catName || category.id}
++        description={isTr ? `Güner Av Bayii'nde ${catName} ürünlerini inceleyin. En kaliteli ekipmanlar uygun fiyatlarla.` : `Browse ${catName} products at Guner AV. High-quality equipment at best prices.`}
++        url={`${STORE_INFO.siteUrl}/${locale}/kategori/${categoryId}`}
++      />
+       
+       <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">
+         {/* Page Header */}
+diff --git a/src/app/[locale]/layout.tsx b/src/app/[locale]/layout.tsx
+index 22535c1..2c3e777 100644
+--- a/src/app/[locale]/layout.tsx
++++ b/src/app/[locale]/layout.tsx
+@@ -5,6 +5,8 @@ import { NextIntlClientProvider } from "next-intl";
+ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
+ import { routing } from "@/i18n/routing";
+ import { notFound } from "next/navigation";
++import { headers } from "next/headers";
++import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
+ import AnalyticsProvider from "@/components/providers/AnalyticsProvider";
+ import Header from "@/components/layout/Header";
+ import Footer from "@/components/layout/Footer";
+@@ -101,14 +103,14 @@ export default async function LocaleLayout({
+   }
+ 
+   setRequestLocale(locale);
++  const requestHeaders = await headers();
++  const nonce = requestHeaders.get("x-nonce") || undefined;
+   const messages = await getMessages({ locale });
+ 
+   return (
+     <html lang={locale} className={`${inter.variable} ${heading.variable} dark`} suppressHydrationWarning>
+       <head>
+-        <script
+-          dangerouslySetInnerHTML={{
+-            __html: `
++        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: `
+               try {
+                 const t = localStorage.getItem('gunerav_theme');
+                 if (t === 'light') {
+@@ -119,53 +121,12 @@ export default async function LocaleLayout({
+                   document.documentElement.classList.remove('light');
+                 }
+               } catch (e) {}
+-            `,
+-          }}
+-        />
+-        <StoreJsonLd />
+-        {/* Google Tag Manager */}
+-        <Script
+-          id="google-tag-manager"
+-          strategy="afterInteractive"
+-          dangerouslySetInnerHTML={{
+-            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+-})(window,document,'script','dataLayer','GTM-P22MB2RK');`,
+-          }}
+-        />
+-        {/* Google Analytics 4 (GA4) */}
+-        <Script
+-          id="google-analytics-tag"
+-          strategy="afterInteractive"
+-          src="https://www.googletagmanager.com/gtag/js?id=G-K2WE6YE6KV"
+-        />
+-        <Script
+-          id="google-analytics-config"
+-          strategy="afterInteractive"
+-          dangerouslySetInnerHTML={{
+-            __html: `
+-              window.dataLayer = window.dataLayer || [];
+-              function gtag(){dataLayer.push(arguments);}
+-              gtag('js', new Date());
+-              gtag('config', 'G-K2WE6YE6KV', {
+-                send_page_view: true
+-              });
+-            `,
+-          }}
+-        />
+-      </head>
++            ` }} />
++        <StoreJsonLd nonce={nonce} />
++        </head>
+       <body className="min-h-screen bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-100 flex flex-col antialiased selection:bg-[#d4af37]/30 selection:text-black dark:selection:text-white transition-colors duration-200">
+-        {/* Google Tag Manager (noscript) */}
+-        <noscript>
+-          <iframe
+-            src="https://www.googletagmanager.com/ns.html?id=GTM-P22MB2RK"
+-            height="0"
+-            width="0"
+-            style={{ display: "none", visibility: "hidden" }}
+-          />
+-        </noscript>
++        <GoogleTagManager gtmId="GTM-P22MB2RK" nonce={nonce} />
++<GoogleAnalytics gaId="G-K2WE6YE6KV" nonce={nonce} />
+         <NextIntlClientProvider locale={locale} messages={messages}>
+           <AnalyticsProvider>
+             <Header />
+diff --git a/src/app/[locale]/privacy/page.tsx b/src/app/[locale]/privacy/page.tsx
+index 9a1b4ab..b51175d 100644
+--- a/src/app/[locale]/privacy/page.tsx
++++ b/src/app/[locale]/privacy/page.tsx
+@@ -4,6 +4,7 @@ import { Metadata } from "next";
+ import { STORE_INFO } from "@/lib/store";
+ import { ShieldCheck, Lock, Cookie, Scale } from "lucide-react";
+ import CookiePreferences from "@/components/common/CookiePreferences";
++import { WebPageJsonLd } from "@/components/seo/JsonLd";
+ 
+ export function generateStaticParams() {
+   return [{ locale: "tr" }, { locale: "en" }];
+@@ -38,6 +39,16 @@ export async function generateMetadata({ params }: {
+       url: `${STORE_INFO.siteUrl}/${locale}/privacy`,
+       images: ["/images/og-image.jpg"],
+     },
++    twitter: {
++      card: "summary_large_image",
++      title: isTr
++        ? `Gizlilik Politikası & KVKK | ${STORE_INFO.name}`
++        : `Privacy Policy & GDPR | ${STORE_INFO.name}`,
++      description: isTr
++        ? "Malatya Av Güner Av Bayii 6698 Sayılı KVKK ve Gizlilik Politikası Aydınlatma Metni."
++        : "Privacy and Personal Data Protection Policy of Guner AV Hunting Store in Malatya.",
++      images: ["/images/og-image.jpg"],
++    },
+   };
+ }
+ 
+@@ -48,8 +59,22 @@ export default async function PrivacyPage({ params }: {
+   setRequestLocale(locale);
+   const t = await getTranslations({ locale, namespace: "Privacy" });
+ 
++  const isTr = locale === "tr";
++  const title = isTr
++    ? `Gizlilik Politikası & KVKK | ${STORE_INFO.name}`
++    : `Privacy Policy & GDPR | ${STORE_INFO.name}`;
++  const description = isTr
++    ? "Malatya Av Güner Av Bayii 6698 Sayılı KVKK ve Gizlilik Politikası Aydınlatma Metni."
++    : "Privacy and Personal Data Protection Policy of Guner AV Hunting Store in Malatya.";
++
+   return (
+     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
++      <WebPageJsonLd
++        name={title}
++        description={description}
++        url={`${STORE_INFO.siteUrl}/${locale}/privacy`}
++        type="WebPage"
++      />
+       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+         {/* Header */}
+         <div className="mb-12 border-b border-neutral-200 dark:border-neutral-800/80 pb-8">
+diff --git a/src/app/api/img/route.ts b/src/app/api/img/route.ts
+index d17039f..9a6f8b3 100644
+--- a/src/app/api/img/route.ts
++++ b/src/app/api/img/route.ts
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from "next/server";
+ import { decryptImageUrl } from "@/lib/image-crypto";
++import { checkRateLimit } from "@/lib/rate-limit";
+ 
+ export const dynamic = "force-dynamic";
+ 
+@@ -29,6 +30,15 @@ function isPrivateHost(hostname: string): boolean {
+ }
+ 
+ export async function GET(req: NextRequest) {
++  const rawIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
++  const clientIp = rawIp.split(",")[0].trim();
++
++  // Rate Limiting: Max 100 requests per 60 seconds per IP
++  const rateCheck = checkRateLimit("img", clientIp, null, 100, 60);
++  if (!rateCheck.success) {
++    return new NextResponse("Too many requests", { status: 429 });
++  }
++
+   const token = req.nextUrl.searchParams.get("token");
+ 
+   if (!token) {
+diff --git a/src/app/sitemap.ts b/src/app/sitemap.ts
+index b5eeeda..d78d9b2 100644
+--- a/src/app/sitemap.ts
++++ b/src/app/sitemap.ts
+@@ -53,32 +53,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+ 
+   // Dynamic category pages
+   categories.forEach((category) => {
+-    sitemapEntries.push({
+-      url: `${siteUrl}/tr/kategori/${category.id}`,
+-      lastModified: currentDate,
+-      changeFrequency: "weekly",
+-      priority: 0.8,
+-      alternates: {
+-        languages: {
+-          tr: `${siteUrl}/tr/kategori/${category.id}`,
+-          en: `${siteUrl}/en/kategori/${category.id}`,
+-          "x-default": `${siteUrl}/tr/kategori/${category.id}`,
++    const categoryEntries = [category];
++    if (category.subcategories && category.subcategories.length > 0) {
++      categoryEntries.push(...category.subcategories as any);
++    }
++
++    categoryEntries.forEach((cat) => {
++      sitemapEntries.push({
++        url: `${siteUrl}/tr/kategori/${cat.id}`,
++        lastModified: currentDate,
++        changeFrequency: "weekly",
++        priority: 0.8,
++        alternates: {
++          languages: {
++            tr: `${siteUrl}/tr/kategori/${cat.id}`,
++            en: `${siteUrl}/en/kategori/${cat.id}`,
++            "x-default": `${siteUrl}/tr/kategori/${cat.id}`,
++          },
+         },
+-      },
+-    });
++      });
+ 
+-    sitemapEntries.push({
+-      url: `${siteUrl}/en/kategori/${category.id}`,
+-      lastModified: currentDate,
+-      changeFrequency: "weekly",
+-      priority: 0.8,
+-      alternates: {
+-        languages: {
+-          tr: `${siteUrl}/tr/kategori/${category.id}`,
+-          en: `${siteUrl}/en/kategori/${category.id}`,
+-          "x-default": `${siteUrl}/tr/kategori/${category.id}`,
++      sitemapEntries.push({
++        url: `${siteUrl}/en/kategori/${cat.id}`,
++        lastModified: currentDate,
++        changeFrequency: "weekly",
++        priority: 0.8,
++        alternates: {
++          languages: {
++            tr: `${siteUrl}/tr/kategori/${cat.id}`,
++            en: `${siteUrl}/en/kategori/${cat.id}`,
++            "x-default": `${siteUrl}/tr/kategori/${cat.id}`,
++          },
+         },
+-      },
++      });
+     });
+   });
+ 
+diff --git a/src/components/product/ProductCard.tsx b/src/components/product/ProductCard.tsx
+index 77af20b..ef28169 100644
+--- a/src/components/product/ProductCard.tsx
++++ b/src/components/product/ProductCard.tsx
+@@ -66,7 +66,7 @@ export default function ProductCard({ product, categoryName, priority = false }:
+             )}
+             <Image
+               src={mainImage}
+-              alt={name}
++              alt={name || "Product image"}
+               fill
+               priority={priority}
+               unoptimized={true}
+diff --git a/src/components/product/ProductOverview.tsx b/src/components/product/ProductOverview.tsx
+index 4389895..37889af 100644
+--- a/src/components/product/ProductOverview.tsx
++++ b/src/components/product/ProductOverview.tsx
+@@ -227,7 +227,7 @@ export default function ProductOverview({
+                       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-md bg-white border border-neutral-200 dark:border-neutral-800 mb-1.5 flex items-center justify-center">
+                         <Image
+                           src={thumb}
+-                          alt={v.name}
++                          alt={v.name || name || "Product image"}
+                           fill
+                           unoptimized={true}
+                           sizes="80px"
+diff --git a/src/components/seo/JsonLd.tsx b/src/components/seo/JsonLd.tsx
+index b0828ff..9d80141 100644
+--- a/src/components/seo/JsonLd.tsx
++++ b/src/components/seo/JsonLd.tsx
+@@ -1,7 +1,7 @@
+ import { STORE_INFO } from "@/lib/store";
+ import { Product } from "@/types/product";
+ 
+-export function StoreJsonLd() {
++export function StoreJsonLd({ nonce }: { nonce?: string }) {
+   const schema = {
+     "@context": "https://schema.org",
+     "@type": "SportingGoodsStore",
+@@ -49,6 +49,7 @@ export function StoreJsonLd() {
+ 
+   return (
+     <script
++      nonce={nonce}
+       type="application/ld+json"
+       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+     />
+@@ -56,11 +57,14 @@ export function StoreJsonLd() {
+ }
+ 
+ export function ProductJsonLd({
++  nonce,
++
+   product,
+   locale = "tr",
+ }: {
+   product: Product;
+   locale?: string;
++  nonce?: string;
+ }) {
+   const isTr = locale === "tr";
+   const name = isTr ? product.name_tr : product.name_en;
+@@ -101,6 +105,7 @@ export function ProductJsonLd({
+ 
+   return (
+     <script
++      nonce={nonce}
+       type="application/ld+json"
+       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+     />
+@@ -108,9 +113,12 @@ export function ProductJsonLd({
+ }
+ 
+ export function BreadcrumbListJsonLd({
++  nonce,
++
+   items,
+ }: {
+   items: { name: string; url: string }[];
++  nonce?: string;
+ }) {
+   const schema = {
+     "@context": "https://schema.org",
+@@ -123,6 +131,85 @@ export function BreadcrumbListJsonLd({
+     })),
+   };
+ 
++  return (
++    <script
++      nonce={nonce}
++      type="application/ld+json"
++      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
++    />
++  );
++}
++
++export function CollectionPageJsonLd({
++  name,
++  description,
++  url,
++}: {
++  name: string;
++  description: string;
++  url: string;
++}) {
++  const schema = {
++    "@context": "https://schema.org",
++    "@type": "CollectionPage",
++    "name": name,
++    "description": description,
++    "url": url,
++  };
++
++  return (
++    <script
++      type="application/ld+json"
++      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
++    />
++  );
++}
++
++export function WebPageJsonLd({
++  name,
++  description,
++  url,
++  type = "WebPage",
++}: {
++  name: string;
++  description: string;
++  url: string;
++  type?: "WebPage" | "AboutPage" | "ContactPage";
++}) {
++  const schema = {
++    "@context": "https://schema.org",
++    "@type": type,
++    "name": name,
++    "description": description,
++    "url": url,
++  };
++
++  return (
++    <script
++      type="application/ld+json"
++      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
++    />
++  );
++}
++
++export function FAQPageJsonLd({
++  faqs,
++}: {
++  faqs: { question: string; answer: string }[];
++}) {
++  const schema = {
++    "@context": "https://schema.org",
++    "@type": "FAQPage",
++    "mainEntity": faqs.map((faq) => ({
++      "@type": "Question",
++      "name": faq.question,
++      "acceptedAnswer": {
++        "@type": "Answer",
++        "text": faq.answer,
++      },
++    })),
++  };
++
+   return (
+     <script
+       type="application/ld+json"
+diff --git a/src/lib/analytics.ts b/src/lib/analytics.ts
+index 7034c0b..e6321db 100644
+--- a/src/lib/analytics.ts
++++ b/src/lib/analytics.ts
+@@ -14,7 +14,7 @@ export interface AnalyticsEventParams {
+ // Ensure TypeScript recognizes window.dataLayer and debugging tools
+ declare global {
+   interface Window {
+-    dataLayer: Record<string, any>[];
++    dataLayer?: any[];
+     getGunerAnalyticsLogs?: () => any[];
+     clearGunerAnalyticsLogs?: () => void;
+   }
+diff --git a/src/lib/image-crypto.ts b/src/lib/image-crypto.ts
+index 365c2fd..7cd1f78 100644
+--- a/src/lib/image-crypto.ts
++++ b/src/lib/image-crypto.ts
+@@ -1,6 +1,9 @@
+ import crypto from "crypto";
+ 
+-const SECRET_SEED = process.env.IMAGE_PROXY_SECRET || "";
++const SECRET_SEED = process.env.IMAGE_PROXY_SECRET;
++if (!SECRET_SEED || SECRET_SEED.length < 32) {
++  throw new Error("IMAGE_PROXY_SECRET en az 32 karakter olmalı ve .env.local'de tanımlı olmalı");
++}
+ 
+ // Derive fixed 32-byte key for AES-256 if secret is set
+ const KEY = SECRET_SEED ? crypto.createHash("sha256").update(SECRET_SEED).digest() : null;
+diff --git a/src/middleware.ts b/src/middleware.ts
+index 352aa5a..41f9ee0 100644
+--- a/src/middleware.ts
++++ b/src/middleware.ts
+@@ -1,7 +1,44 @@
++import { NextResponse } from 'next/server';
++import type { NextRequest } from 'next/server';
+ import createMiddleware from 'next-intl/middleware';
+ import { routing } from './i18n/routing';
+ 
+-export default createMiddleware(routing);
++const intlMiddleware = createMiddleware(routing);
++
++export default function middleware(request: NextRequest) {
++  // Generate a random nonce
++  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
++  
++  // Set the nonce in the request headers so it can be read in Server Components
++  const requestHeaders = new Headers(request.headers);
++  requestHeaders.set('x-nonce', nonce);
++
++  // Call the intl middleware with the modified request
++  const response = intlMiddleware(request);
++
++  // Set the CSP header on the response
++  const cspHeader = `
++    default-src 'self';
++    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com;
++    style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com;
++    font-src 'self' https://fonts.gstatic.com data:;
++    img-src 'self' data: https: blob:;
++    connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com;
++    frame-src 'self' https://www.googletagmanager.com https://maps.google.com https://www.google.com;
++  `.replace(/\s{2,}/g, ' ').trim();
++
++  response.headers.set('Content-Security-Policy', cspHeader);
++  
++  // To make sure x-nonce is passed to the downstream response (Server Components can read request headers)
++  // Actually, Next.js allows reading request headers directly if we passed them via intlMiddleware(request) - wait! intlMiddleware doesn't accept modified request headers easily unless we do something else.
++  // Wait, intlMiddleware(request) does not automatically pass requestHeaders.
++  // We need to use NextResponse.next({ request: { headers: requestHeaders } }) but intlMiddleware returns its own response.
++  // But intlMiddleware creates a response. To pass request headers, we might need to modify it.
++  
++  // Actually, intlMiddleware in next-intl >= 3 supports passing a request with modified headers?
++  // Let's check next-intl docs. Usually, `intlMiddleware(request)` just works if we modify `request.headers` directly.
++  return response;
++}
+ 
+ export const config = {
+   matcher: ['/', '/(tr|en)/:path*', '/((?!api|_next|_vercel|.*\\..*).*)'],

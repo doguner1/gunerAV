@@ -14,7 +14,7 @@ export interface AnalyticsEventParams {
 // Ensure TypeScript recognizes window.dataLayer and debugging tools
 declare global {
   interface Window {
-    dataLayer: Record<string, any>[];
+    dataLayer?: any[];
     getGunerAnalyticsLogs?: () => any[];
     clearGunerAnalyticsLogs?: () => void;
   }

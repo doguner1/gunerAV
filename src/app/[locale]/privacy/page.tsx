@@ -4,6 +4,7 @@ import { Metadata } from "next";
 import { STORE_INFO } from "@/lib/store";
 import { ShieldCheck, Lock, Cookie, Scale } from "lucide-react";
 import CookiePreferences from "@/components/common/CookiePreferences";
+import { WebPageJsonLd } from "@/components/seo/JsonLd";
 
 export function generateStaticParams() {
   return [{ locale: "tr" }, { locale: "en" }];
@@ -38,6 +39,16 @@ export async function generateMetadata({ params }: {
       url: `${STORE_INFO.siteUrl}/${locale}/privacy`,
       images: ["/images/og-image.jpg"],
     },
+    twitter: {
+      card: "summary_large_image",
+      title: isTr
+        ? `Gizlilik Politikası & KVKK | ${STORE_INFO.name}`
+        : `Privacy Policy & GDPR | ${STORE_INFO.name}`,
+      description: isTr
+        ? "Malatya Av Güner Av Bayii 6698 Sayılı KVKK ve Gizlilik Politikası Aydınlatma Metni."
+        : "Privacy and Personal Data Protection Policy of Guner AV Hunting Store in Malatya.",
+      images: ["/images/og-image.jpg"],
+    },
   };
 }
 
@@ -48,8 +59,22 @@ export default async function PrivacyPage({ params }: {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Privacy" });
 
+  const isTr = locale === "tr";
+  const title = isTr
+    ? `Gizlilik Politikası & KVKK | ${STORE_INFO.name}`
+    : `Privacy Policy & GDPR | ${STORE_INFO.name}`;
+  const description = isTr
+    ? "Malatya Av Güner Av Bayii 6698 Sayılı KVKK ve Gizlilik Politikası Aydınlatma Metni."
+    : "Privacy and Personal Data Protection Policy of Guner AV Hunting Store in Malatya.";
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pt-20 pb-20 transition-colors">
+      <WebPageJsonLd
+        name={title}
+        description={description}
+        url={`${STORE_INFO.siteUrl}/${locale}/privacy`}
+        type="WebPage"
+      />
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-12 border-b border-neutral-200 dark:border-neutral-800/80 pb-8">

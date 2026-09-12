@@ -227,7 +227,7 @@ export default function ProductOverview({
                       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-md bg-white border border-neutral-200 dark:border-neutral-800 mb-1.5 flex items-center justify-center">
                         <Image
                           src={thumb}
-                          alt={v.name}
+                          alt={v.name || name || "Product image"}
                           fill
                           unoptimized={true}
                           sizes="80px"

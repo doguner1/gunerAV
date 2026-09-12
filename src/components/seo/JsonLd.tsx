@@ -1,7 +1,7 @@
 import { STORE_INFO } from "@/lib/store";
 import { Product } from "@/types/product";
 
-export function StoreJsonLd() {
+export function StoreJsonLd({ nonce }: { nonce?: string }) {
   const schema = {
     "@context": "https://schema.org",
     "@type": "SportingGoodsStore",
@@ -49,6 +49,7 @@ export function StoreJsonLd() {
 
   return (
     <script
+      nonce={nonce}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
     />
@@ -56,11 +57,14 @@ export function StoreJsonLd() {
 }
 
 export function ProductJsonLd({
+  nonce,
+
   product,
   locale = "tr",
 }: {
   product: Product;
   locale?: string;
+  nonce?: string;
 }) {
   const isTr = locale === "tr";
   const name = isTr ? product.name_tr : product.name_en;
@@ -101,6 +105,7 @@ export function ProductJsonLd({
 
   return (
     <script
+      nonce={nonce}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
     />
@@ -108,9 +113,12 @@ export function ProductJsonLd({
 }
 
 export function BreadcrumbListJsonLd({
+  nonce,
+
   items,
 }: {
   items: { name: string; url: string }[];
+  nonce?: string;
 }) {
   const schema = {
     "@context": "https://schema.org",
@@ -120,6 +128,85 @@ export function BreadcrumbListJsonLd({
       "position": index + 1,
       "name": item.name,
       "item": item.url.startsWith("http") ? item.url : `${STORE_INFO.siteUrl}${item.url}`,
+    })),
+  };
+
+  return (
+    <script
+      nonce={nonce}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+    />
+  );
+}
+
+export function CollectionPageJsonLd({
+  name,
+  description,
+  url,
+}: {
+  name: string;
+  description: string;
+  url: string;
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": name,
+    "description": description,
+    "url": url,
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+    />
+  );
+}
+
+export function WebPageJsonLd({
+  name,
+  description,
+  url,
+  type = "WebPage",
+}: {
+  name: string;
+  description: string;
+  url: string;
+  type?: "WebPage" | "AboutPage" | "ContactPage";
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": type,
+    "name": name,
+    "description": description,
+    "url": url,
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+    />
+  );
+}
+
+export function FAQPageJsonLd({
+  faqs,
+}: {
+  faqs: { question: string; answer: string }[];
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map((faq) => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer,
+      },
     })),
   };
 
