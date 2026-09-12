@@ -92,7 +92,7 @@ export default function HeroSpotlightStudio({
           </div>
         </div>
 
-        {/* Hero Product Visual Display - Refined Studio Frame */}
+        {/* Hero Product Visual Display - Refined Spacious Studio Frame */}
         <Link
           href={featuredProductSlug}
           onClick={() =>
@@ -102,10 +102,9 @@ export default function HeroSpotlightStudio({
               trigger: "image",
             })
           }
-          className="group block relative my-3.5 rounded-2xl bg-gradient-to-b from-white via-white to-neutral-100 border border-neutral-200/80 overflow-hidden shadow-md transition-all duration-300 hover:scale-[1.01]"
-          style={{ height: "230px" }}
+          className="group block relative my-3.5 rounded-2xl bg-gradient-to-b from-white via-white to-neutral-100 border border-neutral-200/80 overflow-hidden shadow-md transition-all duration-300 hover:scale-[1.01] h-[250px] xl:h-[275px]"
         >
-          <div className="relative w-full h-full flex items-center justify-center">
+          <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
             <Image
               src={spotlightImage}
               alt={spotlightTitle}
@@ -115,13 +114,13 @@ export default function HeroSpotlightStudio({
                 spotlightImage.startsWith("/api/img")
               }
               sizes="(max-width: 768px) 100vw, 500px"
-              className="object-contain px-3 py-4 object-center transition-transform duration-500 group-hover:scale-105"
+              className="object-contain p-3 sm:p-4 object-center transition-transform duration-500 group-hover:scale-105"
             />
           </div>
 
           {/* Model Name Floating Overlay at Bottom */}
           {spotlightProduct ? (
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end p-3 pointer-events-none rounded-b-2xl">
+            <div className="absolute inset-x-0 bottom-0 h-16 sm:h-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end p-3 pointer-events-none rounded-b-2xl">
               <div className="text-white min-w-0">
                 <div className="text-[9.5px] font-mono font-bold tracking-widest text-[#d4af37] uppercase truncate drop-shadow-sm">
                   [ + ] {featuredModelText || "SEÇKİN MODEL"}

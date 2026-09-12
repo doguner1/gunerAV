@@ -71,9 +71,9 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
 
       <div className="relative z-20 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
-        <div className="flex flex-col lg:flex-row gap-8 sm:gap-10 lg:gap-12 xl:gap-20 items-center justify-between">
+        <div className="flex flex-col lg:flex-row gap-8 sm:gap-10 lg:gap-12 xl:gap-16 items-center lg:items-start justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="w-full max-w-2xl lg:max-w-none lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-4 xl:pt-6">
+          <div className="w-full max-w-2xl lg:max-w-none lg:w-3/5 xl:w-[54%] space-y-4 sm:space-y-5 lg:space-y-6 lg:pt-2 xl:pt-4">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
