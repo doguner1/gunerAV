@@ -34,23 +34,23 @@ export interface DesignConfig {
   padding: number;      // px
 }
 
-// 1. TAM EKRAN (1920x1080) KULLANICININ ONAYLADIĞI SABİT AYAR
+// 1. TAM EKRAN (1920x1080) SABİT AYAR
 export const FULLSCREEN_CONFIG: DesignConfig = {
   width: 435,
   offsetX: 0,
-  offsetY: -245,
-  imageHeight: 330,
+  offsetY: -110,
+  imageHeight: 310,
   borderRadius: 36,
   bgOpacity: 0,
   padding: 18,
 };
 
-// 2. PENCERE / YARIM EKRAN KULLANICININ ONAYLADIĞI SABİT AYAR
+// 2. PENCERE / YARIM EKRAN SABİT AYAR
 export const DEFAULT_WINDOWED_CONFIG: DesignConfig = {
   width: 435,
   offsetX: 0,
-  offsetY: -180,
-  imageHeight: 310,
+  offsetY: -70,
+  imageHeight: 290,
   borderRadius: 36,
   bgOpacity: 10,
   padding: 18,
@@ -149,38 +149,33 @@ export default function HeroSpotlightStudio({
       }
 
       // 1. ÜST SINIR KORUMASI (Header Navbar):
-      // Header navbar yüksekliği h-16 (64px).
-      // 1080p tam ekranda 82px, dar ekranlarda 76px güvenli üst sınır.
-      const topSafeLimit = w >= 1600 ? 82 : 76;
+      // Header navbar h-16 (64px). Asla üst barın içine girmemesi için en az 110px güvenli mesafe.
+      const topSafeLimit = w >= 1600 ? 112 : 98;
 
       // 2. ALT SINIR KORUMASI (Avcılığa Başlayın / Ekran Tabanı):
       // Alttaki keşif oku ~h - 60px seviyesinde.
       const bottomSafeLimit = h - 60;
       const availableHeight = Math.max(280, bottomSafeLimit - topSafeLimit);
 
-      // Referans kart yüksekliği (Kart ~475px + alt Google rozeti ~45px + boşluklar = ~530px)
-      const baseCardHeight = 530;
+      // Referans kart yüksekliği
+      const baseCardHeight = 520;
 
       // Kademeli dikey ölçekleme (scaleH)
       const scaleH = Math.min(1.0, availableHeight / baseCardHeight);
 
       // Kademeli yatay ölçekleme (scaleW):
-      // 1800px'den 1024px'e doğru ekran daraldıkça orantılı olarak küçülür
       const scaleW = w >= 1800
         ? 1.0
         : Math.min(1.0, 0.70 + ((Math.max(1024, w) - 1024) / (1800 - 1024)) * 0.30);
 
-      // İki eksendeki sınırlamalardan en katı olanı seçilir (min 0.60, max 1.0)
+      // İki eksendeki sınırlamalardan en katı olanı seçilir
       const effectiveScale = Math.max(0.60, Math.min(scaleH, scaleW, 1.0));
 
-      // 3. YATAY HİZALAMA:
-      // Sağ kenara tam sabitliyoruz (offsetX = 0). transformOrigin: "top right" ile küçülürken sağ kenar milim oynamaz.
       const dynamicOffsetX = 0;
 
       // 4. DİKEY HİZALAMA (offsetY):
-      // Üst sınır mutlak korunur: Ebeveyn satırın sayfa tepesine olan mesafesi hesaba katılarak
-      // kartın tepe noktası her pencere yüksekliğinde tam olarak topSafeLimit'e oturtulur.
-      let dynamicOffsetY = -220;
+      // Kart asla üst bara yaklaşamaz, topSafeLimit mutlak garanti altına alınır.
+      let dynamicOffsetY = -80;
       if (containerRef.current) {
         const parentRow = containerRef.current.parentElement;
         const parentTop = parentRow
@@ -395,7 +390,7 @@ export default function HeroSpotlightStudio({
                 fill
                 unoptimized={spotlightImage.startsWith("http") || spotlightImage.startsWith("/api/img")}
                 sizes="(max-width: 768px) 100vw, 500px"
-                className="object-contain p-2 object-center transition-transform duration-500 group-hover:scale-105"
+                className="object-contain px-3 pt-6 pb-12 object-center transition-transform duration-500 group-hover:scale-105"
               />
               {spotlightProduct ? (
                 <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex items-end p-3.5 pointer-events-none rounded-b-2xl">
@@ -447,7 +442,7 @@ export default function HeroSpotlightStudio({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackMapClick("hero_spotlight_google_badge")}
-            className="hidden lg:flex items-center gap-2.5 absolute -bottom-10 -left-4 z-20 rounded-2xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-2 px-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-105 group cursor-pointer"
+            className="hidden lg:flex items-center gap-2.5 absolute top-[calc(100%+14px)] left-2 z-20 rounded-2xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-2 px-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-105 group cursor-pointer"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-[#d4af37] group-hover:scale-110 transition-transform shrink-0">
               <Star className="h-4 w-4 fill-[#d4af37] text-[#d4af37]" />
