@@ -217,3 +217,30 @@ export function FAQPageJsonLd({
     />
   );
 }
+
+export function ItemListJsonLd({
+  items,
+  url,
+}: {
+  items: { name: string; url: string }[];
+  url: string;
+}) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "url": url,
+    "itemListElement": items.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": item.url,
+      "name": item.name,
+    })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+    />
+  );
+}

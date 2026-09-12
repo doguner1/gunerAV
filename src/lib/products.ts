@@ -239,19 +239,106 @@ function secureProduct(p: Product): Product {
   };
 }
 
+/**
+ * Günlük deterministik tohum (seed) üretir.
+ * UTC/Yerel güne göre her gün saat 00:00'da değişir.
+ * Sayfa yenilendiğinde aynı gün içinde sıralama sabit kalır, ertesi gün otomatik karışır.
+ */
+export function getTodaySeed(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
+
+function seededRandom(seed: number): number {
+  let t = (seed += 0x6d2b79f5);
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+/**
+ * Belirli bir tohum (seed) ile listeyi deterministik olarak karıştırır (Fisher-Yates)
+ */
+export function shuffleArrayWithSeed<T>(array: T[], seedStr: string): T[] {
+  if (!array || array.length <= 1) return array ? [...array] : [];
+  const arr = [...array];
+  let currentSeed = hashString(seedStr);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const r = seededRandom(currentSeed);
+    currentSeed = (currentSeed + 1) | 0;
+    const j = Math.floor(r * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/**
+ * Ürünleri KESİNLİKLE kategorilerini bozmadan, YALNIZCA kendi kategorileri/alt kategorileri
+ * içinde günlük olarak karıştırır.
+ */
+export function shuffleProductsIntraCategory(products: Product[], seedStr: string = getTodaySeed()): Product[] {
+  if (!products || products.length <= 1) return products || [];
+
+  // 1. Ürünleri alt/ana kategori gruplarına ayır
+  const groups = new Map<string, Product[]>();
+  for (let i = 0; i < products.length; i++) {
+    const p = products[i];
+    const catKey = p.category || "diger";
+    let list = groups.get(catKey);
+    if (!list) {
+      list = [];
+      groups.set(catKey, list);
+    }
+    list.push(p);
+  }
+
+  // 2. Her kategori grubunu yalnızca kendi içinde karıştır
+  const shuffledGroups = new Map<string, Product[]>();
+  groups.forEach((items, catKey) => {
+    shuffledGroups.set(catKey, shuffleArrayWithSeed(items, `${seedStr}:${catKey}`));
+  });
+
+  // 3. Genel kategori sıralama yapısını koruyarak karıştırılmış elemanları sırayla yerleştir
+  const groupIndices = new Map<string, number>();
+  const result: Product[] = [];
+
+  for (let i = 0; i < products.length; i++) {
+    const p = products[i];
+    const catKey = p.category || "diger";
+    const group = shuffledGroups.get(catKey)!;
+    const nextIdx = groupIndices.get(catKey) || 0;
+    result.push(group[nextIdx]);
+    groupIndices.set(catKey, nextIdx + 1);
+  }
+
+  return result;
+}
+
 const rawLocalProducts = (productsData || []) as unknown as Product[];
-const localProducts: Product[] = rawLocalProducts.map(secureProduct);
+const localProducts: Product[] = shuffleProductsIntraCategory(rawLocalProducts.map(secureProduct));
 const categories = categoriesData as unknown as Category[];
 
 /**
- * Supabase bağlıysa yalnızca Supabase'deki ürünleri getirir (veritabanı temizlendiğinde yerel veri zorla gösterilmez).
+ * Supabase bağlıysa ürünleri çeker, kategorilerini bozmadan kendi içinde günlük karıştırarak sunar.
  * Supabase yapılandırılmamışsa yerel products.json dosyasını kullanır.
  */
 export async function getAllProducts(): Promise<Product[]> {
   if (isSupabaseConfigured) {
     try {
       const supabaseItems = await getSupabaseProducts();
-      return (supabaseItems || []).map(secureProduct);
+      const secured = (supabaseItems || []).map(secureProduct);
+      return shuffleProductsIntraCategory(secured);
     } catch (e) {
       console.warn("[Products] Supabase'den ürün çekilemedi:", e);
       return [];
@@ -266,7 +353,9 @@ export function getAllCategories(): Category[] {
 
 export function getFeaturedProducts(list?: Product[]): Product[] {
   const arr = list || localProducts;
-  return arr.filter((product) => product.featured);
+  const featured = arr.filter((product) => product.featured);
+  // Vitrin ürünlerini de kendi arasında günlük olarak karıştırır
+  return shuffleArrayWithSeed(featured, `${getTodaySeed()}:featured`);
 }
 
 export function getHeroSpotlightProduct(list?: Product[]): Product | undefined {
@@ -291,9 +380,10 @@ export function getHeroSpotlightProduct(list?: Product[]): Product | undefined {
 
 export function getDealsProducts(list?: Product[]): Product[] {
   const arr = list || localProducts;
-  return arr.filter(
+  const deals = arr.filter(
     (product) => product.discount_percent && product.discount_percent > 0
   );
+  return shuffleArrayWithSeed(deals, `${getTodaySeed()}:deals`);
 }
 
 export function getProductById(id: string, list?: Product[]): Product | undefined {

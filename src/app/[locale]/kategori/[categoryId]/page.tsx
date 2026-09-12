@@ -1,15 +1,15 @@
 import { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import { getAllProducts, getAllCategories, getCategoryById } from "@/lib/products";
+import { getAllProducts, getAllCategories, getCategoryById, getProductsByCategory } from "@/lib/products";
 import CatalogClient from "@/components/catalog/CatalogClient";
 import { STORE_INFO } from "@/lib/store";
 import { Suspense } from "react";
-import { BreadcrumbListJsonLd, CollectionPageJsonLd } from "@/components/seo/JsonLd";
+import { BreadcrumbListJsonLd, CollectionPageJsonLd, ItemListJsonLd } from "@/components/seo/JsonLd";
 import { notFound } from "next/navigation";
 
 export const dynamicParams = true;
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export async function generateStaticParams() {
   const categories = getAllCategories();
@@ -91,6 +91,13 @@ export default async function CategoryPage({ params }: {
         name={catName || category.id}
         description={isTr ? `Güner Av Bayii'nde ${catName} ürünlerini inceleyin. En kaliteli ekipmanlar uygun fiyatlarla.` : `Browse ${catName} products at Guner AV. High-quality equipment at best prices.`}
         url={`${STORE_INFO.siteUrl}/${locale}/kategori/${categoryId}`}
+      />
+      <ItemListJsonLd
+        url={`${STORE_INFO.siteUrl}/${locale}/kategori/${categoryId}`}
+        items={getProductsByCategory(categoryId, products).map((p) => ({
+          name: (isTr ? p.name_tr : p.name_en) || p.name_tr || "",
+          url: `${STORE_INFO.siteUrl}/${locale}/products/${(isTr ? p.slug_tr : p.slug_en) || p.id}`
+        }))}
       />
       
       <div className="mx-auto max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-12 xl:px-16">
