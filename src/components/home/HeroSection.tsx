@@ -130,20 +130,20 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
 
             {/* Clean Authority Trust Strip - Prestijli, Kristal Netliğinde ve Yüksek Kontrastlı Rozet */}
             <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-white/20 bg-neutral-950/85 sm:bg-black/70 px-4 py-2.5 backdrop-blur-xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] transition-all">
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 flex-1 sm:flex-auto min-w-[120px]">
                 <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#d4af37]/25 border border-[#d4af37]/50 text-[#d4af37] shrink-0 shadow-inner">
                   <ShieldCheck className="h-3.5 w-3.5 text-[#d4af37]" />
                 </div>
-                <span className="font-extrabold text-white text-xs sm:text-[13px] tracking-wide whitespace-nowrap">
+                <span className="font-extrabold text-white text-xs sm:text-[13px] tracking-wide leading-tight">
                   {t("dealerExclusive")}
                 </span>
               </div>
-              <span className="text-amber-400/40 hidden sm:inline">&bull;</span>
-              <div className="flex items-center gap-2 min-w-0">
+              <span className="text-amber-400/40 hidden sm:inline shrink-0">&bull;</span>
+              <div className="flex items-center gap-2 flex-1 sm:flex-auto min-w-[120px]">
                 <div className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/25 border border-amber-500/50 text-amber-300 shrink-0 shadow-inner">
                   <Sparkles className="h-3.5 w-3.5 text-amber-300" />
                 </div>
-                <span className="font-bold text-amber-200 text-xs sm:text-[13px] tracking-wide whitespace-nowrap">
+                <span className="font-bold text-amber-200 text-xs sm:text-[13px] tracking-wide leading-tight">
                   {t("priceAndQuality")}
                 </span>
               </div>
@@ -170,9 +170,9 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       </div>
 
       {/* Progressive Dark Fade & Soft Atmospheric Blur (Only for desktop screens behind content) */}
-      <div className="hidden sm:block absolute bottom-0 inset-x-0 h-24 sm:h-28 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0" />
+      <div className="hidden lg:block absolute bottom-0 inset-x-0 h-24 lg:h-28 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0" />
       <div
-        className="hidden sm:block absolute bottom-0 inset-x-0 h-16 sm:h-20 pointer-events-none z-0"
+        className="hidden lg:block absolute bottom-0 inset-x-0 h-16 lg:h-20 pointer-events-none z-0"
         style={{
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
