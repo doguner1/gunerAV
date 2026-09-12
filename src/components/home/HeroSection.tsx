@@ -73,7 +73,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       <div className="relative z-20 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
         <div className="flex flex-col lg:flex-row gap-8 sm:gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="w-full max-w-2xl lg:max-w-none lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-10 xl:pt-14 2xl:pt-18">
+          <div className="w-full max-w-2xl lg:max-w-none lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-1 xl:pt-4 2xl:pt-8">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
@@ -130,20 +130,20 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
 
             {/* Clean Authority Trust Strip - Prestijli, Kristal Netliğinde ve Yüksek Kontrastlı Rozet */}
             <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-white/20 bg-neutral-950/85 sm:bg-black/70 px-4 py-2.5 backdrop-blur-xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] transition-all">
-              <div className="flex items-center gap-2 flex-1 sm:flex-auto min-w-[120px]">
+              <div className="flex items-center gap-2 min-w-0">
                 <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#d4af37]/25 border border-[#d4af37]/50 text-[#d4af37] shrink-0 shadow-inner">
                   <ShieldCheck className="h-3.5 w-3.5 text-[#d4af37]" />
                 </div>
-                <span className="font-extrabold text-white text-xs sm:text-[13px] tracking-wide leading-tight">
+                <span className="font-extrabold text-white text-xs sm:text-[13px] tracking-wide whitespace-nowrap">
                   {t("dealerExclusive")}
                 </span>
               </div>
-              <span className="text-amber-400/40 hidden sm:inline shrink-0">&bull;</span>
-              <div className="flex items-center gap-2 flex-1 sm:flex-auto min-w-[120px]">
+              <span className="text-amber-400/40 hidden sm:inline">&bull;</span>
+              <div className="flex items-center gap-2 min-w-0">
                 <div className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/25 border border-amber-500/50 text-amber-300 shrink-0 shadow-inner">
                   <Sparkles className="h-3.5 w-3.5 text-amber-300" />
                 </div>
-                <span className="font-bold text-amber-200 text-xs sm:text-[13px] tracking-wide leading-tight">
+                <span className="font-bold text-amber-200 text-xs sm:text-[13px] tracking-wide whitespace-nowrap">
                   {t("priceAndQuality")}
                 </span>
               </div>
@@ -170,9 +170,9 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       </div>
 
       {/* Progressive Dark Fade & Soft Atmospheric Blur (Only for desktop screens behind content) */}
-      <div className="hidden lg:block absolute bottom-0 inset-x-0 h-24 lg:h-28 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0" />
+      <div className="hidden sm:block absolute bottom-0 inset-x-0 h-24 sm:h-28 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-0" />
       <div
-        className="hidden lg:block absolute bottom-0 inset-x-0 h-16 lg:h-20 pointer-events-none z-0"
+        className="hidden sm:block absolute bottom-0 inset-x-0 h-16 sm:h-20 pointer-events-none z-0"
         style={{
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
