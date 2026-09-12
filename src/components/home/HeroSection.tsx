@@ -45,19 +45,30 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
     <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-16 pb-6 sm:pt-20 sm:pb-8 lg:pt-20 lg:pb-10">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-        {/* Responsive Atmospheric Tactical Background (Single download matching device viewport, 1:1 Retina/OLED sharpness) */}
-        <picture className="absolute inset-0 block w-full h-full">
-          <source media="(max-width: 767px)" srcSet="/images/hero-bg-mobile.webp" />
-          <source media="(min-width: 768px)" srcSet="/images/hero-bg-hd.webp" />
-          <img
-            src="/images/hero-bg-hd.webp"
-            alt={tCommon("bgAlt")}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-1000"
-          />
-        </picture>
+        {/* Background Video: Plays once on load, stops on last frame, sharp HD fit */}
+        <video
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          poster="/images/hero-bg-hd.webp"
+          className="absolute inset-0 w-full h-full object-cover object-center scale-100"
+        >
+          <source src="/videos/hero-bg.mp4" type="video/mp4" />
+          {/* Fallback to responsive picture if video unsupported */}
+          <picture className="absolute inset-0 block w-full h-full">
+            <source media="(max-width: 767px)" srcSet="/images/hero-bg-mobile.webp" />
+            <source media="(min-width: 768px)" srcSet="/images/hero-bg-hd.webp" />
+            <img
+              src="/images/hero-bg-hd.webp"
+              alt={tCommon("bgAlt")}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-cover object-center scale-100"
+            />
+          </picture>
+        </video>
 
         {/* Desktop Directional Overlay: Darker on the left for crisp text legibility, transparent on right */}
         <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
