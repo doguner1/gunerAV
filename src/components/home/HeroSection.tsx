@@ -42,7 +42,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
     .slice(0, 3);
 
   return (
-    <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-16 pb-6 sm:pt-20 sm:pb-8 lg:pt-20 lg:pb-10">
+    <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-20 pb-8 sm:pt-24 sm:pb-10 lg:pt-28 lg:pb-16">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         {/* Responsive Atmospheric Tactical Background (Single download matching device viewport, 1:1 Retina/OLED sharpness) */}
@@ -71,9 +71,9 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
       <div className="tactical-grid absolute inset-0 z-0 opacity-10 pointer-events-none" />
 
       <div className="relative z-20 mx-auto max-w-[1640px] xl:max-w-[1740px] 2xl:max-w-[1880px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 w-full">
-        <div className="flex flex-col lg:flex-row gap-8 sm:gap-10 lg:gap-16 xl:gap-24 items-center lg:items-start justify-between">
+        <div className="flex flex-col lg:flex-row gap-8 sm:gap-10 lg:gap-12 xl:gap-20 items-center justify-between">
           {/* LEFT COLUMN: Clean, Restful, Uncluttered Authority & CTAs */}
-          <div className="w-full max-w-2xl lg:max-w-none lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-1 xl:pt-4 2xl:pt-8">
+          <div className="w-full max-w-2xl lg:max-w-none lg:w-3/5 xl:w-1/2 space-y-4 sm:space-y-5 lg:space-y-5 xl:space-y-6 lg:pt-4 xl:pt-6">
             {/* Live Store Hours Status Badge */}
             <div className="flex items-center gap-2">
               <StoreStatusBadge />
