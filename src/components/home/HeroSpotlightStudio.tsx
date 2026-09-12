@@ -36,23 +36,23 @@ export interface DesignConfig {
 
 // 1. TAM EKRAN (1920x1080) KULLANICININ ONAYLADIĞI SABİT AYAR
 export const FULLSCREEN_CONFIG: DesignConfig = {
-  width: 435,
-  offsetX: 0,
-  offsetY: -245,
-  imageHeight: 330,
-  borderRadius: 36,
+  width: 355,
+  offsetX: 30,
+  offsetY: -115,
+  imageHeight: 220,
+  borderRadius: 28,
   bgOpacity: 0,
   padding: 18,
 };
 
 // 2. PENCERE / YARIM EKRAN KULLANICININ ONAYLADIĞI SABİT AYAR
 export const DEFAULT_WINDOWED_CONFIG: DesignConfig = {
-  width: 435,
-  offsetX: 0,
-  offsetY: -180,
-  imageHeight: 310,
-  borderRadius: 36,
-  bgOpacity: 10,
+  width: 355,
+  offsetX: 30,
+  offsetY: -115,
+  imageHeight: 220,
+  borderRadius: 28,
+  bgOpacity: 0,
   padding: 18,
 };
 
@@ -75,8 +75,8 @@ export default function HeroSpotlightStudio({
   const [fullscreenConfig, setFullscreenConfig] = useState<DesignConfig>(FULLSCREEN_CONFIG);
   const [windowedConfig, setWindowedConfig] = useState<DesignConfig>(DEFAULT_WINDOWED_CONFIG);
 
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [isStudioEnabled, setIsStudioEnabled] = useState(true); // Canlı Tasarım Stüdyosu kullanıcı için açıldı
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isStudioEnabled, setIsStudioEnabled] = useState(false); // Canlı Tasarım Stüdyosu kapatıldı, Alt+D ile açılabilir
   const [isDesktop, setIsDesktop] = useState(false);
   const [screenSize, setScreenSize] = useState({ width: 1920, height: 1080 });
   const [editMode, setEditMode] = useState<"windowed" | "fullscreen">("windowed");
@@ -138,62 +138,11 @@ export default function HeroSpotlightStudio({
         return;
       }
 
-      // Canlı stüdyo paneli açıkken manuel değerleri koru
-      if (isStudioEnabled && isPanelOpen) {
-        setDynamicLayout({
-          offsetY: activeConfig.offsetY,
-          offsetX: activeConfig.offsetX,
-          scale: 1,
-        });
-        return;
-      }
-
-      // 1. ÜST SINIR KORUMASI (Header Navbar):
-      // Header navbar yüksekliği h-16 (64px).
-      // 1080p tam ekranda 82px, dar ekranlarda 76px güvenli üst sınır.
-      const topSafeLimit = w >= 1600 ? 82 : 76;
-
-      // 2. ALT SINIR KORUMASI (Avcılığa Başlayın / Ekran Tabanı):
-      // Alttaki keşif oku ~h - 60px seviyesinde.
-      const bottomSafeLimit = h - 60;
-      const availableHeight = Math.max(280, bottomSafeLimit - topSafeLimit);
-
-      // Referans kart yüksekliği (Kart ~475px + alt Google rozeti ~45px + boşluklar = ~530px)
-      const baseCardHeight = 530;
-
-      // Kademeli dikey ölçekleme (scaleH)
-      const scaleH = Math.min(1.0, availableHeight / baseCardHeight);
-
-      // Kademeli yatay ölçekleme (scaleW):
-      // 1800px'den 1024px'e doğru ekran daraldıkça orantılı olarak küçülür
-      const scaleW = w >= 1800
-        ? 1.0
-        : Math.min(1.0, 0.70 + ((Math.max(1024, w) - 1024) / (1800 - 1024)) * 0.30);
-
-      // İki eksendeki sınırlamalardan en katı olanı seçilir (min 0.60, max 1.0)
-      const effectiveScale = Math.max(0.60, Math.min(scaleH, scaleW, 1.0));
-
-      // 3. YATAY HİZALAMA:
-      // Sağ kenara tam sabitliyoruz (offsetX = 0). transformOrigin: "top right" ile küçülürken sağ kenar milim oynamaz.
-      const dynamicOffsetX = 0;
-
-      // 4. DİKEY HİZALAMA (offsetY):
-      // Üst sınır mutlak korunur: Ebeveyn satırın sayfa tepesine olan mesafesi hesaba katılarak
-      // kartın tepe noktası her pencere yüksekliğinde tam olarak topSafeLimit'e oturtulur.
-      let dynamicOffsetY = -220;
-      if (containerRef.current) {
-        const parentRow = containerRef.current.parentElement;
-        const parentTop = parentRow
-          ? parentRow.getBoundingClientRect().top + window.scrollY
-          : containerRef.current.getBoundingClientRect().top + window.scrollY;
-        
-        dynamicOffsetY = Math.round(topSafeLimit - parentTop);
-      }
-
+      // Kullanıcının onayladığı tam/yarım ekran koordinatları
       setDynamicLayout({
-        offsetY: dynamicOffsetY,
-        offsetX: dynamicOffsetX,
-        scale: effectiveScale,
+        offsetY: activeConfig.offsetY,
+        offsetX: activeConfig.offsetX,
+        scale: 1,
       });
     };
 
@@ -414,17 +363,17 @@ export default function HeroSpotlightStudio({
             </Link>
 
             {/* Spotlight Footer & Action */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/15 gap-2">
-              {/* Sınırlı Süre İçin %10 İndirimde (Hafif Belirgin & Şık) */}
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 border border-[#d4af37]/35 text-[#d4af37] shadow-inner shrink-0">
-                  <Sparkles className="h-4 w-4 text-[#d4af37]" />
+            <div className="flex items-center justify-between pt-2.5 border-t border-white/15 gap-2">
+              {/* Sınırlı Süre İçin %10 İndirimde (Kompakt & Asla Kapanmaz) */}
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 border border-[#d4af37]/35 text-[#d4af37] shadow-inner shrink-0">
+                  <Sparkles className="h-3.5 w-3.5 text-[#d4af37]" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[9px] sm:text-[10px] uppercase font-mono font-bold tracking-wider text-amber-400/90 whitespace-nowrap">
+                  <span className="text-[9px] uppercase font-mono font-bold tracking-wider text-amber-400/90 whitespace-nowrap">
                     {discountPrefixText || "Sınırlı Süre İçin"}
                   </span>
-                  <span className="text-xs font-heading font-black text-white tracking-wide whitespace-nowrap">
+                  <span className="text-[11px] font-heading font-black text-white tracking-wide whitespace-nowrap">
                     <span className="text-[#d4af37] font-black">{discountHighlightText || "%10 İndirimde"}</span>
                   </span>
                 </div>
@@ -433,10 +382,10 @@ export default function HeroSpotlightStudio({
               <Link
                 href={featuredProductSlug}
                 onClick={() => trackEvent("click_hero_spotlight", { item_name: spotlightTitle, slug: featuredProductSlug, trigger: "button" })}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black px-4 py-2 text-xs font-black uppercase tracking-wider shadow-lg transition-all hover:scale-105 active:scale-95 shrink-0"
+                className="inline-flex items-center gap-1 rounded-lg bg-white hover:bg-neutral-200 text-black px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider shadow-md transition-all hover:scale-105 active:scale-95 shrink-0"
               >
-                <span>{inspectText}</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                <span>İncele</span>
+                <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -447,17 +396,17 @@ export default function HeroSpotlightStudio({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackMapClick("hero_spotlight_google_badge")}
-            className="hidden lg:flex items-center gap-2.5 absolute -bottom-10 -left-4 z-20 rounded-2xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-2 px-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-105 group cursor-pointer"
+            className="hidden lg:flex items-center gap-2 absolute top-[calc(100%+8px)] left-0 right-0 justify-center rounded-xl border border-white/20 bg-neutral-950/95 hover:bg-black text-white py-1.5 px-3 shadow-[0_15px_35px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all hover:scale-[1.02] group cursor-pointer"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-[#d4af37] group-hover:scale-110 transition-transform shrink-0">
-              <Star className="h-4 w-4 fill-[#d4af37] text-[#d4af37]" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 border border-white/15 text-[#d4af37] group-hover:scale-110 transition-transform shrink-0">
+              <Star className="h-3.5 w-3.5 fill-[#d4af37] text-[#d4af37]" />
             </div>
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-extrabold text-white tracking-wide flex items-center gap-1">
+            <div className="flex items-center gap-1.5 text-left truncate">
+              <span className="text-[11px] font-extrabold text-white tracking-wide whitespace-nowrap">
                 {googleBadgeTitle || "5.0 ★ Google Haritalar"}
               </span>
-              <span className="text-[10px] font-medium text-neutral-400 group-hover:text-neutral-300 transition-colors">
-                {googleBadgeSubtitle || "Malatya'nın En Yüksek Puanlı Bayii"} ({reviewCount} Yorum)
+              <span className="text-[10px] font-medium text-neutral-400 group-hover:text-neutral-300 transition-colors truncate">
+                ({reviewCount} Yorum)
               </span>
             </div>
           </a>
