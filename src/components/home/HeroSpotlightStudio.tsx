@@ -17,23 +17,23 @@ export interface DesignConfig {
 }
 
 export const FULLSCREEN_CONFIG: DesignConfig = {
-  width: 440,
+  width: 400,
   offsetX: 0,
   offsetY: 0,
-  imageHeight: 240,
+  imageHeight: 210,
   borderRadius: 24,
-  bgOpacity: 75,
-  padding: 20,
+  bgOpacity: 80,
+  padding: 16,
 };
 
 export const DEFAULT_WINDOWED_CONFIG: DesignConfig = {
-  width: 440,
+  width: 400,
   offsetX: 0,
   offsetY: 0,
-  imageHeight: 240,
+  imageHeight: 210,
   borderRadius: 24,
-  bgOpacity: 75,
-  padding: 20,
+  bgOpacity: 80,
+  padding: 16,
 };
 
 interface HeroSpotlightStudioProps {
@@ -70,29 +70,32 @@ export default function HeroSpotlightStudio({
   inspectText,
 }: HeroSpotlightStudioProps) {
   return (
-    <div className="w-full max-w-md sm:max-w-lg lg:max-w-[420px] xl:max-w-[450px] 2xl:max-w-[480px] shrink-0 lg:self-center">
-      {/* Luxury Obsidian Glass Showcase Card */}
-      <div className="relative rounded-3xl border border-white/15 bg-neutral-950/80 p-4 sm:p-5 xl:p-6 backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.75),inset_0_1px_1px_rgba(255,255,255,0.2)] text-white overflow-hidden transition-all duration-300 hover:border-white/25">
-        {/* Subtle Ambient Gold Radiance */}
-        <div className="absolute -top-16 -right-16 h-36 w-36 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+    <div className="w-full max-w-md sm:max-w-lg lg:max-w-[380px] xl:max-w-[400px] shrink-0 lg:self-start lg:-mt-4 xl:-mt-6 z-20">
+      {/* Luxury Compact Top-Right Tactical Glass Showcase Card */}
+      <div className="relative rounded-2xl border border-white/15 bg-neutral-950/85 p-3.5 sm:p-4 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] text-white overflow-hidden transition-all duration-300 hover:border-[#d4af37]/40 group">
+        {/* Ambient Top Glow */}
+        <div className="absolute -top-12 -right-12 h-28 w-28 rounded-full bg-amber-500/15 blur-2xl pointer-events-none" />
 
-        {/* Spotlight Header Bar */}
-        <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#d4af37]/15 border border-[#d4af37]/35 text-[#d4af37]">
-              <Crosshair className="h-3.5 w-3.5" />
+        {/* Spotlight Header Bar: Badge + Stock + Google Rating */}
+        <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#d4af37]/15 border border-[#d4af37]/35 text-[#d4af37] shrink-0">
+              <Crosshair className="h-3 w-3" />
             </div>
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-neutral-200">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-neutral-200 truncate">
               {badgeText}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>{inStockText}</span>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9.5px] font-bold text-emerald-300 border border-emerald-500/30">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{inStockText}</span>
+            </div>
           </div>
         </div>
 
-        {/* Hero Product Visual Display - Refined Spacious Studio Frame */}
+        {/* Versatile Product Showcase Display - Fits wide rifles, square optics, and vertical gear */}
         <Link
           href={featuredProductSlug}
           onClick={() =>
@@ -102,9 +105,9 @@ export default function HeroSpotlightStudio({
               trigger: "image",
             })
           }
-          className="group block relative my-3.5 rounded-2xl bg-gradient-to-b from-white via-white to-neutral-100 border border-neutral-200/80 overflow-hidden shadow-md transition-all duration-300 hover:scale-[1.01] h-[250px] xl:h-[275px]"
+          className="group/img block relative my-2.5 rounded-xl bg-gradient-to-b from-white via-white to-neutral-100 border border-neutral-200/90 overflow-hidden shadow-inner transition-all duration-300 hover:scale-[1.01] h-[190px] xl:h-[205px]"
         >
-          <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-4">
+          <div className="relative w-full h-full flex items-center justify-center p-2.5">
             <Image
               src={spotlightImage}
               alt={spotlightTitle}
@@ -113,19 +116,19 @@ export default function HeroSpotlightStudio({
                 spotlightImage.startsWith("http") ||
                 spotlightImage.startsWith("/api/img")
               }
-              sizes="(max-width: 768px) 100vw, 500px"
-              className="object-contain p-3 sm:p-4 object-center transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, 450px"
+              className="object-contain p-2.5 object-center transition-transform duration-500 group-hover/img:scale-105"
             />
           </div>
 
-          {/* Model Name Floating Overlay at Bottom */}
+          {/* Model Name Floating Ribbon at Bottom */}
           {spotlightProduct ? (
-            <div className="absolute inset-x-0 bottom-0 h-16 sm:h-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end p-3 pointer-events-none rounded-b-2xl">
+            <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex items-end p-2.5 pointer-events-none rounded-b-xl">
               <div className="text-white min-w-0">
-                <div className="text-[9.5px] font-mono font-bold tracking-widest text-[#d4af37] uppercase truncate drop-shadow-sm">
+                <div className="text-[9px] font-mono font-bold tracking-widest text-[#d4af37] uppercase truncate">
                   [ + ] {featuredModelText || "SEÇKİN MODEL"}
                 </div>
-                <div className="text-xs sm:text-sm font-heading font-black truncate drop-shadow-sm text-white">
+                <div className="text-xs font-heading font-black truncate text-white drop-shadow-sm">
                   {spotlightTitle}
                 </div>
               </div>
@@ -134,17 +137,17 @@ export default function HeroSpotlightStudio({
         </Link>
 
         {/* Spotlight Footer & Action */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/10 gap-2">
+        <div className="flex items-center justify-between pt-2.5 border-t border-white/10 gap-2">
           {/* Sınırlı Süre İndirim Rozeti */}
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-amber-500/15 border border-[#d4af37]/35 text-[#d4af37] shrink-0">
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#d4af37]" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 border border-[#d4af37]/35 text-[#d4af37] shrink-0">
+              <Sparkles className="h-3.5 w-3.5 text-[#d4af37]" />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[9px] sm:text-[10px] uppercase font-mono font-bold tracking-wider text-amber-400/90 whitespace-nowrap">
+              <span className="text-[9px] uppercase font-mono font-bold tracking-wider text-amber-400/90 whitespace-nowrap">
                 {discountPrefixText || "Sınırlı Süre İçin"}
               </span>
-              <span className="text-[11px] sm:text-xs font-heading font-black text-white tracking-wide whitespace-nowrap">
+              <span className="text-[11px] font-heading font-black text-white tracking-wide whitespace-nowrap">
                 <span className="text-[#d4af37] font-black">
                   {discountHighlightText || "%10 İndirimde"}
                 </span>
@@ -161,34 +164,34 @@ export default function HeroSpotlightStudio({
                 trigger: "button",
               })
             }
-            className="inline-flex items-center gap-1.5 rounded-xl bg-white hover:bg-neutral-100 text-black px-3.5 py-2 sm:px-4 sm:py-2.5 text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-md transition-all hover:scale-105 active:scale-95 shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white hover:bg-neutral-100 text-black px-3.5 py-2 text-[11px] font-black uppercase tracking-wider shadow-md transition-all hover:scale-105 active:scale-95 shrink-0"
           >
             <span>{inspectText}</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
-      </div>
 
-      {/* Grounded Google Haritalar Trust Pill - Doğal ve Asla Yazıları Örtmeyen Konum */}
-      <a
-        href={mapsUrl || "https://maps.google.com"}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => trackMapClick("hero_spotlight_google_badge")}
-        className="mt-3 flex items-center gap-3 rounded-2xl border border-white/15 bg-neutral-950/85 hover:bg-black text-white py-2.5 px-4 shadow-lg backdrop-blur-xl transition-all hover:border-[#d4af37]/50 group cursor-pointer"
-      >
-        <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 group-hover:scale-110 transition-transform shrink-0">
-          <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current" />
-        </div>
-        <div className="flex flex-col text-left">
-          <span className="text-xs font-bold text-white tracking-wide flex items-center gap-1">
-            {googleBadgeTitle || "5.0 ★ Google Haritalar"}
+        {/* Sleek In-Card Google Reviews Rating Bar */}
+        <a
+          href={mapsUrl || "https://maps.google.com"}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackMapClick("hero_spotlight_google_badge")}
+          className="mt-2.5 flex items-center justify-between rounded-lg border border-white/10 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-1.5">
+            <div className="flex text-amber-400">
+              <Star className="h-3 w-3 fill-current" />
+            </div>
+            <span className="text-[10.5px] font-bold text-white tracking-tight">
+              5.0 Google Haritalar
+            </span>
+          </div>
+          <span className="text-[9.5px] text-neutral-400 hover:text-neutral-200">
+            12 Doğrulanmış Yorum &rarr;
           </span>
-          <span className="text-[10px] sm:text-[11px] font-medium text-neutral-400 group-hover:text-neutral-300 transition-colors">
-            {googleBadgeSubtitle || "Malatya'nın En Yüksek Puanlı Bayii"} ({reviewCount} Yorum)
-          </span>
-        </div>
-      </a>
+        </a>
+      </div>
     </div>
   );
 }
