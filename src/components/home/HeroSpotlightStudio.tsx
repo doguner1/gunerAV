@@ -293,10 +293,10 @@ export default function HeroSpotlightStudio({
 
   return (
     <>
-      {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma) */}
+      {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma, Tablet & Mobil Dengeli Genişlik) */}
       <div
         ref={containerRef}
-        className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-none lg:w-[355px] lg:h-[530px] lg:shrink-0 lg:self-start lg:ml-auto relative mt-4 sm:mt-6 lg:mt-0 transition-all duration-150 z-20"
+        className="w-full max-w-[340px] sm:max-w-[360px] lg:max-w-none lg:w-[355px] lg:h-[530px] lg:shrink-0 lg:self-start mx-auto lg:ml-auto lg:mr-0 relative mt-4 sm:mt-6 lg:mt-0 transition-all duration-150 z-20"
         style={{
           width: isDesktop ? `${activeConfig.width}px` : undefined,
           height: isDesktop ? `530px` : undefined,
@@ -319,11 +319,11 @@ export default function HeroSpotlightStudio({
         >
           {/* iOS Liquid Glass Container */}
           <div
-            className="relative backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75 lg:rounded-[28px] lg:p-[18px]"
+            className="relative backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75 rounded-[28px] p-[16px] sm:p-[18px]"
             style={{
-              borderRadius: `${activeConfig.borderRadius}px`,
-              backgroundColor: `rgba(18, 18, 18, ${activeConfig.bgOpacity / 100})`,
-              padding: `${activeConfig.padding}px`,
+              borderRadius: isDesktop ? `${activeConfig.borderRadius}px` : undefined,
+              backgroundColor: isDesktop ? `rgba(18, 18, 18, ${activeConfig.bgOpacity / 100})` : "rgba(18, 18, 18, 0.4)",
+              padding: isDesktop ? `${activeConfig.padding}px` : undefined,
             }}
           >
             {/* Spotlight Header Bar */}
@@ -346,7 +346,7 @@ export default function HeroSpotlightStudio({
             <Link
               href={featuredProductSlug}
               onClick={() => trackEvent("click_hero_spotlight", { item_name: spotlightTitle, slug: featuredProductSlug, trigger: "image" })}
-              className="group block relative my-3 rounded-2xl bg-white border border-neutral-200/60 overflow-hidden shadow-md p-3 transition-all duration-75 h-[240px] lg:h-[220px]"
+              className="group block relative my-2.5 sm:my-3 rounded-2xl bg-white border border-neutral-200/60 overflow-hidden shadow-md p-3 transition-all duration-75 h-[210px] sm:h-[220px] lg:h-[220px]"
               style={{
                 height: isDesktop ? `${activeConfig.imageHeight}px` : undefined,
               }}

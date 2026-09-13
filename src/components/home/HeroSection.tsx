@@ -42,7 +42,7 @@ export default function HeroSection({ products = [] }: { products?: Product[] })
     .slice(0, 3);
 
   return (
-    <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-16 pb-6 sm:pt-20 sm:pb-8 lg:pt-20 lg:pb-10">
+    <section className="relative min-h-[100dvh] lg:min-h-screen flex flex-col justify-center overflow-hidden bg-black pt-16 pb-12 sm:pt-20 sm:pb-16 lg:pt-20 lg:pb-10">
       {/* Full-Screen Atmospheric Tactical Photography Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         {/* Background Video: Plays once on load, stops on last frame, sharp HD fit */}
