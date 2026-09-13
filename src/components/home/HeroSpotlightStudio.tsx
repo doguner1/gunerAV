@@ -319,7 +319,7 @@ export default function HeroSpotlightStudio({
         >
           {/* iOS Liquid Glass Container */}
           <div
-            className="relative bg-neutral-900 dark:bg-black backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75 lg:rounded-[28px] lg:p-[18px]"
+            className="relative backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75 lg:rounded-[28px] lg:p-[18px]"
             style={{
               borderRadius: `${activeConfig.borderRadius}px`,
               backgroundColor: `rgba(18, 18, 18, ${activeConfig.bgOpacity / 100})`,
