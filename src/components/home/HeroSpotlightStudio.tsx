@@ -139,7 +139,6 @@ export default function HeroSpotlightStudio({
       }
 
       // 1. ÜST SINIR KORUMASI (Header Navbar):
-      // Header navbar h-16 (64px). Pencere küçülünce üst barın içine girmemesi için koruma.
       const topSafeLimit = w >= 1600 ? 84 : 76;
       let safeOffsetY = activeConfig.offsetY;
 
@@ -155,20 +154,10 @@ export default function HeroSpotlightStudio({
         }
       }
 
-      // 2. Kademeli Ölçekleme (Pencere küçüldükçe kart orantılı uyum sağlasın)
-      const bottomSafeLimit = h - 60;
-      const availableHeight = Math.max(260, bottomSafeLimit - topSafeLimit);
-      const baseCardHeight = 440;
-      const scaleH = Math.min(1.0, availableHeight / baseCardHeight);
-      const scaleW = w >= 1800
-        ? 1.0
-        : Math.min(1.0, 0.75 + ((Math.max(1024, w) - 1024) / (1800 - 1024)) * 0.25);
-      const effectiveScale = Math.max(0.65, Math.min(scaleH, scaleW, 1.0));
-
       setDynamicLayout({
         offsetY: safeOffsetY,
         offsetX: activeConfig.offsetX,
-        scale: effectiveScale,
+        scale: 1,
       });
     };
 
@@ -307,32 +296,30 @@ export default function HeroSpotlightStudio({
       {/* 1. SPOTLIGHT CARD CONTAINER (Masaüstü Canlı Konumlandırma) */}
       <div
         ref={containerRef}
-        className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-none lg:shrink-0 lg:self-start lg:ml-auto relative mt-4 sm:mt-6 lg:mt-0 transition-all duration-150 z-20"
+        className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-none lg:w-[355px] lg:h-[530px] lg:shrink-0 lg:self-start lg:ml-auto relative mt-4 sm:mt-6 lg:mt-0 transition-all duration-150 z-20"
         style={{
-          width: isDesktop ? `${Math.round(activeConfig.width * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
-          height: isDesktop ? `${Math.round(530 * ((isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale))}px` : "auto",
+          width: isDesktop ? `${activeConfig.width}px` : undefined,
+          height: isDesktop ? `530px` : undefined,
         }}
       >
         {/* Dynamic Desktop Sizing & Translation Wrapper */}
         <div
           ref={cardRef}
-          className="w-full transition-all duration-150"
+          className="w-full lg:w-[355px] lg:absolute lg:right-0 lg:top-0 transition-all duration-150"
           style={{
-            position: isDesktop ? "absolute" : "relative",
+            position: isDesktop ? "absolute" : undefined,
             right: 0,
             top: 0,
-            width: isDesktop ? `${activeConfig.width}px` : "100%",
-            minWidth: isDesktop ? `${activeConfig.width}px` : "auto",
-            maxWidth: isDesktop ? `${activeConfig.width}px` : "100%",
+            width: isDesktop ? `${activeConfig.width}px` : undefined,
             transform: isDesktop
-              ? `translate3d(${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetX : dynamicLayout.offsetX}px, ${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetY : dynamicLayout.offsetY}px, 0) scale(${(isStudioEnabled && isPanelOpen) ? 1 : dynamicLayout.scale})`
-              : "none",
+              ? `translate3d(${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetX : dynamicLayout.offsetX}px, ${(isStudioEnabled && isPanelOpen) ? activeConfig.offsetY : dynamicLayout.offsetY}px, 0)`
+              : undefined,
             transformOrigin: "top right",
           }}
         >
           {/* iOS Liquid Glass Container */}
           <div
-            className="relative bg-neutral-900 dark:bg-black backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75"
+            className="relative bg-neutral-900 dark:bg-black backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75 lg:rounded-[28px] lg:p-[18px]"
             style={{
               borderRadius: `${activeConfig.borderRadius}px`,
               backgroundColor: `rgba(18, 18, 18, ${activeConfig.bgOpacity / 100})`,
@@ -359,9 +346,9 @@ export default function HeroSpotlightStudio({
             <Link
               href={featuredProductSlug}
               onClick={() => trackEvent("click_hero_spotlight", { item_name: spotlightTitle, slug: featuredProductSlug, trigger: "image" })}
-              className="group block relative my-3 rounded-2xl bg-white border border-neutral-200/60 overflow-hidden shadow-md p-3 transition-all duration-75"
+              className="group block relative my-3 rounded-2xl bg-white border border-neutral-200/60 overflow-hidden shadow-md p-3 transition-all duration-75 h-[240px] lg:h-[220px]"
               style={{
-                height: isDesktop ? `${activeConfig.imageHeight}px` : "240px",
+                height: isDesktop ? `${activeConfig.imageHeight}px` : undefined,
               }}
             >
               <Image
