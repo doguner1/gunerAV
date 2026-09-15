@@ -26,10 +26,10 @@ export function StoreJsonLd({ nonce }: { nonce?: string }) {
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": STORE_INFO.rating.toFixed(1),
-      "reviewCount": STORE_INFO.reviewCount.toString(),
-      "bestRating": "5",
-      "worstRating": "1",
+      "ratingValue": Number(STORE_INFO.rating.toFixed(1)),
+      "reviewCount": STORE_INFO.reviewCount,
+      "bestRating": 5,
+      "worstRating": 1,
     },
     "openingHoursSpecification": [
       {

@@ -124,11 +124,11 @@ export default async function LocaleLayout({
                 }
               } catch (e) {}
             ` }} />
-        <StoreJsonLd nonce={nonce} />
         </head>
       <body className="min-h-screen bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-100 flex flex-col antialiased selection:bg-[#d4af37]/30 selection:text-black dark:selection:text-white transition-colors duration-200">
         <GoogleTagManager gtmId="GTM-P22MB2RK" nonce={nonce} />
-<GoogleAnalytics gaId="G-K2WE6YE6KV" nonce={nonce} />
+        <GoogleAnalytics gaId="G-K2WE6YE6KV" nonce={nonce} />
+        <StoreJsonLd nonce={nonce} />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AnalyticsProvider>
             <Header />
