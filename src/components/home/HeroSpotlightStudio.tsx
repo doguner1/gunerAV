@@ -318,12 +318,13 @@ export default function HeroSpotlightStudio({
           }}
         >
           {/* iOS Liquid Glass Container */}
+          {/* p-[18px] ve rounded-[28px] className olarak tanımlandı; inline style CSP (nonce) tarafından bloklanıyordu */}
           <div
-            className="relative backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75 rounded-[28px]"
+            className="relative backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.35)] overflow-hidden text-white transition-all duration-75 rounded-[28px] p-[18px]"
             style={{
-              borderRadius: isDesktop ? `${activeConfig.borderRadius}px` : "28px",
-              backgroundColor: isDesktop ? `rgba(18, 18, 18, ${activeConfig.bgOpacity / 100})` : "rgba(18, 18, 18, 0)",
-              padding: isDesktop ? `${activeConfig.padding}px` : "18px",
+              borderRadius: isDesktop ? `${activeConfig.borderRadius}px` : undefined,
+              backgroundColor: isDesktop ? `rgba(18, 18, 18, ${activeConfig.bgOpacity / 100})` : undefined,
+              padding: isDesktop ? `${activeConfig.padding}px` : undefined,
             }}
           >
             {/* Spotlight Header Bar */}
