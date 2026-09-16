@@ -24,13 +24,6 @@ export function StoreJsonLd({ nonce }: { nonce?: string }) {
       "latitude": STORE_INFO.coordinates.lat,
       "longitude": STORE_INFO.coordinates.lng,
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": Number(STORE_INFO.rating.toFixed(1)),
-      "reviewCount": STORE_INFO.reviewCount,
-      "bestRating": 5,
-      "worstRating": 1,
-    },
     "openingHoursSpecification": [
       {
         "@type": "OpeningHoursSpecification",
@@ -49,8 +42,11 @@ export function StoreJsonLd({ nonce }: { nonce?: string }) {
 
   return (
     <script
+      key="store-jsonld"
+      id="store-jsonld"
       nonce={nonce}
       type="application/ld+json"
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
     />
   );
