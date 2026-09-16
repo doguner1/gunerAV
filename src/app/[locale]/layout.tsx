@@ -13,7 +13,7 @@ import Footer from "@/components/layout/Footer";
 import WhatsAppFloatingButton from "@/components/common/WhatsAppFloatingButton";
 import MobileQuickBar from "@/components/common/MobileQuickBar";
 import CookieBanner from "@/components/common/CookieBanner";
-import { StoreJsonLd } from "@/components/seo/JsonLd";
+import { StoreJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import { STORE_INFO } from "@/lib/store";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: {
       title: t("siteTitle"),
       description: t("siteDescription"),
       url: `${siteUrl}/${locale}`,
-      siteName: STORE_INFO.name,
+      siteName: STORE_INFO.nameShort || "Güner AV",
       images: [
         {
           url: "/images/og-image.jpg",
@@ -129,6 +129,7 @@ export default async function LocaleLayout({
         <GoogleTagManager gtmId="GTM-P22MB2RK" nonce={nonce} />
         <GoogleAnalytics gaId="G-K2WE6YE6KV" nonce={nonce} />
         <StoreJsonLd nonce={nonce} />
+        <WebSiteJsonLd nonce={nonce} />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AnalyticsProvider>
             <Header />

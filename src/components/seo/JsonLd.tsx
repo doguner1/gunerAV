@@ -52,6 +52,32 @@ export function StoreJsonLd({ nonce }: { nonce?: string }) {
   );
 }
 
+export function WebSiteJsonLd({ nonce }: { nonce?: string }) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Güner AV",
+    "alternateName": [
+      "Guner AV",
+      "Malatya AV",
+      "Güner Av Bayii",
+      "Malatya Güner AV",
+    ],
+    "url": STORE_INFO.siteUrl,
+  };
+
+  return (
+    <script
+      key="website-jsonld"
+      id="website-jsonld"
+      nonce={nonce}
+      type="application/ld+json"
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
+    />
+  );
+}
+
 export function ProductJsonLd({
   nonce,
 
