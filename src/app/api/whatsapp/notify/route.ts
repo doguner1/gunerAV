@@ -19,7 +19,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { productName, productUrl, supplierUrl, triggerSource } = body;
+    const {
+      productName,
+      productUrl,
+      supplierUrl,
+      triggerSource,
+      type,
+      activeCount,
+      previousCount,
+      path: visitorPath,
+      deviceType,
+      customMessage,
+    } = body;
 
     const rawToken = (process.env.WHATSAPP_API_TOKEN || "").trim();
     const apiToken = rawToken.replace(/^Bearer\s+/i, "").replace(/^["']|["']$/g, "").trim();
@@ -53,18 +64,50 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const pName = productName || "İsimsiz Ürün";
-    const pUrl = productUrl || "Belirtilmemiş";
-    const sUrl = supplierUrl || "Belirtilmemiş (Tedarikçi URL Yok)";
+    let messageBody = "";
 
-    const messageBody = [
-      `*${pName}*`,
-      "",
-      "",
-      `🌐 *Sitemiz:* ${pUrl}`,
-      "",
-      `🔗 *Tedarikçi:* ${sUrl}`,
-    ].join("\n");
+    if (customMessage) {
+      messageBody = customMessage;
+    } else if (type === "active_visitors" || activeCount !== undefined) {
+      const nowTR = new Intl.DateTimeFormat("tr-TR", {
+        timeZone: "Europe/Istanbul",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date());
+
+      const countText = previousCount !== undefined
+        ? `${previousCount} ➔ *${activeCount} kişi*`
+        : `*${activeCount} kişi*`;
+
+      messageBody = [
+        "👥 *GÜNER AV - CANLI ZİYARETÇİ ARTIŞI*",
+        "",
+        `📈 *Sitedeki aktif kullanıcı sayısı arttı!*`,
+        `🟢 *Canlı Ziyaretçi:* ${countText}`,
+        visitorPath ? `📍 *Son Gezilen:* ${visitorPath}` : "",
+        deviceType ? `📱 *Cihaz:* ${deviceType}` : "",
+        `🕒 *Saat:* ${nowTR}`,
+        "",
+        "🔗 *Admin Paneli:* https://gunerav.com/admin",
+      ].filter(Boolean).join("\n");
+    } else {
+      const pName = productName || "İsimsiz Ürün";
+      const pUrl = productUrl || "Belirtilmemiş";
+      const sUrl = supplierUrl || "Belirtilmemiş (Tedarikçi URL Yok)";
+
+      messageBody = [
+        `*${pName}*`,
+        "",
+        "",
+        `🌐 *Sitemiz:* ${pUrl}`,
+        "",
+        `🔗 *Tedarikçi:* ${sUrl}`,
+      ].join("\n");
+    }
 
     const endpoint = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
 
