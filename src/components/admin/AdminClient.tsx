@@ -318,6 +318,8 @@ export default function AdminClient() {
       durationFormatted: string;
       totalDurationSeconds: number;
       hasWhatsAppLead: boolean;
+      hasPhoneCall?: boolean;
+      hasMapClick?: boolean;
       stepCount: number;
       visitCount?: number;
       steps: Array<{
@@ -2349,13 +2351,37 @@ export default function AdminClient() {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          {/* 1. WhatsApp Lead İkonu */}
                           {session.hasWhatsAppLead && (
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1">
-                              <MessageCircle className="h-3 w-3" />
-                              WhatsApp Siparişi
+                            <span
+                              title="WhatsApp Sipariş / Fiyat Talebi"
+                              className="p-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-sm"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
                             </span>
                           )}
+
+                          {/* 2. Harita & Yol Tarifi İkonu */}
+                          {session.hasMapClick && (
+                            <span
+                              title="Mağaza Konumu & Yol Tarifi (Harita)"
+                              className="p-1 rounded-md bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/40 flex items-center justify-center shrink-0 shadow-sm"
+                            >
+                              <MapPin className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+
+                          {/* 3. Telefon Doğrudan Arama İkonu */}
+                          {session.hasPhoneCall && (
+                            <span
+                              title="Telefon Doğrudan Arama"
+                              className="p-1 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-sm"
+                            >
+                              <PhoneCall className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+
                           <span className="px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 text-[10px] font-mono">
                             <Clock className="h-3 w-3 inline mr-1 text-[#d4af37]" />
                             {session.durationFormatted} ({session.stepCount} Adım)

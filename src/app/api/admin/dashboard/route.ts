@@ -27,6 +27,8 @@ export interface VisitorJourneySession {
   durationFormatted: string;
   totalDurationSeconds: number;
   hasWhatsAppLead: boolean;
+  hasPhoneCall: boolean;
+  hasMapClick: boolean;
   stepCount: number;
   visitCount?: number;
   steps: JourneyStep[];
@@ -435,6 +437,8 @@ export async function GET(req: NextRequest) {
     const lastTime = sortedEvs[sortedEvs.length - 1]?.received_at || firstTime;
 
     let hasWhatsAppLead = false;
+    let hasPhoneCall = false;
+    let hasMapClick = false;
     const steps: JourneyStep[] = [];
     let visitCount = 1;
     let totalActiveSeconds = 0;
@@ -540,9 +544,11 @@ export async function GET(req: NextRequest) {
         description = `Renk / Kalibre Seçimi: ${p.variant || "Varyant"} (${p.item_name || ""})`;
         badge = { text: "Varyant", color: "blue" };
       } else if (evName.includes("call") || evName.includes("phone")) {
+        hasPhoneCall = true;
         description = `Telefonla Doğrudan Arama (${p.source || "Web"})`;
         badge = { text: "Telefon", color: "green" };
-      } else if (evName.includes("direction") || evName.includes("map")) {
+      } else if (evName.includes("direction") || evName.includes("map") || evName.includes("location")) {
+        hasMapClick = true;
         description = `Mağaza Konumu & Yol Tarifi Açıldı`;
         badge = { text: "Harita", color: "amber" };
       } else {
@@ -576,6 +582,8 @@ export async function GET(req: NextRequest) {
       durationFormatted: formatDurationHuman(totalDurationSeconds),
       totalDurationSeconds,
       hasWhatsAppLead,
+      hasPhoneCall,
+      hasMapClick,
       stepCount: steps.filter((s) => !s.isSeparator).length,
       visitCount,
       steps,
