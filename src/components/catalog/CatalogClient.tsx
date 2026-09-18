@@ -224,30 +224,63 @@ export function isProductMatchingCategory(product: Product, categoryId: string):
   return prodCat === categoryId;
 }
 
-export function normalizeBrand(brand: string | null | undefined): string {
-  if (!brand) return "";
-  const b = brand.trim().toLowerCase();
-  if (b.includes("ata")) return "Ata Arms";
-  if (b.includes("huğlu") || b.includes("huglu")) return "Huğlu";
+export function normalizeBrand(brand: string | null | undefined, productName?: string): string {
+  const b = (brand || "").trim().toLowerCase();
+  const n = (productName || "").trim().toLowerCase();
+
+  // 1. Air / Air Control Extreme -> Retay
+  if (b === "air" || b.startsWith("air ") || b.includes("air control") || n.includes("air control")) {
+    return "Retay";
+  }
+
+  // 2. Renova -> Huğlu
+  if (b.includes("renova") || n.includes("renova")) {
+    return "Huğlu";
+  }
+
+  // 3. Hunt / Hunt Group -> Always Hunt Group
+  if (b.includes("hunt") || n.includes("hunt group") || n.includes("huntgroup")) {
+    return "Hunt Group";
+  }
+
+  // 4. Retay
   if (b.includes("retay")) return "Retay";
+
+  // 5. Huğlu
+  if (b.includes("huğlu") || b.includes("huglu")) return "Huğlu";
+
+  // 6. Ata Arms
+  if (b.includes("ata")) return "Ata Arms";
+
+  // 7. Castello
   if (b.includes("castello")) return "Castello";
-  if (b.includes("hunt group") || b.includes("huntgroup")) return "Hunt Group";
+
+  // 8. Serengeti
   if (b.includes("serengeti")) return "Serengeti";
+
+  // 9. Dağlıoğlu
   if (b.includes("dağlıoğlu") || b.includes("daglioglu")) return "Dağlıoğlu";
+
+  // 10. Sarsılmaz
+  if (b.includes("sarsılmaz") || b.includes("sarsilmaz")) return "Sarsılmaz";
+
+  // 11. Mavoric
+  if (b.includes("mavoric")) return "Mavoric";
+
+  // 12. Diğer standart markalar
   if (b.includes("uzkon")) return "Uzkon";
   if (b.includes("bora")) return "Bora";
   if (b.includes("kral")) return "Kral";
   if (b.includes("winchester")) return "Winchester";
   if (b.includes("hatsan")) return "Hatsan";
   if (b.includes("girsan")) return "Girsan";
-  if (b.includes("sarsılmaz")) return "Sarsılmaz";
   if (b.includes("stoeger")) return "Stoeger";
   if (b.includes("franchi")) return "Franchi";
   if (b.includes("benelli")) return "Benelli";
   if (b.includes("beretta")) return "Beretta";
   if (b.includes("browning")) return "Browning";
 
-  // capitalize first letters for others
+  if (!brand) return "";
   return brand.trim().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -450,7 +483,7 @@ export default function CatalogClient({
     const brands = new Set<string>();
     for (const product of initialProducts) {
       if (isProductMatchingCategory(product, selectedCategory)) {
-        const brand = normalizeBrand(product.brand);
+        const brand = normalizeBrand(product.brand, product.name_tr);
         if (brand) brands.add(brand);
       }
     }
@@ -467,7 +500,7 @@ export default function CatalogClient({
 
       // Brand filter
       if (selectedBrand !== "all") {
-        if (normalizeBrand(product.brand) !== selectedBrand) {
+        if (normalizeBrand(product.brand, product.name_tr) !== selectedBrand) {
           return false;
         }
       }
