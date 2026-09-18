@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getSupabaseAdminClient, hashIp } from "@/lib/server-supabase";
 import { detectDeviceType } from "@/lib/device-detect";
+import { isDeviceIgnored } from "@/lib/device-settings";
 
 // In-memory cache to deduplicate identical events arriving within 1200ms
 const recentServerEvents = new Map<string, number>();
@@ -14,7 +15,7 @@ const recentServerEvents = new Map<string, number>();
 export async function recordAnalyticsEvent(
   req: NextRequest,
   parsedBody?: any
-): Promise<{ success: boolean; persisted: "supabase" | "none"; id?: string }> {
+): Promise<{ success: boolean; persisted: "supabase" | "none"; id?: string; optout?: boolean }> {
   let body: any = parsedBody;
 
   if (!body) {
@@ -34,6 +35,11 @@ export async function recordAnalyticsEvent(
   const eventName = body.event || "unknown";
   const p = body.params || {};
   const visitorId = p.visitor_id || "anon";
+
+  // Check if device is ignored (opted out by admin)
+  if (isDeviceIgnored(visitorId)) {
+    return { success: true, persisted: "none", id: "ignored_device", optout: true };
+  }
 
   // Server-side deduplication: ignore duplicate packet within 1200ms from the same visitor/IP
   const dedupeKey = `${eventName}:${visitorId}:${p.source || p.item_id || p.whatsapp_source || p.path || ""}`;

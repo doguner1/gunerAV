@@ -23,6 +23,12 @@ function detectClientDevice(): string {
 export async function sendPresenceHeartbeat(info: PresenceInfo): Promise<void> {
   if (typeof window === "undefined") return;
 
+  try {
+    if (localStorage.getItem("gunerav_analytics_optout") === "true") {
+      return;
+    }
+  } catch {}
+
   const visitorId = getOrCreateVisitorId();
   const deviceType = info.deviceType || detectClientDevice();
   const isProbablyIpadPro =
@@ -31,7 +37,7 @@ export async function sendPresenceHeartbeat(info: PresenceInfo): Promise<void> {
     navigator.maxTouchPoints > 1;
 
   try {
-    await fetch("/api/heartbeat", {
+    const res = await fetch("/api/heartbeat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -45,6 +51,15 @@ export async function sendPresenceHeartbeat(info: PresenceInfo): Promise<void> {
       }),
       keepalive: true,
     });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      if (data?.optout) {
+        try {
+          localStorage.setItem("gunerav_analytics_optout", "true");
+        } catch {}
+      }
+    }
   } catch (err) {
     // Heartbeat fail should never interrupt user browsing
   }

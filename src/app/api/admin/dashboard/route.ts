@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { isAdminAuthorized } from "@/lib/server-auth";
 import { detectDeviceType } from "@/lib/device-detect";
 import { getActiveVisitors } from "@/lib/active-visitors-store";
+import { getAllDeviceSettings } from "@/lib/device-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -742,6 +743,7 @@ export async function GET(req: NextRequest) {
     searchTerms: searchTerms.slice(0, 20),
     missedDemand: missedDemand.slice(0, 15),
     deviceBreakdown,
+    deviceSettings: await getAllDeviceSettings(),
     recentEvents: rawRows.slice(0, 300),
   });
 }

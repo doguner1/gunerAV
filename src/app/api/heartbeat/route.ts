@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { detectDeviceType } from "@/lib/device-detect";
 import { recordActiveVisitor } from "@/lib/active-visitors-store";
+import { isDeviceIgnored } from "@/lib/device-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,10 @@ export async function POST(req: NextRequest) {
 
     if (!visitor_id || typeof visitor_id !== "string") {
       return NextResponse.json({ ok: false, error: "Missing visitor_id" }, { status: 400 });
+    }
+
+    if (isDeviceIgnored(visitor_id)) {
+      return NextResponse.json({ ok: true, ignored: true, optout: true });
     }
 
     // Rate Limiting: Max 10 heartbeats per 10 seconds per IP:visitor_id

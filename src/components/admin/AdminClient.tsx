@@ -48,6 +48,8 @@ import {
   Share2,
   Target,
   Activity,
+  Edit3,
+  Ban,
 } from "lucide-react";
 
 interface AnalyticsEvent {
@@ -365,6 +367,12 @@ export default function AdminClient() {
       percent: number;
       dropRate: string;
     }>;
+    deviceSettings?: Record<string, {
+      visitorId: string;
+      alias: string;
+      isIgnored: boolean;
+      updatedAt?: string;
+    }>;
     recentEvents: AnalyticsEvent[];
   } | null>(null);
 
@@ -382,6 +390,21 @@ export default function AdminClient() {
   const [showActiveVisitorsTable, setShowActiveVisitorsTable] = useState<boolean>(false);
   const [isRevalidating, setIsRevalidating] = useState<boolean>(false);
   const [revalidateMsg, setRevalidateMsg] = useState<string | null>(null);
+
+  // Device settings (custom naming & ignore/opt-out)
+  const [deviceSettings, setDeviceSettings] = useState<Record<string, {
+    visitorId: string;
+    alias: string;
+    isIgnored: boolean;
+  }>>({});
+  const [currentVisitorId, setCurrentVisitorId] = useState<string>("");
+  const [hideIgnoredDevices, setHideIgnoredDevices] = useState(false);
+  const [editingDevice, setEditingDevice] = useState<{
+    visitorId: string;
+    alias: string;
+    isIgnored: boolean;
+  } | null>(null);
+  const [isSavingDevice, setIsSavingDevice] = useState(false);
 
   // Active visitors live polling (every 6s)
   useEffect(() => {
@@ -412,6 +435,18 @@ export default function AdminClient() {
   // Restore admin session if already logged in within the browser session via HttpOnly cookie
   useEffect(() => {
     let isMounted = true;
+
+    if (typeof window !== "undefined") {
+      const storedVid = localStorage.getItem("gunerav_visitor_id") || "";
+      setCurrentVisitorId(storedVid);
+      try {
+        const savedSettings = JSON.parse(localStorage.getItem("gunerav_device_settings") || "{}");
+        if (savedSettings && typeof savedSettings === "object") {
+          setDeviceSettings(savedSettings);
+        }
+      } catch {}
+    }
+
     const checkSession = async () => {
       try {
         const res = await fetch("/api/admin/auth");
@@ -485,6 +520,15 @@ export default function AdminClient() {
       const data = await res.json();
       if (data.success) {
         setDashboardData(data);
+        if (data.deviceSettings) {
+          setDeviceSettings((prev) => {
+            const merged = { ...prev, ...data.deviceSettings };
+            try {
+              localStorage.setItem("gunerav_device_settings", JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
+        }
         if (Array.isArray(data.sessions) && data.sessions.length > 0) {
           setExpandedSessions((prev) => {
             if (prev.size === 0) {
@@ -508,6 +552,58 @@ export default function AdminClient() {
       // ignore
     }
     setLoadingEvents(false);
+  };
+
+  // Open modal to rename or toggle ignore for a device
+  const openDeviceModal = (visitorId: string) => {
+    const existing = deviceSettings[visitorId] || {
+      visitorId,
+      alias: "",
+      isIgnored: false,
+    };
+    setEditingDevice({
+      visitorId,
+      alias: existing.alias || "",
+      isIgnored: Boolean(existing.isIgnored),
+    });
+  };
+
+  // Save device setting (alias and opt-out)
+  const handleSaveDeviceSetting = async () => {
+    if (!editingDevice) return;
+    setIsSavingDevice(true);
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (password) headers["x-admin-key"] = password;
+
+      const res = await fetch("/api/admin/devices", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(editingDevice),
+      });
+      const data = await res.json();
+      if (data.success && data.setting) {
+        setDeviceSettings((prev) => {
+          const next = { ...prev, [data.setting.visitorId]: data.setting };
+          try {
+            localStorage.setItem("gunerav_device_settings", JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+
+        // If this device is the one currently in use, update client opt-out immediately
+        if (currentVisitorId && (currentVisitorId.startsWith(editingDevice.visitorId) || editingDevice.visitorId.startsWith(currentVisitorId))) {
+          try {
+            localStorage.setItem("gunerav_analytics_optout", editingDevice.isIgnored ? "true" : "false");
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.error("Save device setting error:", err);
+    } finally {
+      setIsSavingDevice(false);
+      setEditingDevice(null);
+    }
   };
 
   // Change time range filter
@@ -1391,6 +1487,10 @@ export default function AdminClient() {
           : topProducts;
         const searchTerms = dashboardData?.searchTerms || [];
         const missedDemand = dashboardData?.missedDemand || [];
+        const allSessions = dashboardData?.sessions || [];
+        const visibleSessions = hideIgnoredDevices
+          ? allSessions.filter((s) => !deviceSettings[s.visitorId]?.isIgnored)
+          : allSessions;
         const deviceBreakdown = dashboardData?.deviceBreakdown || {
           mobile: { count: 0, percent: 55 },
           tablet: { count: 0, percent: 15 },
@@ -1630,9 +1730,27 @@ export default function AdminClient() {
                           <tr key={v.visitor_id || idx} className="hover:bg-neutral-800/30">
                             <td className="px-3 py-2 font-sans font-medium text-white flex items-center gap-2">
                               <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0"></span>
-                              <span className="font-mono text-[11px] text-neutral-300">
-                                {v.visitor_id ? `${v.visitor_id.slice(0, 10)}...` : "anonim"}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="font-mono text-[11px] text-[#d4af37] cursor-pointer hover:underline flex items-center gap-1"
+                                  title={`ID: ${v.visitor_id} (İsimlendirmek için tıkla)`}
+                                  onClick={() => openDeviceModal(v.visitor_id)}
+                                >
+                                  {deviceSettings[v.visitor_id]?.alias ? (
+                                    <span className="font-sans font-bold text-amber-300">
+                                      {deviceSettings[v.visitor_id].alias}
+                                    </span>
+                                  ) : (
+                                    <span>{v.visitor_id ? `${v.visitor_id.slice(0, 10)}...` : "anonim"}</span>
+                                  )}
+                                  <Edit3 className="h-3 w-3 text-neutral-500 hover:text-amber-300 inline transition-colors" />
+                                </span>
+                                {deviceSettings[v.visitor_id]?.isIgnored && (
+                                  <span className="text-[9px] text-red-400 bg-red-500/15 px-1 py-0.5 rounded border border-red-500/30">
+                                    Takip Dışı
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-3 py-2 font-sans text-neutral-300 text-[11px] capitalize">
                               {v.device_type === "mobile" ? "📱 Mobil" : v.device_type === "tablet" ? "📲 Tablet" : "💻 Masaüstü"}
@@ -2124,24 +2242,45 @@ export default function AdminClient() {
 
             {/* VISITOR JOURNEYS & CUSTOMER JOURNEY TIMELINE (YENİ ÖZELLİK 2) */}
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 shadow-2xl p-5">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-4 mb-4 border-b border-neutral-800">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-4 border-b border-neutral-800">
                 <div>
                   <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider flex items-center gap-2">
                     <Route className="h-4 w-4 text-[#d4af37]" />
                     <span>Ziyaretçi Oturumları & Müşteri Yolculuğu</span>
                     <span className="rounded-md bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-[10px] px-2 py-0.5 font-bold">
-                      {(dashboardData?.sessions || []).length} Oturum
+                      {visibleSessions.length} Oturum
                     </span>
                   </h3>
                   <p className="text-xs text-neutral-400 mt-0.5">
                     Müşterilerin sitede gezinme, ürün inceleme, HD büyüteç zoom ve WhatsApp sipariş adımlarının kronolojik dökümü.
                   </p>
                 </div>
+
+                {/* Filter out ignored / personal test devices */}
+                <label className="flex items-center gap-2 text-xs text-neutral-300 hover:text-white cursor-pointer select-none bg-black/40 border border-neutral-800 hover:border-neutral-700 px-3 py-1.5 rounded-lg transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={hideIgnoredDevices}
+                    onChange={(e) => setHideIgnoredDevices(e.target.checked)}
+                    className="rounded border-neutral-700 bg-neutral-900 text-[#d4af37] focus:ring-0 focus:ring-offset-0"
+                  />
+                  <span className="flex items-center gap-1.5">
+                    <Ban className="h-3 w-3 text-red-400" />
+                    <span>Kendi Cihazlarımı / Takip Dışı Cihazları Gizle</span>
+                  </span>
+                </label>
               </div>
 
               <div className="space-y-3">
-                {(dashboardData?.sessions || []).map((session) => {
+                {visibleSessions.map((session) => {
                   const isExpanded = expandedSessions.has(session.sessionId);
+                  const isCurDev = Boolean(
+                    currentVisitorId &&
+                    (currentVisitorId.startsWith(session.visitorId) || session.visitorId.startsWith(currentVisitorId))
+                  );
+                  const devAlias = deviceSettings[session.visitorId]?.alias;
+                  const devIgnored = Boolean(deviceSettings[session.visitorId]?.isIgnored);
+
                   return (
                     <div
                       key={session.sessionId}
@@ -2155,7 +2294,37 @@ export default function AdminClient() {
                       >
                         <div className="flex items-center gap-2.5">
                           <span className="font-mono text-xs font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded flex items-center gap-2">
-                            <span className="text-[#d4af37]" title="Kalıcı Cihaz / Çerez Kimliği">Cihaz: {session.visitorId?.slice(0, 10)}</span>
+                            <span
+                              className="text-[#d4af37] flex items-center gap-1.5 cursor-pointer hover:underline"
+                              title={`Cihaz ID: ${session.visitorId} (Düzenlemek için tıkla)`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeviceModal(session.visitorId);
+                              }}
+                            >
+                              {devAlias ? (
+                                <span className="font-sans font-bold text-amber-300">
+                                  Cihaz: {devAlias}
+                                </span>
+                              ) : (
+                                <span>Cihaz: {session.visitorId?.slice(0, 10)}</span>
+                              )}
+                              <Edit3 className="h-3 w-3 text-neutral-500 hover:text-amber-300 inline transition-colors" />
+                            </span>
+
+                            {devIgnored && (
+                              <span className="text-red-400 font-sans text-[10px] font-bold bg-red-500/15 px-1.5 py-0.5 rounded border border-red-500/30 flex items-center gap-1">
+                                <Ban className="h-2.5 w-2.5" />
+                                Takip Dışı
+                              </span>
+                            )}
+
+                            {isCurDev && (
+                              <span className="text-blue-400 font-sans text-[10px] font-bold bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+                                Bu Cihazınız
+                              </span>
+                            )}
+
                             {session.visitCount && session.visitCount > 1 ? (
                               <>
                                 <span className="text-neutral-600">·</span>
@@ -2278,9 +2447,11 @@ export default function AdminClient() {
                   );
                 })}
 
-                {(!dashboardData?.sessions || dashboardData.sessions.length === 0) && (
+                {visibleSessions.length === 0 && (
                   <div className="text-center py-6 text-neutral-500 text-xs">
-                    Henüz kayıtlı ziyaretçi oturumu bulunmuyor.
+                    {hideIgnoredDevices
+                      ? "Kendi cihazlarınız gizlendiğinden gösterilecek oturum kalmadı."
+                      : "Henüz kayıtlı ziyaretçi oturumu bulunmuyor."}
                   </div>
                 )}
               </div>
@@ -2288,6 +2459,106 @@ export default function AdminClient() {
           </div>
         );
       })()}
+
+      {/* DEVICE ALIAS & OPT-OUT MODAL */}
+      {editingDevice && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setEditingDevice(null)}
+        >
+          <div
+            className="w-full max-w-md bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800 bg-neutral-950/60">
+              <div className="flex items-center gap-2">
+                <Laptop className="h-5 w-5 text-[#d4af37]" />
+                <h3 className="font-semibold text-neutral-100 text-sm">Cihaz Ayarı & İsimlendirme</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingDevice(null)}
+                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Device ID Display */}
+              <div>
+                <label className="text-xs font-medium text-neutral-400 block mb-1">Cihaz Kimliği (visitor_id)</label>
+                <div className="flex items-center justify-between bg-neutral-950 border border-neutral-800 px-3 py-2 rounded-lg text-xs font-mono text-neutral-300">
+                  <span>{editingDevice.visitorId}</span>
+                  {currentVisitorId &&
+                    (currentVisitorId.startsWith(editingDevice.visitorId) ||
+                      editingDevice.visitorId.startsWith(currentVisitorId)) && (
+                      <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-sans font-semibold">
+                        Şu Anki Cihazınız
+                      </span>
+                    )}
+                </div>
+              </div>
+
+              {/* Alias Input */}
+              <div>
+                <label className="text-xs font-medium text-neutral-300 block mb-1">
+                  Cihaz Adı / Not
+                </label>
+                <input
+                  type="text"
+                  value={editingDevice.alias}
+                  onChange={(e) => setEditingDevice({ ...editingDevice, alias: e.target.value })}
+                  placeholder="Örn: Benim huawei laptop, Ofis Masaüstü..."
+                  className="w-full bg-neutral-950 border border-neutral-700 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37] text-white px-3 py-2 rounded-lg text-sm transition-all outline-none"
+                  autoFocus
+                />
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  Bu ismi girdiğinizde admin panelinde artık cihaz kodu yerine bu isim görünecektir.
+                </p>
+              </div>
+
+              {/* Stop Tracking Checkbox */}
+              <div className="bg-neutral-950/80 border border-neutral-800/80 p-3 rounded-xl space-y-1.5">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={editingDevice.isIgnored}
+                    onChange={(e) => setEditingDevice({ ...editingDevice, isIgnored: e.target.checked })}
+                    className="mt-0.5 rounded border-neutral-700 bg-neutral-800 text-red-500 focus:ring-0 focus:ring-offset-0"
+                  />
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-semibold text-neutral-200 block">
+                      🚫 Bu Cihazı Takip Etme (Takibi Durdur)
+                    </span>
+                    <span className="text-[11px] text-neutral-400 block leading-relaxed">
+                      Açıldığında bu cihazdan yapılan tıklama, ürün gezme ve ziyaretler Supabase&apos;e kaydedilmez. Veritabanı kotanız kendi testlerinizle dolmaz.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-neutral-800 bg-neutral-950/40">
+              <button
+                type="button"
+                onClick={() => setEditingDevice(null)}
+                className="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-300 hover:bg-neutral-800 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                disabled={isSavingDevice}
+                onClick={handleSaveDeviceSetting}
+                className="px-4 py-1.5 rounded-lg bg-[#d4af37] text-black text-xs font-bold hover:bg-[#c5a030] disabled:opacity-50 transition-colors"
+              >
+                {isSavingDevice ? "Kaydediliyor..." : "Kaydet"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PRODUCT IMAGE PREVIEW MODAL */}
       {previewProduct && (

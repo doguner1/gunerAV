@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient } from "@/lib/server-supabase";
+import { isDeviceIgnored } from "@/lib/device-settings";
 
 export interface StoredActiveVisitor {
   visitor_id: string;
@@ -14,6 +15,10 @@ export async function recordActiveVisitor(params: {
   device_type?: string;
   product_name?: string | null;
 }) {
+  if (isDeviceIgnored(params.visitor_id)) {
+    return null;
+  }
+
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
     console.error("[active-visitors] Supabase client yok, heartbeat kaydedilemedi");

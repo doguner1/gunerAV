@@ -76,6 +76,13 @@ const recentClientEvents = new Map<string, number>();
 export function trackEvent(eventName: string, params: AnalyticsEventParams = {}) {
   if (typeof window === "undefined") return;
 
+  // Takibi durdurulmuş / hariç tutulmuş cihaz kontrolü (Sıfır ağ ve kota harcaması)
+  try {
+    if (localStorage.getItem("gunerav_analytics_optout") === "true") {
+      return;
+    }
+  } catch {}
+
   // Deduplicate identical events triggered in rapid succession (under 800ms)
   // Prevents rapid double taps, accidental touch+click ghost clicks, etc.
   const dedupeKey = `${eventName}_${params.source || ""}_${params.item_id || params.id || ""}_${params.category_id || ""}_${params.trigger || ""}`;
@@ -169,17 +176,35 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
         headers: { "Content-Type": "application/json" },
         body: bodyStr,
         keepalive: true,
-      }).catch(() => {
-        // Fallback to legacy endpoint if collect failed
-        try {
-          fetch("/api/analytics", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: bodyStr,
-            keepalive: true,
-          }).catch(() => {});
-        } catch {}
-      });
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.optout) {
+            try {
+              localStorage.setItem("gunerav_analytics_optout", "true");
+            } catch {}
+          }
+        })
+        .catch(() => {
+          // Fallback to legacy endpoint if collect failed
+          try {
+            fetch("/api/analytics", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: bodyStr,
+              keepalive: true,
+            })
+              .then((r) => r.json())
+              .then((data) => {
+                if (data?.optout) {
+                  try {
+                    localStorage.setItem("gunerav_analytics_optout", "true");
+                  } catch {}
+                }
+              })
+              .catch(() => {});
+          } catch {}
+        });
     }
   } catch (err) {}
 
