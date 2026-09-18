@@ -134,16 +134,19 @@ export function computeMatchConfidence(name1: string, name2: string): number {
  * Returns the best match URL and title, or null if not found.
  */
 export async function searchOzlerAvProduct(
-  query: string
+  query: string,
+  cookie?: string
 ): Promise<{ url: string; title: string } | null> {
   if (!query || query.trim().length < 2) return null;
   try {
     const apiUrl = "https://www.ozlerav.com.tr/arama/urunautocomplate?query=" + encodeURIComponent(query.trim());
+    const headers: Record<string, string> = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" };
+    if (cookie) {
+      headers["Cookie"] = cookie;
+    }
     const res = await fetch(
       apiUrl,
-      {
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
-      }
+      { headers }
     );
     if (!res.ok) return null;
     const data = await res.json();

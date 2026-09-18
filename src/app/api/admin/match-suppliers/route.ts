@@ -8,6 +8,7 @@ import {
   searchOzlerAvProduct,
   computeMatchConfidence,
 } from "@/lib/supplier-matcher";
+import { getOzlerAvCookie } from "@/lib/ozlerav-auth";
 import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { revalidatePath } from "next/cache";
 
@@ -19,9 +20,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [products, supplierIndex] = await Promise.all([
+    const [products, supplierIndex, ozleravCookie] = await Promise.all([
       getAllProducts(true),
       getSupplierIndex(),
+      getOzlerAvCookie(),
     ]);
 
     // Phase 1: Sitemap-based matching (fast, bulk)
@@ -39,7 +41,7 @@ export async function GET(req: NextRequest) {
         batch.map(async (m) => {
           const terms = extractSearchTerms(m.name_tr);
           if (!terms) return;
-          const result = await searchOzlerAvProduct(terms);
+          const result = await searchOzlerAvProduct(terms, ozleravCookie || undefined);
           if (result && result.url) {
             const confidence = computeMatchConfidence(m.name_tr, result.title);
             if (confidence >= 40) {
