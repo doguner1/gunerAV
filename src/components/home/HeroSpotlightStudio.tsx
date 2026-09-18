@@ -358,7 +358,7 @@ export default function HeroSpotlightStudio({
                 fill
                 unoptimized={spotlightImage.startsWith("http") || spotlightImage.startsWith("/api/img")}
                 sizes="(max-width: 768px) 100vw, 500px"
-                className="object-contain p-2 object-center transition-transform duration-500 group-hover:scale-105"
+                className="!absolute !inset-0 !w-full !h-full object-contain p-2.5 object-center transition-transform duration-500 group-hover:scale-105"
               />
               {spotlightProduct ? (
                 <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex items-end p-3.5 pointer-events-none rounded-b-2xl">

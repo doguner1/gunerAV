@@ -2175,8 +2175,8 @@ export default function AdminClient() {
                             )}
                             <span className="capitalize">{session.deviceType}</span>
                           </span>
-                          <span className="text-[11px] text-neutral-500 font-mono" title="Son Etkileşim Zamanı">
-                            {new Date(session.endTime || session.startTime).toLocaleString("tr-TR")}
+                          <span className="text-[11px] text-neutral-500 font-mono" title="Ziyaret Başlangıç Saati">
+                            {new Date(session.startTime).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}
                           </span>
                         </div>
 

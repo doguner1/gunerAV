@@ -20,7 +20,8 @@ export default function middleware(request: NextRequest) {
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com;
-    style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    style-src-attr 'unsafe-inline';
     font-src 'self' https://fonts.gstatic.com data:;
     img-src 'self' data: https: blob:;
     connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com;

@@ -42,7 +42,12 @@ function formatDurationHuman(seconds: number): string {
 function formatTime(isoString: string): string {
   try {
     const d = new Date(isoString);
-    return d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    return d.toLocaleTimeString("tr-TR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: "Europe/Istanbul",
+    });
   } catch {
     return "00:00:00";
   }
@@ -466,6 +471,7 @@ export async function GET(req: NextRequest) {
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            timeZone: "Europe/Istanbul",
           });
 
           steps.push({
