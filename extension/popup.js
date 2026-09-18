@@ -2667,61 +2667,118 @@ async function runBatchScrape() {
       appendBatchLog(`🎯 Kullanıcı Seçimi: TÜM ÜRÜNLER istisnasız '${batchCategory}' kategorisine atanıyor. (Ruhsat: ${isFirearmCat ? "Gerektirir" : "Gerekmez"})`, "success");
     } else {
       // Liste linki veya geçerli sekme URL'sinden otomatik kategori tespiti
-      const activeUrl = (document.getElementById("fldBatchUrl")?.value || tab?.url || targetTab?.url || "").toLowerCase();
+      const rawActiveUrl = document.getElementById("fldBatchUrl")?.value || tab?.url || targetTab?.url || "";
+      let pathname = "";
+      try {
+        const u = new URL(rawActiveUrl);
+        pathname = (u.pathname + " " + u.search).toLowerCase();
+      } catch (e) {
+        pathname = rawActiveUrl.toLowerCase();
+      }
+
       let autoDetectedCat = null;
       if (
-        activeUrl.includes("durbun") ||
-        activeUrl.includes("optik") ||
-        activeUrl.includes("scope") ||
-        activeUrl.includes("red-dot")
+        pathname.includes("alabalik-hamuru") ||
+        pathname.includes("alabalik_hamuru") ||
+        pathname.includes("trout-pasta") ||
+        pathname.includes("trout_pasta") ||
+        pathname.includes("c1335") ||
+        (pathname.includes("seagame") && (pathname.includes("hamur") || pathname.includes("pasta") || pathname.includes("yem")))
+      ) {
+        autoDetectedCat = "kamp-alabalik-hamuru";
+      }
+      else if (
+        pathname.includes("dogal-yem") ||
+        pathname.includes("dogal_yem") ||
+        pathname.includes("canli-yem") ||
+        pathname.includes("balik-yem") ||
+        pathname.includes("sazan-yem") ||
+        pathname.includes("hamur-yem")
+      ) {
+        autoDetectedCat = "kamp-dogal-yem";
+      }
+      else if (pathname.includes("cadir-aksesuarlari") || pathname.includes("cadir-aksesuar")) {
+        autoDetectedCat = "kamp-cadir-aksesuari";
+      }
+      else if (pathname.includes("cadir-k-") || pathname.includes("cadir") || pathname.includes("cadirlar")) {
+        autoDetectedCat = "kamp-cadir";
+      }
+      else if (pathname.includes("uyku-tulumu") || pathname.includes("uyku_tulumu")) {
+        autoDetectedCat = "kamp-uyku-tulumu";
+      }
+      else if (pathname.includes("mat-k-") || pathname.includes("mat-") || pathname.includes("/mat")) {
+        autoDetectedCat = "kamp-mat";
+      }
+      else if (
+        pathname.includes("durbun") ||
+        pathname.includes("optik") ||
+        pathname.includes("scope") ||
+        pathname.includes("red-dot")
       ) {
         autoDetectedCat = "optik";
       }
       else if (
-        activeUrl.includes("av-taktik-aksesuar") ||
-        activeUrl.includes("taktik-aksesuarlari") ||
-        activeUrl.includes("av-aksesuarlari") ||
-        activeUrl.includes("k-237") ||
-        activeUrl.includes("k-238") ||
-        activeUrl.includes("k-239")
+        pathname.includes("av-taktik-aksesuar") ||
+        pathname.includes("taktik-aksesuarlari") ||
+        pathname.includes("av-aksesuarlari") ||
+        pathname.includes("k-237") ||
+        pathname.includes("k-238") ||
+        pathname.includes("k-239")
       ) {
         autoDetectedCat = "tufek-aksesuar";
       }
-      else if (activeUrl.includes("havali-tabanca")) autoDetectedCat = "havali-tabanca";
-      else if (activeUrl.includes("havali-tufek")) autoDetectedCat = "havali-tufek";
-      else if (activeUrl.includes("kurusiki")) autoDetectedCat = "kurusiki-tabanca";
-      else if (activeUrl.includes("havali") || activeUrl.includes("airgun")) autoDetectedCat = "havali-kurusiki";
-      else if (activeUrl.includes("bakim") || activeUrl.includes("temizleme") || activeUrl.includes("harbi")) autoDetectedCat = "tufek-bakim";
-      else if (activeUrl.includes("cadir-aksesuarlari")) autoDetectedCat = "kamp-cadir-aksesuari";
-      else if (activeUrl.includes("cadir-k-") || activeUrl.includes("cadir")) autoDetectedCat = "kamp-cadir";
-      else if (activeUrl.includes("uyku-tulumu")) autoDetectedCat = "kamp-uyku-tulumu";
-      else if (activeUrl.includes("mat-k-") || activeUrl.includes("mat-")) autoDetectedCat = "kamp-mat";
-      else if (activeUrl.includes("giyim") || activeUrl.includes("pantolon") || activeUrl.includes("mont") || activeUrl.includes("yelek") || activeUrl.includes("bot") || activeUrl.includes("ayakkabi")) autoDetectedCat = "giyim";
-      else if (activeUrl.includes("bicak") || activeUrl.includes("caki") || activeUrl.includes("balta")) autoDetectedCat = "bicak";
-      else if (activeUrl.includes("fisek") || activeUrl.includes("muhimmat")) autoDetectedCat = "muhimmat";
-      else if (activeUrl.includes("kamp") || activeUrl.includes("balik")) autoDetectedCat = "kamp";
-      else if (activeUrl.includes("yari-otomatik")) autoDetectedCat = "tufek-yari-otomatik";
-      else if (activeUrl.includes("pompali")) autoDetectedCat = "tufek-pompali";
-      else if (activeUrl.includes("sarjorlu")) autoDetectedCat = "tufek-sarjorlu";
-      else if (activeUrl.includes("bullpup")) autoDetectedCat = "tufek-bullpup";
-      else if (activeUrl.includes("superpoze")) autoDetectedCat = "tufek-superpoze";
-      else if (activeUrl.includes("cifte")) autoDetectedCat = "tufek-cifte";
-      else if (activeUrl.includes("tek-kirma")) autoDetectedCat = "tufek-tek-kirma";
+      else if (pathname.includes("havali-tabanca")) autoDetectedCat = "havali-tabanca";
+      else if (pathname.includes("havali-tufek")) autoDetectedCat = "havali-tufek";
+      else if (pathname.includes("kurusiki")) autoDetectedCat = "kurusiki-tabanca";
+      else if (pathname.includes("havali-muhimmat") || pathname.includes("pellet")) autoDetectedCat = "havali-muhimmat";
+      else if (pathname.includes("havali") || pathname.includes("airgun")) autoDetectedCat = "havali-kurusiki";
+      else if (pathname.includes("bakim") || pathname.includes("temizleme") || pathname.includes("harbi")) autoDetectedCat = "tufek-bakim";
+      else if (pathname.includes("giyim") || pathname.includes("pantolon") || pathname.includes("mont") || pathname.includes("yelek") || pathname.includes("bot") || pathname.includes("ayakkabi")) autoDetectedCat = "giyim";
+      else if (pathname.includes("bicak") || pathname.includes("caki") || pathname.includes("balta")) autoDetectedCat = "bicak";
+      else if (pathname.includes("24-gram") || pathname.includes("24-gr")) autoDetectedCat = "muhimmat-24-gram";
+      else if (pathname.includes("28-gram") || pathname.includes("28-gr")) autoDetectedCat = "muhimmat-28-gram";
+      else if (pathname.includes("30-gram") || pathname.includes("30-gr")) autoDetectedCat = "muhimmat-30-gram";
+      else if (pathname.includes("32-gram") || pathname.includes("32-gr")) autoDetectedCat = "muhimmat-32-gram";
+      else if (pathname.includes("34-gram") || pathname.includes("34-gr")) autoDetectedCat = "muhimmat-34-gram";
+      else if (pathname.includes("36-gram") || pathname.includes("36-gr")) autoDetectedCat = "muhimmat-36-gram";
+      else if (pathname.includes("magnum")) autoDetectedCat = "muhimmat-magnum";
+      else if (pathname.includes("tek-kursun")) autoDetectedCat = "muhimmat-tek-kursun";
+      else if (pathname.includes("savrotin")) autoDetectedCat = "muhimmat-savrotin";
+      else if (pathname.includes("trap") || pathname.includes("skeet")) autoDetectedCat = "muhimmat-trap-skeet";
+      else if (pathname.includes("kursunsuz") || pathname.includes("celik-sacma")) autoDetectedCat = "muhimmat-kursunsuz-celik";
+      else if (pathname.includes("ozel-dolum")) autoDetectedCat = "muhimmat-ozel-dolum";
+      else if (pathname.includes("fisek") || pathname.includes("muhimmat")) autoDetectedCat = "muhimmat";
+      else if (pathname.includes("yari-otomatik")) autoDetectedCat = "tufek-yari-otomatik";
+      else if (pathname.includes("pompali")) autoDetectedCat = "tufek-pompali";
+      else if (pathname.includes("sarjorlu")) autoDetectedCat = "tufek-sarjorlu";
+      else if (pathname.includes("bullpup")) autoDetectedCat = "tufek-bullpup";
+      else if (pathname.includes("superpoze")) autoDetectedCat = "tufek-superpoze";
+      else if (pathname.includes("cifte")) autoDetectedCat = "tufek-cifte";
+      else if (pathname.includes("tek-kirma")) autoDetectedCat = "tufek-tek-kirma";
+      else if (pathname.includes("kamp") || pathname.includes("balik")) autoDetectedCat = "kamp";
 
       if (autoDetectedCat) {
         rawProducts.forEach((p) => {
-          p.category = autoDetectedCat;
-          p.requires_license = autoDetectedCat.startsWith("tufek") && autoDetectedCat !== "tufek-aksesuar" && autoDetectedCat !== "tufek-bakim" && !autoDetectedCat.startsWith("havali");
+          const isGeneric = !p.category || ["kamp", "tufek", "havali-kurusiki", "muhimmat"].includes(p.category);
+          if (isGeneric) {
+            p.category = autoDetectedCat;
+            p.requires_license = autoDetectedCat.startsWith("tufek") && autoDetectedCat !== "tufek-aksesuar" && autoDetectedCat !== "tufek-bakim" && !autoDetectedCat.startsWith("havali");
+          }
         });
         appendBatchLog(`🤖 Tedarikçi liste linkinden kategori otomatik algılandı: ${autoDetectedCat}`, "info");
       } else {
-        // Her ürünün başlığından akıllı kategori tayini (Dürbünler, Aksesuarlar, Giyim ve Kamp tayin edilir)
+        // Her ürünün başlığından akıllı kategori tayini (Dürbünler, Aksesuarlar, Giyim, Balık ve Kamp tayin edilir)
         rawProducts.forEach((p) => {
+          // Eğer ürün sayfasından spesifik bir alt kategori (örn: kamp-alabalik-hamuru, tufek-yari-otomatik vb.) zaten belirlendiyse koru
+          if (p.category && !["kamp", "tufek", "muhimmat", "havali-kurusiki"].includes(p.category)) {
+            return;
+          }
+
           const titleLower = (p.title || "").toLowerCase();
 
           const isAccessory =
             (p.category && (p.category.startsWith("aksesuar") || p.category === "tufek-aksesuar")) ||
-            activeUrl.includes("taktik-aksesuar") ||
+            rawActiveUrl.toLowerCase().includes("taktik-aksesuar") ||
             titleLower.includes("aparati") ||
             titleLower.includes("aparatı") ||
             titleLower.includes("montaj rayı") ||
@@ -2809,8 +2866,8 @@ async function runBatchScrape() {
             titleLower.includes("havalı saçma") ||
             titleLower.includes("havali sacma") ||
             titleLower.includes("pellet") ||
-            activeUrl.includes("havali") ||
-            activeUrl.includes("kurusiki");
+            rawActiveUrl.toLowerCase().includes("havali") ||
+            rawActiveUrl.toLowerCase().includes("kurusiki");
 
           const isOptic =
             !isAccessory &&
@@ -2830,8 +2887,8 @@ async function runBatchScrape() {
               titleLower.includes("sifirlama lazeri") ||
               titleLower.includes("monoküler") ||
               titleLower.includes("monokuler") ||
-              activeUrl.includes("durbun") ||
-              activeUrl.includes("optik")
+              rawActiveUrl.toLowerCase().includes("durbun") ||
+              rawActiveUrl.toLowerCase().includes("optik")
             );
 
           const isClothing =
@@ -2860,8 +2917,31 @@ async function runBatchScrape() {
               titleLower.includes("giyim")
             );
 
+          const isTroutBait =
+            titleLower.includes("alabalık hamur") ||
+            titleLower.includes("alabalik hamur") ||
+            titleLower.includes("trout pasta") ||
+            titleLower.includes("trout bait") ||
+            (titleLower.includes("seagame") && (titleLower.includes("hamur") || titleLower.includes("pasta") || titleLower.includes("yem"))) ||
+            (titleLower.includes("hamur") && (titleLower.includes("alabalik") || titleLower.includes("alabalık")));
+
+          const isNaturalBait =
+            !isTroutBait && (
+              titleLower.includes("doğal yem") ||
+              titleLower.includes("dogal yem") ||
+              titleLower.includes("canlı yem") ||
+              titleLower.includes("canli yem") ||
+              titleLower.includes("balık yemi") ||
+              titleLower.includes("balik yemi") ||
+              titleLower.includes("mısır yemi") ||
+              titleLower.includes("misir yemi") ||
+              titleLower.includes("balık hamuru") ||
+              titleLower.includes("balik hamuru") ||
+              titleLower.includes("boilie")
+            );
+
           const isCamping =
-            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && (
+            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && !isTroutBait && !isNaturalBait && (
               titleLower.includes("uyku tulumu") ||
               titleLower.includes("tulum") ||
               titleLower.includes("çadır") ||
@@ -2877,7 +2957,7 @@ async function runBatchScrape() {
             );
 
           const isKnife =
-            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && !isCamping && (
+            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && !isCamping && !isTroutBait && !isNaturalBait && (
               titleLower.includes("bıçak") ||
               titleLower.includes("bicak") ||
               titleLower.includes("çakı") ||
@@ -2914,6 +2994,12 @@ async function runBatchScrape() {
           } else if (isClothing) {
             p.requires_license = false;
             p.category = "giyim";
+          } else if (isTroutBait) {
+            p.requires_license = false;
+            p.category = "kamp-alabalik-hamuru";
+          } else if (isNaturalBait) {
+            p.requires_license = false;
+            p.category = "kamp-dogal-yem";
           } else if (isCamping) {
             p.requires_license = false;
             if (titleLower.includes("uyku tulumu") || titleLower.includes("tulum")) p.category = "kamp-uyku-tulumu";
