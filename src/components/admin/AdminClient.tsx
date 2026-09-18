@@ -1340,7 +1340,21 @@ export default function AdminClient() {
                                 <span className="uppercase font-mono text-[#d4af37] font-semibold">{p.category}</span>
                                 <span>&bull;</span>
                                 <span className="font-mono text-neutral-500 truncate">{p.id}</span>
-                                {p.supplier_id ? (
+                                {p.supplier_url ? (
+                                  <>
+                                    <span>&bull;</span>
+                                    <a
+                                      href={p.supplier_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="font-mono text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-neutral-800 text-blue-400 hover:text-blue-300 hover:bg-neutral-700 transition-colors border border-blue-500/30"
+                                      title="Tedarikçideki Birebir Ürün Sayfası (Admin Gizli)"
+                                    >
+                                      <span>🔗 {p.supplier_id === 1 ? "arslansilah" : "ozlerav"}</span>
+                                    </a>
+                                  </>
+                                ) : p.supplier_id ? (
                                   <>
                                     <span>&bull;</span>
                                     <a
@@ -1348,10 +1362,10 @@ export default function AdminClient() {
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       onClick={(e) => e.stopPropagation()}
-                                      className="font-mono text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-neutral-800 text-blue-400 hover:text-blue-300 hover:bg-neutral-700 transition-colors"
-                                      title="Tedarikçi Sitesine Git"
+                                      className="font-mono text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-neutral-800 text-neutral-400 hover:text-neutral-300 hover:bg-neutral-700 transition-colors"
+                                      title="Tedarikçi Ana Sayfası (Birebir link henüz kaydedilmemiş)"
                                     >
-                                      {p.supplier_id === 1 ? "arslansilah" : "ozlerav"}
+                                      {p.supplier_id === 1 ? "arslansilah (?)" : "ozlerav (?)"}
                                     </a>
                                   </>
                                 ) : null}

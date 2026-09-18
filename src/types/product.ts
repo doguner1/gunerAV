@@ -26,6 +26,7 @@ export interface Product {
   specs_tr?: Record<string, string | undefined>;
   specs_en?: Record<string, string | undefined>;
   supplier_id?: number;
+  supplier_url?: string;
 }
 
 export interface SubCategory {

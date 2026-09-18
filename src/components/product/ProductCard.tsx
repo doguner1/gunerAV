@@ -33,9 +33,11 @@ export default function ProductCard({ product, categoryName, priority = false }:
       ? product.images[0]
       : "/images/products/optics-1.webp";
 
+  const productUrl = `${STORE_INFO.siteUrl}/${locale}/products/${slug}`;
+
   const waMsg = isTr
-    ? `Merhaba Güner Av Bayii, ${name} ürününün fiyatını öğrenmek istiyorum.`
-    : `Hello Guner AV, I would like to inquire about the price of ${name}.`;
+    ? `Merhaba Güner Av Bayii, "${name}" ürününün fiyatını öğrenmek istiyorum.\n\nİncelediğim Ürün:\n${productUrl}`
+    : `Hello Guner AV, I would like to inquire about the price of "${name}".\n\nProduct Link:\n${productUrl}`;
 
   const waLink = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 

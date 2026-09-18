@@ -392,6 +392,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const applyExtractedData = (data) => {
+      if (data && !data.url && tab?.url) {
+        data.url = tab.url;
+      }
       populateForm(data);
       saveFormDraft();
       showStatus(`✅ Ürün yakalandı: ${(data.title || "").slice(0, 35)}...`, "success");
@@ -767,6 +770,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         finalSupplierId = parseInt(supSelect, 10) || 2;
       }
 
+      const supplierUrl = document.getElementById("fldSupplierUrl")?.value.trim() || null;
+
       const payload = {
         id: slug,
         slug_tr: slug,
@@ -788,6 +793,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         specs_tr: specs,
         specs_en: specs,
         supplier_id: finalSupplierId,
+        supplier_url: supplierUrl,
       };
 
       const endpoint = `${savedCfg.supabaseUrl}/rest/v1/products`;
@@ -896,6 +902,12 @@ function generateStandardDescription(data, specsObj) {
 function populateForm(data) {
   if (data.title) document.getElementById("fldNameTr").value = data.title;
   if (data.name_tr) document.getElementById("fldNameTr").value = data.name_tr;
+
+  const supUrl = data.url || data.supplier_url || "";
+  const fldSupUrl = document.getElementById("fldSupplierUrl");
+  if (fldSupUrl && supUrl) {
+    fldSupUrl.value = supUrl;
+  }
 
   const specs = data.specs_tr || data.specs || {};
 
@@ -1413,6 +1425,7 @@ async function saveFormDraft() {
     model: document.getElementById("fldModel")?.value || "",
     supplierId: document.getElementById("fldSupplierId")?.value || "2",
     supplierIdCustom: document.getElementById("fldSupplierIdCustom")?.value || "",
+    supplierUrl: document.getElementById("fldSupplierUrl")?.value || "",
     images: document.getElementById("fldImages")?.value || "",
     variantsJson: document.getElementById("fldVariantsJson")?.value || "",
     featured: document.getElementById("chkFeatured")?.checked ?? true,
@@ -1444,6 +1457,9 @@ function restoreFormDraft(draft) {
       inpCustom.style.display = draft.supplierId === "custom" ? "block" : "none";
       if (draft.supplierIdCustom) inpCustom.value = draft.supplierIdCustom;
     }
+  }
+  if (draft.supplierUrl && document.getElementById("fldSupplierUrl")) {
+    document.getElementById("fldSupplierUrl").value = draft.supplierUrl;
   }
   if (draft.images) document.getElementById("fldImages").value = draft.images;
 
@@ -2671,6 +2687,7 @@ async function runBatchScrape() {
         specs_tr: specs,
         specs_en: specs,
         supplier_id: finalSupplierId,
+        supplier_url: p.supplier_url || p.url || null,
       };
 
       try {

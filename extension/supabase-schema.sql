@@ -29,8 +29,10 @@ create table if not exists public.products (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Var olan veritabanı için ek kolon (Hata vermez):
+-- Var olan veritabanı için ek kolonlar (Hata vermez):
 alter table public.products add column if not exists variants jsonb default '[]'::jsonb;
+alter table public.products add column if not exists supplier_id integer default 2;
+alter table public.products add column if not exists supplier_url text;
 
 -- 2. Hızlı Arama & Filtreleme İndeksleri
 create index if not exists idx_products_category on public.products(category);

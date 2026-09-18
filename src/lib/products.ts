@@ -236,6 +236,7 @@ function secureProduct(p: Product): Product {
     specs_tr: cleanSpecsTr,
     specs_en: cleanSpecsEn,
     supplier_id: supplierId,
+    supplier_url: p.supplier_url || undefined,
   };
 }
 

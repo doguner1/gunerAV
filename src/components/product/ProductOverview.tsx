@@ -92,10 +92,11 @@ export default function ProductOverview({
   const variantSuffix = activeVariant
     ? ` (${activeVariant.name || activeVariant.color_code})`
     : "";
+  const productUrl = `${STORE_INFO.siteUrl}/${locale}/products/${productSlug}`;
 
   const waMsg = isTr
-    ? `Merhaba Güner Av Bayii, ${name}${variantSuffix} ürününün fiyatını öğrenmek istiyorum.`
-    : `Hello Guner AV, I would like to inquire about the price of ${name}${variantSuffix}.`;
+    ? `Merhaba Güner Av Bayii, "${name}${variantSuffix}" ürününün fiyatını öğrenmek istiyorum.\n\nİncelediğim Ürün:\n${productUrl}`
+    : `Hello Guner AV, I would like to inquire about the price of "${name}${variantSuffix}".\n\nProduct Link:\n${productUrl}`;
 
   const waUrl = generateWhatsAppLink(STORE_INFO.whatsappNumber, waMsg);
 
