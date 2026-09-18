@@ -331,6 +331,7 @@ export default function AdminClient() {
   } | null>(null);
   const [supplierFilter, setSupplierFilter] = useState<"all" | "new" | "already" | "unmatched">("new");
   const [supplierModalSaveSuccess, setSupplierModalSaveSuccess] = useState<string | null>(null);
+  const [confidenceThreshold, setConfidenceThreshold] = useState<number>(80);
 
   // Product Management State
   const [products, setProducts] = useState<Product[]>([]);
@@ -890,7 +891,7 @@ export default function AdminClient() {
   const handleSaveSupplierMatches = async () => {
     if (!supplierMatchData) return;
     const updates = supplierMatchData.matches
-      .filter((m) => !m.alreadyMatched && m.suggested_url && m.confidence >= 50)
+      .filter((m) => !m.alreadyMatched && m.suggested_url && m.confidence >= confidenceThreshold)
       .map((m) => ({ id: m.id, supplier_url: m.suggested_url! }));
 
     if (updates.length === 0) {
@@ -898,7 +899,7 @@ export default function AdminClient() {
       return;
     }
 
-    if (!window.confirm(`${updates.length} ürünün tedarikçi linkini Supabase'e kaydetmek istediğinize emin misiniz?`)) {
+    if (!window.confirm(`%${confidenceThreshold} ve üzeri güven oranına sahip ${updates.length} ürünün tedarikçi linkini kaydetmek istediğinize emin misiniz?`)) {
       return;
     }
 
@@ -936,6 +937,13 @@ export default function AdminClient() {
       return true;
     });
   }, [supplierMatchData, supplierFilter]);
+
+  const savableMatchCount = useMemo(() => {
+    if (!supplierMatchData) return 0;
+    return supplierMatchData.matches.filter(
+      (m) => !m.alreadyMatched && m.suggested_url && m.confidence >= confidenceThreshold
+    ).length;
+  }, [supplierMatchData, confidenceThreshold]);
 
   const unreadMessagesCount = useMemo(() => {
     return messages.filter((m) => !m.is_read).length;
@@ -3561,6 +3569,34 @@ export default function AdminClient() {
               </button>
             </div>
 
+            {/* Confidence Threshold Selector */}
+            {supplierMatchData && (
+              <div className="flex items-center justify-between gap-3 px-6 py-2.5 bg-neutral-900/60 border-b border-neutral-800/60">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-neutral-400 font-medium whitespace-nowrap">Kaydetme Eşiği:</span>
+                  <div className="flex items-center gap-1">
+                    {[50, 60, 70, 80, 90].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setConfidenceThreshold(t)}
+                        className={`px-2 py-1 rounded text-[11px] font-bold transition-colors ${
+                          confidenceThreshold === t
+                            ? "bg-[#d4af37] text-black shadow-sm"
+                            : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white border border-neutral-700"
+                        }`}
+                      >
+                        %{t}+
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <span className="text-[11px] text-neutral-300 font-mono whitespace-nowrap">
+                  <strong className="text-[#d4af37]">{savableMatchCount}</strong> ürün kaydedilecek
+                </span>
+              </div>
+            )}
+
             {/* List Body */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2.5 min-h-[320px]">
               {isLoadingSupplierMatches ? (
@@ -3568,7 +3604,7 @@ export default function AdminClient() {
                   <RefreshCw className="w-8 h-8 text-[#d4af37] animate-spin mb-3" />
                   <p className="text-sm font-semibold text-white">Tedarikçi Kataloğu Taranıyor...</p>
                   <p className="text-xs text-neutral-400 mt-1 max-w-sm">
-                    Özler Av ve Arslan Silah canlı sitemap ve ürün listesi taranarak ürünlerinizle eşleştiriliyor.
+                    Sitemap eşleştirmesi + Özler Av otomatik ürün araması çalışıyor. Bu işlem 10-20 saniye sürebilir.
                   </p>
                 </div>
               ) : !supplierMatchData ? (
@@ -3591,7 +3627,7 @@ export default function AdminClient() {
                 filteredSupplierMatches.map((m) => (
                   <div
                     key={m.id}
-                    className="p-3 rounded-xl bg-neutral-950/60 border border-neutral-800 hover:border-neutral-700 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3"
+                    className={`p-3 rounded-xl bg-neutral-950/60 border border-neutral-800 hover:border-neutral-700 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 ${!m.alreadyMatched && m.suggested_url && m.confidence < confidenceThreshold ? "opacity-40" : ""}`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -3664,7 +3700,7 @@ export default function AdminClient() {
               <div className="text-xs text-neutral-400">
                 {supplierMatchData ? (
                   <span>
-                    <strong className="text-white">{supplierMatchData.newlyMatchedCount}</strong> yeni ürün tedarikçi linkiyle güncellenmeye hazır.
+                    Toplam <strong className="text-white">{supplierMatchData.newlyMatchedCount}</strong> yeni eşleşme bulundu — %{confidenceThreshold}+ güven eşiğiyle <strong className="text-[#d4af37]">{savableMatchCount}</strong> tanesi kaydedilecek.
                   </span>
                 ) : (
                   <span>Önce eşleştirme taraması yapınız.</span>
@@ -3683,7 +3719,7 @@ export default function AdminClient() {
                   disabled={
                     isSavingSupplierMatches ||
                     !supplierMatchData ||
-                    supplierMatchData.newlyMatchedCount === 0
+                    savableMatchCount === 0
                   }
                   onClick={handleSaveSupplierMatches}
                   className="px-5 py-2 rounded-xl bg-[#d4af37] text-black text-xs font-bold hover:bg-[#c5a030] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-[#d4af37]/10"
@@ -3697,7 +3733,7 @@ export default function AdminClient() {
                     <>
                       <Check className="w-4 h-4" />
                       <span>
-                        Yeni Eşleşenleri Kaydet ({supplierMatchData?.newlyMatchedCount || 0})
+                        %{confidenceThreshold}+ Eşleşenleri Kaydet ({savableMatchCount})
                       </span>
                     </>
                   )}

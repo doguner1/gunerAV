@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthorized } from "@/lib/server-auth";
 import { getAllProducts } from "@/lib/products";
-import { getSupplierIndex, matchProductWithSupplier } from "@/lib/supplier-matcher";
+import {
+  getSupplierIndex,
+  matchProductWithSupplier,
+  extractSearchTerms,
+  searchOzlerAvProduct,
+  computeMatchConfidence,
+} from "@/lib/supplier-matcher";
 import { getSupabaseAdminClient } from "@/lib/server-supabase";
 import { revalidatePath } from "next/cache";
 
@@ -18,11 +24,40 @@ export async function GET(req: NextRequest) {
       getSupplierIndex(),
     ]);
 
+    // Phase 1: Sitemap-based matching (fast, bulk)
     const matches = products.map((p) => matchProductWithSupplier(p, supplierIndex));
 
+    // Phase 2: Autocomplete fallback for unmatched Özler Av products
+    const unmatchedForSearch = matches.filter(
+      (m) => !m.alreadyMatched && !m.suggested_url && m.supplier === "ozlerav"
+    );
+
+    // Batch autocomplete searches: 10 concurrent, 200ms between batches
+    for (let i = 0; i < unmatchedForSearch.length; i += 10) {
+      const batch = unmatchedForSearch.slice(i, i + 10);
+      await Promise.all(
+        batch.map(async (m) => {
+          const terms = extractSearchTerms(m.name_tr);
+          if (!terms) return;
+          const result = await searchOzlerAvProduct(terms);
+          if (result && result.url) {
+            const confidence = computeMatchConfidence(m.name_tr, result.title);
+            if (confidence >= 40) {
+              m.suggested_url = result.url;
+              m.confidence = confidence;
+            }
+          }
+        })
+      );
+      // Polite delay between batches
+      if (i + 10 < unmatchedForSearch.length) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    }
+
     const alreadyMatchedCount = matches.filter((m) => m.alreadyMatched).length;
-    const newlyMatchedCount = matches.filter((m) => !m.alreadyMatched && m.suggested_url && m.confidence >= 50).length;
-    const unmatchedCount = matches.filter((m) => !m.alreadyMatched && (!m.suggested_url || m.confidence < 50)).length;
+    const newlyMatchedCount = matches.filter((m) => !m.alreadyMatched && !!m.suggested_url && m.confidence >= 40).length;
+    const unmatchedCount = matches.filter((m) => !m.alreadyMatched && (!m.suggested_url || m.confidence < 40)).length;
 
     return NextResponse.json({
       success: true,
