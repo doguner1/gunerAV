@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAllProducts } from "@/lib/products";
 import { isAdminAuthorized } from "@/lib/server-auth";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     if (!isAdminAuthorized(req)) {
@@ -11,7 +14,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const products = await getAllProducts();
+    const products = await getAllProducts(true);
 
     return NextResponse.json({
       success: true,

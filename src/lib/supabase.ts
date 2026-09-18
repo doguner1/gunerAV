@@ -11,7 +11,7 @@ export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
 /**
  * Supabase REST API üzerinden ürünleri çeker (ISR 30sn önbellek ile)
  */
-export async function getSupabaseProducts(): Promise<Product[]> {
+export async function getSupabaseProducts(fresh: boolean = false): Promise<Product[]> {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return [];
   }
@@ -24,7 +24,9 @@ export async function getSupabaseProducts(): Promise<Product[]> {
           apikey: SUPABASE_KEY,
           Authorization: `Bearer ${SUPABASE_KEY}`,
         },
-        next: { revalidate: 86400, tags: ["products"] }, // Günde bir veya on-demand /api/revalidate ile anında
+        ...(fresh
+          ? { cache: "no-store" as const }
+          : { next: { revalidate: 86400, tags: ["products"] } }),
       }
     );
 

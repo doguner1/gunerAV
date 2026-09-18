@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function GET(req: NextRequest) {
   return handleRevalidate(req);
@@ -23,6 +23,13 @@ async function handleRevalidate(req: NextRequest) {
   }
 
   try {
+    // Supabase Next.js Data Cache etiketini daima temizle
+    try {
+      revalidateTag("products", "max");
+    } catch (tagErr) {
+      console.warn("revalidateTag hatası:", tagErr);
+    }
+
     if (path) {
       revalidatePath(path);
     } else {
@@ -31,6 +38,7 @@ async function handleRevalidate(req: NextRequest) {
       revalidatePath("/[locale]/products", "page");
       revalidatePath("/[locale]/kategori/[categoryId]", "page");
       revalidatePath("/[locale]/products/[slug]", "page");
+      revalidatePath("/", "layout");
     }
 
     return NextResponse.json({

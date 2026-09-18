@@ -134,6 +134,18 @@
         "slug": "kamp-uyku-tulumu",
         "name_tr": "Uyku Tulumu",
         "name_en": "Sleeping Bags"
+      },
+      {
+        "id": "kamp-dogal-yem",
+        "slug": "kamp-dogal-yem",
+        "name_tr": "Doğal Yem",
+        "name_en": "Natural Bait"
+      },
+      {
+        "id": "kamp-alabalik-hamuru",
+        "slug": "kamp-alabalik-hamuru",
+        "name_tr": "Seagame Alabalık Hamuru",
+        "name_en": "Seagame Trout Paste"
       }
     ]
   },

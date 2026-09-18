@@ -341,10 +341,10 @@ const categories = categoriesData as unknown as Category[];
  * Supabase bağlıysa ürünleri çeker, kategorilerini bozmadan kendi içinde günlük karıştırarak sunar.
  * Supabase yapılandırılmamışsa yerel products.json dosyasını kullanır.
  */
-export async function getAllProducts(): Promise<Product[]> {
+export async function getAllProducts(fresh: boolean = false): Promise<Product[]> {
   if (isSupabaseConfigured) {
     try {
-      const supabaseItems = await getSupabaseProducts();
+      const supabaseItems = await getSupabaseProducts(fresh);
       const secured = (supabaseItems || []).map(secureProduct);
       return shuffleProductsIntraCategory(secured);
     } catch (e) {

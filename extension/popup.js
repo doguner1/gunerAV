@@ -823,6 +823,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       showStatus("🎉 Ürün başarıyla Supabase'e kaydedildi ve yayına alındı!", "success");
       btn.textContent = "✅ Başarıyla Kaydedildi";
 
+      // Sitedeki önbelleği anında temizle (Next.js On-Demand Revalidation)
+      try {
+        await fetch("https://www.gunerav.site/api/revalidate?secret=gunerav_revalidate_secret_2026", {
+          method: "POST",
+        });
+      } catch (revErr) {
+        console.warn("Önbellek temizleme çağrısı uyarısı:", revErr);
+      }
+
       // Başarılı kayıttan sonra taslağı sil
       await chrome.storage.local.remove("productFormDraft");
 
@@ -899,52 +908,59 @@ function generateStandardDescription(data, specsObj) {
   return `${prefix}, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`;
 }
 
+function normalizeTurkish(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/İ/g, "i")
+    .replace(/I/g, "i")
+    .replace(/ı/g, "i")
+    .replace(/Ğ/g, "g")
+    .replace(/ğ/g, "g")
+    .replace(/Ü/g, "u")
+    .replace(/ü/g, "u")
+    .replace(/Ş/g, "s")
+    .replace(/ş/g, "s")
+    .replace(/Ö/g, "o")
+    .replace(/ö/g, "o")
+    .replace(/Ç/g, "c")
+    .replace(/ç/g, "c")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 function isInvalidProductTitle(text) {
   if (!text || typeof text !== "string") return true;
-  const t = text.trim().toLowerCase();
+  const t = normalizeTurkish(text);
   if (t.length < 3) return true;
   const blacklist = [
-    "sözleşme koşulları",
-    "sözleşme kosullari",
-    "sözleşme",
+    "sozlesme kosullari",
     "sozlesme",
-    "mesafeli satış sözleşmesi",
     "mesafeli satis sozlesmesi",
-    "ön bilgilendirme formu",
     "on bilgilendirme formu",
-    "gizlilik ve güvenlik",
     "gizlilik ve guvenlik",
-    "aydınlatma metni",
     "aydinlatma metni",
-    "çerez politikası",
     "cerez politikasi",
     "kvkk",
-    "üyelik sözleşmesi",
     "uyelik sozlesmesi",
     "sepetim",
     "sepet",
-    "sipariş özeti",
     "siparis ozeti",
     "teslimat ve iade",
-    "hakkımızda",
     "hakkimizda",
-    "iletişim",
     "iletisim",
-    "bize ulaşın",
     "bize ulasin",
-    "giriş yap",
     "giris yap",
-    "üye ol",
     "uye ol",
-    "kullanıcı girişi",
-    "bayi girişi",
-    "şifremi unuttum",
+    "kullanici girisi",
+    "bayi girisi",
+    "sifremi unuttum",
     "favorilerim",
     "favoriler",
-    "arama sonuçları",
+    "arama sonuclari",
     "kategoriler",
-    "tüm kategoriler",
-    "menü",
+    "tum kategoriler",
     "menu",
     "adres bilgileri",
     "fatura adresi",
@@ -952,23 +968,31 @@ function isInvalidProductTitle(text) {
     "kampanyalar",
     "duyurular"
   ];
-  return blacklist.some((b) => t === b || t.startsWith(b + " ") || t.endsWith(" " + b) || t.includes("sözleşme") || t.includes("sozlesme"));
+  return blacklist.some((b) => t === b || t.startsWith(b + " ") || t.endsWith(" " + b) || t.includes("sozlesme"));
 }
 
 function isInvalidBrand(brand) {
   if (!brand || typeof brand !== "string") return true;
-  const b = brand.trim().toLowerCase();
+  const b = normalizeTurkish(brand);
   if (b.length < 2 || b.length > 40) return true;
   const blacklist = [
-    "sözleşme", "sozlesme", "koşulları", "kosullari", "şartlar", "sartlar",
-    "ürün", "urun", "ürünler", "urunler", "detay", "detaylar",
-    "anasayfa", "home", "giriş", "giris", "kategori", "kategoriler",
-    "fiyat", "fiyatı", "fiyati", "stok", "sepet", "sepetim", "menü", "menu",
+    "sozlesme", "kosullari", "sartlar",
+    "urun", "urunler", "detay", "detaylar",
+    "anasayfa", "home", "giris", "kategori", "kategoriler",
+    "fiyat", "fiyati", "stok", "sepet", "sepetim", "menu",
     "marka", "brand", "model", "av", "bayi", "alesta", "gunerav", "guner",
-    "resmi", "web", "site", "online", "mağaza", "magaza", "tüm", "tum",
-    "giriş yap", "üye ol"
+    "resmi", "web", "site", "online", "magaza", "tum",
+    "giris yap", "uye ol",
+    // Yem Çeşitleri, Aromalar & Balıkçılık Terimleri (Asla Marka Olamaz)
+    "midye", "ciger", "pellet", "peynir", "sarimsak",
+    "alabalik", "hamur", "hamuru", "yem", "yemi", "yemler",
+    "dogal yem", "canli yem", "trout", "pasta", "bait",
+    "trout pasta", "trout bait", "trout pasta alabalik hamuru",
+    // Renkler (Marka Olamaz)
+    "yesil", "sari", "kirmizi", "turuncu", "beyaz", "siyah", "mavi",
+    "rainbow", "gokkusagi", "kamuflaj"
   ];
-  return blacklist.includes(b) || b.includes("sözleşme") || b.includes("sozlesme");
+  return blacklist.includes(b) || b.includes("sozlesme") || b.includes("kosullari");
 }
 
 function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
@@ -991,10 +1015,23 @@ function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
     const cleanLine = rawLine.replace(/^[•*—\-–►▪▫✓✔\+]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim();
     if (cleanLine.length < 5) continue;
 
-    const lower = cleanLine
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
+    const lower = normalizeTurkish(cleanLine);
+
+    const forbiddenLineWords = [
+      "anasayfa", "ana sayfa", "dogal yem", "canli yem", "balik avi", "balik yemleri",
+      "urun aciklamasi", "urun ozellikleri", "degerlendirmeler", "yorumlar",
+      "taksit secenekleri", "iade kosullari", "kargo bilgisi"
+    ];
+    if (forbiddenLineWords.includes(lower)) continue;
+
+    // Başlık veya ürün adı tekrarı olan satırları (Örn: "SEAGAME Trout Pasta Alabalık Hamuru") atla
+    if (
+      (lower.includes("trout pasta") && (lower.includes("hamur") || lower.includes("alabalik"))) ||
+      lower.startsWith("seagame trout pasta") ||
+      (doc && doc.title && normalizeTurkish(doc.title).includes(lower) && cleanLine.length > 15)
+    ) {
+      continue;
+    }
 
     if (
       (lower.includes("ozellikler") && cleanLine.endsWith(":")) ||
@@ -1003,7 +1040,9 @@ function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
       lower.includes("kargo") ||
       lower.includes("kdv") ||
       lower.includes("musteri hizmetleri") ||
-      lower.includes("tum haklari saklidir")
+      lower.includes("tum haklari saklidir") ||
+      lower.includes("temin edebilirsiniz") ||
+      lower.includes("bayilerden temin")
     ) {
       continue;
     }
@@ -1029,7 +1068,35 @@ function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
 
     let matched = false;
 
-    // Yüzme / Aksiyon (Hamur, Sahte Yem, Maket vb.)
+    // 1. Balık Yemi & Hamuru: Aroma / Koku / Çekici Formül
+    if ((lower.includes("aroma") || lower.includes("aromal") || lower.includes("formul") || lower.includes("koku") || lower.includes("tat") || lower.includes("ceker") || lower.includes("cezbedici")) && !newSpecs["Aroma / Formül"] && !newSpecs["Aroma / Etki"]) {
+      const aromaMatch = lower.match(/\b(midye|ciger|peynir|sarimsak|pellet|somon|kalamar|kan|misir|vanilya|cilek|karides|anason|balik)\b/);
+      if (aromaMatch) {
+        const aromaCapMap = {
+          midye: "Midye",
+          ciger: "Ciğer",
+          peynir: "Peynir",
+          sarimsak: "Sarımsak",
+          pellet: "Pellet",
+          somon: "Somon",
+          kalamar: "Kalamar",
+          kan: "Kan",
+          misir: "Mısır",
+          vanilya: "Vanilya",
+          cilek: "Çilek",
+          karides: "Karides",
+          anason: "Anason",
+          balik: "Balık"
+        };
+        const prettyName = aromaCapMap[aromaMatch[1]] || (aromaMatch[1].charAt(0).toUpperCase() + aromaMatch[1].slice(1));
+        newSpecs["Aroma / Formül"] = `${prettyName} Aromalı Özel Formül`;
+      } else {
+        newSpecs["Aroma / Formül"] = cleanLine;
+      }
+      matched = true;
+    }
+
+    // 2. Yüzme / Aksiyon (Hamur, Sahte Yem, Maket vb.)
     if (/yuzen|floating/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
       newSpecs["Yüzme Özelliği"] = "Yüzen (Floating)";
       matched = true;
@@ -1041,8 +1108,14 @@ function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
       matched = true;
     }
 
-    // Kullanım Alanı
-    if ((lower.includes("kullanim") || lower.includes("uygun")) && !newSpecs["Kullanım Alanı"]) {
+    // 3. Mukavemet & Dağılmama (Farklı Sıcaklık ve Akıntılara Dayanıklı)
+    if ((lower.includes("dagilma") || lower.includes("catlama") || lower.includes("akinti") || lower.includes("sicaklik")) && !newSpecs["Dayanıklılık & Yapı"]) {
+      newSpecs["Dayanıklılık & Yapı"] = "Farklı sıcaklıklarda ve güçlü akıntılarda dağılmaz ve çatlamaz";
+      matched = true;
+    }
+
+    // 4. Kullanım Alanı
+    if ((lower.includes("kullanim") || lower.includes("uygun") || lower.includes("dere") || lower.includes("irmak") || lower.includes("golet") || lower.includes("baraj")) && !newSpecs["Kullanım Alanı"]) {
       let val = cleanLine;
       const m = cleanLine.match(/^(.*?)(?:için\s*uygundur|kullanımına\s*uygundur|kullanım\s*için)/i);
       if (m && m[1].trim().length > 3) {
@@ -1053,45 +1126,39 @@ function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
       matched = true;
     }
 
-    // Renk / Renk Seçenekleri
+    // 5. Renk / Renk Seçenekleri
     if ((lower.includes("renk") || lower.includes("renkler")) && !newSpecs["Renk Seçenekleri"]) {
       newSpecs["Renk Seçenekleri"] = cleanLine.replace(/üretilmektedir\.?/i, "").replace(/sunulmaktadır\.?/i, "").trim();
       matched = true;
     }
 
-    // Gramaj / Ağırlık / Ambalaj
+    // 6. Gramaj / Ağırlık / Ambalaj
     if (/(\d+(?:[\.,]\d+)?)\s*(?:gram|gr|kg)/i.test(cleanLine) && !newSpecs["Ağırlık / Gramaj"]) {
       const gm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:gram|gr|kg)(?:'l[ıi]k)?(?:\s*ambalaj[ıi]nda)?)/i);
       newSpecs["Ağırlık / Gramaj"] = gm ? gm[1].trim() : cleanLine;
       matched = true;
     }
 
-    // İğne / Kanca Uyumu
+    // 7. İğne / Kanca Uyumu
     if ((lower.includes("igne") || lower.includes("kanca")) && !newSpecs["İğne Uyumu"]) {
       newSpecs["İğne Uyumu"] = cleanLine.replace(/korur\.?/i, "korur").trim();
       matched = true;
     }
 
-    // Aroma / Çekici Formül / Koku
-    if ((lower.includes("formul") || lower.includes("koku") || lower.includes("tat") || lower.includes("aroma") || lower.includes("ceker") || lower.includes("cezbedici")) && !newSpecs["Aroma / Etki"]) {
-      newSpecs["Aroma / Etki"] = cleanLine;
-      matched = true;
-    }
-
-    // Su Geçirmezlik
+    // 8. Su Geçirmezlik
     if ((lower.includes("su gecirmez") || lower.includes("waterproof")) && !newSpecs["Su Geçirmezlik"]) {
       newSpecs["Su Geçirmezlik"] = "Su Geçirmez";
       matched = true;
     }
 
-    // Boy / Ebat
+    // 9. Boy / Ebat
     if (/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i.test(cleanLine) && !newSpecs["Boyut / Ebat"]) {
       const bm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i);
       newSpecs["Boyut / Ebat"] = bm ? bm[1] : cleanLine;
       matched = true;
     }
 
-    // 3. Fallback: Genel maddeleri yapısal özellik olarak dönüştür
+    // 10. Fallback: Genel maddeleri yapısal özellik olarak dönüştür
     if (!matched) {
       if (cleanLine.includes(",")) {
         const parts = cleanLine.split(",");
@@ -1129,6 +1196,29 @@ function populateForm(data) {
     data.brand ||
     (specs ? specs["Marka"] || specs["Brand"] : "") ||
     "";
+
+  // Bilinen markaları kontrol et (Başlık SEAGAME içeriyorsa marka kesinlikle SEAGAME'dir)
+  const KNOWN_POPUP_BRANDS = [
+    "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
+    "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
+    "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
+    "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
+    "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
+    "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex",
+    "SEAGAME", "Seagame", "Savage Gear", "Daiwa", "Shimano", "Okuma", "Bauer",
+    "Remington", "Federal", "Sterling", "Yavaşçalar", "RC", "Fiocchi", "Bornaghi", "BP"
+  ];
+  if (candidateTitle) {
+    const normCandidate = normalizeTurkish(candidateTitle);
+    for (const b of KNOWN_POPUP_BRANDS) {
+      const normB = normalizeTurkish(b);
+      if (new RegExp(`(^|\\b)${normB}(\\b|$)`, "i").test(normCandidate)) {
+        brandVal = b;
+        break;
+      }
+    }
+  }
+
   if (brandVal && isInvalidBrand(brandVal)) {
     brandVal = "";
     delete specs["Marka"];
@@ -1581,6 +1671,28 @@ function populateForm(data) {
     catSelect.value = "kamp-mat";
     licenseChk.checked = false;
   } else if (
+    fullText.includes("alabalik hamuru") ||
+    fullText.includes("alabalık hamuru") ||
+    fullText.includes("trout pasta") ||
+    fullText.includes("c1335") ||
+    (fullText.includes("seagame") && (fullText.includes("pasta") || fullText.includes("hamur") || fullText.includes("bait")))
+  ) {
+    catSelect.value = "kamp-alabalik-hamuru";
+    licenseChk.checked = false;
+  } else if (
+    fullText.includes("doğal yem") ||
+    fullText.includes("dogal yem") ||
+    fullText.includes("canlı yem") ||
+    fullText.includes("canli yem") ||
+    fullText.includes("alabalık yemi") ||
+    fullText.includes("alabalik yemi") ||
+    fullText.includes("sazan yemi") ||
+    fullText.includes("balık hamuru") ||
+    fullText.includes("balik hamuru")
+  ) {
+    catSelect.value = "kamp-dogal-yem";
+    licenseChk.checked = false;
+  } else if (
     fullText.includes("kamp") ||
     fullText.includes("termos") ||
     fullText.includes("matara") ||
@@ -1625,6 +1737,8 @@ function populateForm(data) {
       const nLow = ((data.title || "") + " " + (data.brand || "")).toLowerCase();
       if (uLow.includes("arslansilah") || nLow.includes("castello")) {
         supId = 1;
+      } else if (uLow.includes("alestabalik") || uLow.includes("alesta")) {
+        supId = 3;
       } else if (uLow.includes("ozlerav")) {
         supId = 2;
       } else {
@@ -2955,6 +3069,17 @@ async function runBatchScrape() {
       `${successCount} / ${finalProducts.length}`
     );
     appendBatchLog(`🎉 Tebrikler! Toplu aktarım başarıyla tamamlandı. Toplam ${successCount} adet ürün sitenizde yayına alındı.`, "success");
+
+    if (successCount > 0) {
+      try {
+        await fetch("https://www.gunerav.site/api/revalidate?secret=gunerav_revalidate_secret_2026", {
+          method: "POST",
+        });
+        appendBatchLog("⚡ Site önbelleği anında temizlendi, ürünler anında vitrinde!", "info");
+      } catch (revErr) {
+        console.warn("Önbellek temizleme çağrısı:", revErr);
+      }
+    }
   } catch (err) {
     appendBatchLog(`❌ Beklenmeyen hata: ${err.message}`, "error");
     updateBatchProgress(0, `Hata: ${err.message}`);
