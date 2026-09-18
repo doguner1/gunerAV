@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export async function GET(req: NextRequest) {
+  const apiToken = (process.env.WHATSAPP_API_TOKEN || "").trim();
+  const phoneNumberId = (process.env.WHATSAPP_PHONE_NUMBER_ID || "").trim();
+  const notifyPhone = (process.env.WHATSAPP_NOTIFY_PHONE || "").trim();
+
+  return NextResponse.json({
+    hasToken: Boolean(apiToken),
+    tokenLength: apiToken.length,
+    tokenPrefix: apiToken ? apiToken.slice(0, 10) + "..." : "YOK",
+    hasPhoneNumberId: Boolean(phoneNumberId),
+    phoneNumberId: phoneNumberId || "YOK",
+    hasNotifyPhone: Boolean(notifyPhone),
+    notifyPhone: notifyPhone || "YOK",
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const { productName, productUrl, supplierUrl, triggerSource } = body;
 
-    const apiToken = process.env.WHATSAPP_API_TOKEN;
-    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-    const notifyPhoneRaw = process.env.WHATSAPP_NOTIFY_PHONE;
+    const rawToken = (process.env.WHATSAPP_API_TOKEN || "").trim();
+    const apiToken = rawToken.replace(/^Bearer\s+/i, "").replace(/^["']|["']$/g, "").trim();
+    const phoneNumberId = (process.env.WHATSAPP_PHONE_NUMBER_ID || "").trim().replace(/^["']|["']$/g, "");
+    const notifyPhoneRaw = (process.env.WHATSAPP_NOTIFY_PHONE || "").trim().replace(/^["']|["']$/g, "");
 
     if (!apiToken || !phoneNumberId || !notifyPhoneRaw) {
       console.warn("[WhatsApp Notify] Missing environment variables:", {
@@ -22,7 +39,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const cleanNotifyPhone = notifyPhoneRaw.replace(/\D/g, "");
+    let cleanNotifyPhone = notifyPhoneRaw.replace(/\D/g, "");
+    if (cleanNotifyPhone.startsWith("05") && cleanNotifyPhone.length === 11) {
+      cleanNotifyPhone = "9" + cleanNotifyPhone;
+    } else if (cleanNotifyPhone.startsWith("5") && cleanNotifyPhone.length === 10) {
+      cleanNotifyPhone = "90" + cleanNotifyPhone;
+    }
+
     if (!cleanNotifyPhone) {
       return NextResponse.json({
         success: false,
@@ -72,6 +95,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         error: metaData?.error?.message || "Meta API error",
+        errorDetails: metaData?.error || metaData,
         status: metaRes.status,
       });
     }
