@@ -192,7 +192,7 @@ export default function FilterBar({
 
       {/* 4. Kamp & Balık Sub-Categories Row */}
       {(selectedCategory === "kamp" || selectedCategory.startsWith("kamp-")) && (
-        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
+        <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 shrink-0 mr-1 flex items-center gap-1">
               <span>⛺</span>
@@ -213,8 +213,12 @@ export default function FilterBar({
 
             {categories
               .find((c) => c.id === "kamp")
-              ?.subcategories?.map((sub) => {
-                const isSubSelected = selectedCategory === sub.id;
+              ?.subcategories
+              ?.filter((sub) => !sub.parent_id)
+              ?.map((sub) => {
+                const isSubSelected =
+                  selectedCategory === sub.id ||
+                  categories.find((c) => c.id === "kamp")?.subcategories?.some((child) => child.parent_id === sub.id && child.id === selectedCategory);
                 const subLabel = isTr ? sub.name_tr : sub.name_en;
                 return (
                   <button
@@ -232,6 +236,52 @@ export default function FilterBar({
                 );
               })}
           </div>
+
+          {/* 4.1 Doğal Yem / Alt Türler Satırı (Yalnızca Doğal Yem veya altı seçildiğinde açılır) */}
+          {(selectedCategory === "kamp-dogal-yem" ||
+            categories.find((c) => c.id === "kamp")?.subcategories?.some((child) => child.parent_id === "kamp-dogal-yem" && child.id === selectedCategory)) && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pl-2 sm:pl-4 border-l-2 border-blue-500/40 animate-in fade-in slide-in-from-top-1 duration-200 scrollbar-none">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 shrink-0 mr-1 flex items-center gap-1">
+                <span>🐟</span>
+                <span>{isTr ? "Yem Çeşidi / Marka:" : "Bait Type / Brand:"}</span>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => onSelectCategory("kamp-dogal-yem")}
+                className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                  selectedCategory === "kamp-dogal-yem"
+                    ? "bg-emerald-600 text-white shadow-sm font-black"
+                    : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                {isTr ? "Tüm Doğal Yemler" : "All Natural Baits"}
+              </button>
+
+              {categories
+                .find((c) => c.id === "kamp")
+                ?.subcategories
+                ?.filter((sub) => sub.parent_id === "kamp-dogal-yem")
+                ?.map((sub) => {
+                  const isChildSelected = selectedCategory === sub.id;
+                  const subLabel = isTr ? sub.name_tr : sub.name_en;
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => onSelectCategory(sub.id)}
+                      className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                        isChildSelected
+                          ? "bg-emerald-600 text-white shadow-sm font-black"
+                          : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                      }`}
+                    >
+                      {subLabel}
+                    </button>
+                  );
+                })}
+            </div>
+          )}
         </div>
       )}
 

@@ -145,7 +145,8 @@
         "id": "kamp-alabalik-hamuru",
         "slug": "kamp-alabalik-hamuru",
         "name_tr": "Seagame Alabalık Hamuru",
-        "name_en": "Seagame Trout Paste"
+        "name_en": "Seagame Trout Paste",
+        "parent_id": "kamp-dogal-yem"
       }
     ]
   },

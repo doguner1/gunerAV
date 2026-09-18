@@ -34,6 +34,7 @@ export interface SubCategory {
   slug: string;
   name_tr: string;
   name_en: string;
+  parent_id?: string;
 }
 
 export interface Category {
