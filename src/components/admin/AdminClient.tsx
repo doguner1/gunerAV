@@ -1,3 +1,5 @@
+import ImportOzlerAvClient from "./ImportOzlerAvClient";
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -290,7 +292,7 @@ export default function AdminClient() {
   const [error, setError] = useState("");
   
   // Tabs: 'products' | 'analytics' | 'messages'
-  const [activeTab, setActiveTab] = useState<"products" | "analytics" | "messages">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "analytics" | "messages" | "import">("products");
 
   // Messages State
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -2871,7 +2873,19 @@ export default function AdminClient() {
       {/* =========================================================================
           TAB 3: CONTACT MESSAGES (GELEN İLETİŞİM MESAJLARI)
       ========================================================================= */}
-      {activeTab === "messages" && (
+      {activeTab === "import" && (
+  <div className="space-y-6">
+    <div className="flex justify-between items-end">
+      <div>
+        <h2 className="text-2xl font-bold text-white tracking-tight">Ürün İçe Aktar</h2>
+        <p className="text-neutral-400 mt-1">Özler Av'dan sitemize otomatik ürün çekin.</p>
+      </div>
+    </div>
+    <ImportOzlerAvClient />
+  </div>
+)}
+
+{activeTab === "messages" && (
         <div className="space-y-6">
           {/* Header Metric Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
