@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Product } from "@/types/product";
+import { ContactMessage } from "@/types/message";
 import {
   Package,
   BarChart3,
@@ -50,6 +51,12 @@ import {
   Activity,
   Edit3,
   Ban,
+  Mail,
+  Inbox,
+  CheckCheck,
+  Send,
+  User,
+  MessageSquare,
 } from "lucide-react";
 
 interface AnalyticsEvent {
@@ -224,6 +231,56 @@ function formatSecondsAgo(isoString: string): string {
   }
 }
 
+function formatTurkeyDate(isoDate: string): string {
+  try {
+    const d = new Date(isoDate);
+    return d.toLocaleString("tr-TR", {
+      timeZone: "Europe/Istanbul",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return isoDate;
+  }
+}
+
+function getSubjectInfo(subject: string) {
+  switch (subject) {
+    case "product":
+      return {
+        label: "Ürün & Fiyat Danışma",
+        badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+      };
+    case "license":
+      return {
+        label: "Ruhsat ve Yasal Prosedürler",
+        badgeClass: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
+      };
+    case "general":
+    default:
+      return {
+        label: "Genel Bilgi",
+        badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+      };
+  }
+}
+
+function buildWhatsAppReplyUrl(msg: ContactMessage): string {
+  let cleanPhone = (msg.phone || "").replace(/[^0-9]/g, "");
+  if (cleanPhone.startsWith("0")) {
+    cleanPhone = "9" + cleanPhone;
+  } else if (!cleanPhone.startsWith("90") && cleanPhone.length === 10) {
+    cleanPhone = "90" + cleanPhone;
+  }
+  const subj = getSubjectInfo(msg.subject).label;
+  const name = msg.name || "Müşterimiz";
+  const text = `Merhaba Sn. ${name}, Güner Av web sitemiz üzerinden ilettiğiniz "${subj}" konulu mesajınıza istinaden ulaşıyorum. Size nasıl yardımcı olabiliriz?`;
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+}
+
 export default function AdminClient() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -231,8 +288,19 @@ export default function AdminClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // Tabs: 'products' | 'analytics'
-  const [activeTab, setActiveTab] = useState<"products" | "analytics">("products");
+  // Tabs: 'products' | 'analytics' | 'messages'
+  const [activeTab, setActiveTab] = useState<"products" | "analytics" | "messages">("products");
+
+  // Messages State
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [messageSearchQuery, setMessageSearchQuery] = useState("");
+  const [messageFilterStatus, setMessageFilterStatus] = useState<"all" | "unread" | "read">("all");
+  const [messageFilterSubject, setMessageFilterSubject] = useState<string>("all");
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [updatingMessageId, setUpdatingMessageId] = useState<string | null>(null);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
 
   // Product Management State
   const [products, setProducts] = useState<Product[]>([]);
@@ -457,6 +525,7 @@ export default function AdminClient() {
           setIsAuthenticated(true);
           fetchProducts();
           fetchAnalytics(undefined, "all");
+          fetchMessages();
         }
       } catch {}
     };
@@ -484,6 +553,7 @@ export default function AdminClient() {
         setPassword(""); // Şifreyi hemen bellekten temizle
         fetchProducts(currentPassword);
         fetchAnalytics(currentPassword, "all");
+        fetchMessages(currentPassword);
       } else {
         setError(data.error || "Hatalı şifre. Lütfen Vercel'deki ANALYTICS_SECRET değerinizi giriniz.");
       }
@@ -647,6 +717,122 @@ export default function AdminClient() {
       setIsRevalidating(false);
     }
   };
+
+  // Fetch messages whenever user switches to messages tab
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "messages") {
+      fetchMessages();
+    }
+  }, [isAuthenticated, activeTab]);
+
+  // 4. Fetch Contact Messages
+  const fetchMessages = async (authKey?: string) => {
+    setIsLoadingMessages(true);
+    setMessagesError(null);
+    try {
+      const headers: Record<string, string> = {};
+      const key = authKey || password;
+      if (key) headers["x-admin-key"] = key;
+      const res = await fetch("/api/admin/messages", { headers });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.messages)) {
+        setMessages(data.messages);
+      } else {
+        setMessagesError(data.error || "Mesajlar yüklenemedi.");
+      }
+    } catch {
+      setMessagesError("Mesajlar getirilirken bağlantı hatası oluştu.");
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  const handleToggleMessageRead = async (msg: ContactMessage) => {
+    const nextRead = !msg.is_read;
+    setUpdatingMessageId(msg.id);
+    // Optimistic UI update
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msg.id ? { ...m, is_read: nextRead } : m))
+    );
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (password) headers["x-admin-key"] = password;
+      await fetch("/api/admin/messages", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ id: msg.id, is_read: nextRead }),
+      });
+    } catch (e) {
+      console.error("[toggle read error]:", e);
+    } finally {
+      setUpdatingMessageId(null);
+    }
+  };
+
+  const handleDeleteMessage = async (id: string) => {
+    if (!window.confirm("Bu mesajı kalıcı olarak silmek istediğinize emin misiniz?")) {
+      return;
+    }
+    setDeletingMessageId(id);
+    try {
+      const headers: Record<string, string> = {};
+      if (password) headers["x-admin-key"] = password;
+      const res = await fetch(`/api/admin/messages?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages((prev) => prev.filter((m) => m.id !== id));
+      } else {
+        alert(data.error || "Mesaj silinemedi.");
+      }
+    } catch {
+      alert("Mesaj silinirken bağlantı hatası oluştu.");
+    } finally {
+      setDeletingMessageId(null);
+    }
+  };
+
+  const handleCopyMessageText = (text: string, id: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedMessageId(id);
+    setTimeout(() => setCopiedMessageId(null), 2000);
+  };
+
+  const unreadMessagesCount = useMemo(() => {
+    return messages.filter((m) => !m.is_read).length;
+  }, [messages]);
+
+  const todayMessagesCount = useMemo(() => {
+    const todayStr = new Date().toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" });
+    return messages.filter((m) => {
+      try {
+        const msgDateStr = new Date(m.created_at).toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" });
+        return msgDateStr === todayStr;
+      } catch {
+        return false;
+      }
+    }).length;
+  }, [messages]);
+
+  const filteredMessages = useMemo(() => {
+    return messages.filter((m) => {
+      if (messageFilterStatus === "unread" && m.is_read) return false;
+      if (messageFilterStatus === "read" && !m.is_read) return false;
+      if (messageFilterSubject !== "all" && m.subject !== messageFilterSubject) return false;
+      if (messageSearchQuery.trim()) {
+        const q = messageSearchQuery.toLowerCase().trim();
+        const matchesName = (m.name || "").toLowerCase().includes(q);
+        const matchesPhone = (m.phone || "").toLowerCase().includes(q);
+        const matchesEmail = (m.email || "").toLowerCase().includes(q);
+        const matchesMsg = (m.message || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesPhone && !matchesEmail && !matchesMsg) return false;
+      }
+      return true;
+    });
+  }, [messages, messageFilterStatus, messageFilterSubject, messageSearchQuery]);
 
   // Export Analytics as Excel/Sheets-compatible CSV (UTF-8 BOM)
   const handleExportCsv = () => {
@@ -1025,6 +1211,31 @@ export default function AdminClient() {
             >
               <BarChart3 className="h-4 w-4" />
               <span>Canlı Analiz ({events.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("messages")}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                activeTab === "messages"
+                  ? "bg-[#d4af37] text-black shadow-md"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              <span>Mesajlar</span>
+              {messages.length > 0 && (
+                <span className="text-[11px] opacity-80">({messages.length})</span>
+              )}
+              {unreadMessagesCount > 0 && (
+                <span
+                  className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                    activeTab === "messages"
+                      ? "bg-black text-[#d4af37]"
+                      : "bg-[#d4af37] text-black animate-pulse shadow-sm"
+                  }`}
+                >
+                  {unreadMessagesCount} yeni
+                </span>
+              )}
             </button>
           </div>
 
@@ -2499,6 +2710,408 @@ export default function AdminClient() {
           </div>
         );
       })()}
+
+      {/* =========================================================================
+          TAB 3: CONTACT MESSAGES (GELEN İLETİŞİM MESAJLARI)
+      ========================================================================= */}
+      {activeTab === "messages" && (
+        <div className="space-y-6">
+          {/* Header Metric Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Toplam Mesaj */}
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 sm:p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between text-neutral-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Toplam Mesaj</span>
+                <Inbox className="h-4 w-4 text-[#d4af37]" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white">
+                {messages.length}
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-1">
+                İletişim formundan gelen tüm talepler
+              </p>
+            </div>
+
+            {/* Bekleyen / Okunmamış */}
+            <div className={`rounded-2xl border p-4 sm:p-5 backdrop-blur-sm transition-all ${
+              unreadMessagesCount > 0
+                ? "border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20"
+                : "border-neutral-800 bg-neutral-900/60"
+            }`}>
+              <div className="flex items-center justify-between text-neutral-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Bekleyen (Yeni)</span>
+                <Mail className={`h-4 w-4 ${unreadMessagesCount > 0 ? "text-amber-400 animate-bounce" : "text-neutral-500"}`} />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <div className={`text-2xl sm:text-3xl font-black font-heading ${
+                  unreadMessagesCount > 0 ? "text-amber-400" : "text-white"
+                }`}>
+                  {unreadMessagesCount}
+                </div>
+                {unreadMessagesCount > 0 && (
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-[#d4af37] border border-amber-500/30">
+                    Aksiyon Gerekli
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-1">
+                {unreadMessagesCount > 0 ? "İnceleme bekleyen yeni mesajlar" : "Tüm mesajlar incelendi"}
+              </p>
+            </div>
+
+            {/* Bugün Gelenler */}
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 sm:p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between text-neutral-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Bugün Gelenler</span>
+                <Calendar className="h-4 w-4 text-emerald-400" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white">
+                {todayMessagesCount}
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-1">
+                Bugün iletilen müşteri mesajları
+              </p>
+            </div>
+
+            {/* Telefon Numaralı */}
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 sm:p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between text-neutral-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Direkt İletişim</span>
+                <PhoneCall className="h-4 w-4 text-sky-400" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-heading text-white">
+                {messages.filter((m) => m.phone).length}
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-1">
+                WhatsApp veya aramayla dönülebilir
+              </p>
+            </div>
+          </div>
+
+          {/* Search, Filters & Actions Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 rounded-2xl border border-neutral-800 bg-neutral-900/80 shadow-lg">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+              {/* Search Bar */}
+              <div className="relative flex-1 min-w-[240px]">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+                <input
+                  type="text"
+                  value={messageSearchQuery}
+                  onChange={(e) => setMessageSearchQuery(e.target.value)}
+                  placeholder="İsim, telefon, e-posta veya mesaj içeriğinde ara..."
+                  className="w-full bg-neutral-950 border border-neutral-800 focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37] text-white pl-10 pr-9 py-2.5 rounded-xl text-xs placeholder:text-neutral-500 transition-all outline-none"
+                />
+                {messageSearchQuery && (
+                  <button
+                    onClick={() => setMessageSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="inline-flex p-1 rounded-xl bg-neutral-950 border border-neutral-800 shrink-0">
+                <button
+                  onClick={() => setMessageFilterStatus("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    messageFilterStatus === "all"
+                      ? "bg-[#d4af37] text-black shadow-sm"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  Tümü ({messages.length})
+                </button>
+                <button
+                  onClick={() => setMessageFilterStatus("unread")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    messageFilterStatus === "unread"
+                      ? "bg-amber-500 text-black shadow-sm"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  {unreadMessagesCount > 0 && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  )}
+                  <span>Okunmamış ({unreadMessagesCount})</span>
+                </button>
+                <button
+                  onClick={() => setMessageFilterStatus("read")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    messageFilterStatus === "read"
+                      ? "bg-neutral-700 text-white shadow-sm"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  Okunan ({messages.length - unreadMessagesCount})
+                </button>
+              </div>
+
+              {/* Subject Filter Dropdown */}
+              <select
+                value={messageFilterSubject}
+                onChange={(e) => setMessageFilterSubject(e.target.value)}
+                className="bg-neutral-950 border border-neutral-800 focus:border-[#d4af37] text-neutral-300 text-xs px-3 py-2.5 rounded-xl outline-none shrink-0"
+              >
+                <option value="all">Tüm Konular</option>
+                <option value="general">Genel Bilgi</option>
+                <option value="product">Ürün & Fiyat Danışma</option>
+                <option value="license">Ruhsat & Yasal Prosedürler</option>
+              </select>
+            </div>
+
+            {/* Refresh Button */}
+            <button
+              onClick={() => fetchMessages()}
+              disabled={isLoadingMessages}
+              title="Mesajları Yenile"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-950 hover:bg-neutral-800 text-neutral-300 px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoadingMessages ? "animate-spin text-[#d4af37]" : ""}`} />
+              <span>{isLoadingMessages ? "Yenileniyor..." : "Yenile"}</span>
+            </button>
+          </div>
+
+          {/* Messages Error Banner */}
+          {messagesError && (
+            <div className="p-4 rounded-xl bg-red-950/40 border border-red-800/60 text-red-300 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+                <span>{messagesError}</span>
+              </div>
+              <button
+                onClick={() => fetchMessages()}
+                className="underline hover:text-white font-bold"
+              >
+                Tekrar Dene
+              </button>
+            </div>
+          )}
+
+          {/* Messages List */}
+          <div className="space-y-4">
+            {filteredMessages.map((msg) => {
+              const subjInfo = getSubjectInfo(msg.subject);
+              const waUrl = buildWhatsAppReplyUrl(msg);
+              const isUpdating = updatingMessageId === msg.id;
+              const isDeleting = deletingMessageId === msg.id;
+              const isCopied = copiedMessageId === msg.id;
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`rounded-2xl border transition-all p-5 sm:p-6 shadow-xl ${
+                    !msg.is_read
+                      ? "border-amber-500/40 bg-gradient-to-br from-neutral-900 via-neutral-900 to-amber-950/15"
+                      : "border-neutral-800 bg-neutral-900/70 hover:border-neutral-700"
+                  }`}
+                >
+                  {/* Message Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-800/80">
+                    <div className="flex items-center gap-3">
+                      {/* Avatar with Sender's Initial */}
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#d4af37] to-amber-700 text-black font-black flex items-center justify-center text-sm shadow-md shrink-0">
+                        {msg.name ? msg.name.trim().charAt(0).toUpperCase() : "?"}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                            {msg.name || "İsimsiz Müşteri"}
+                          </h3>
+
+                          {/* Read/Unread Status Badge */}
+                          {!msg.is_read ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-[#d4af37] border border-amber-500/40 animate-pulse">
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                              YENİ MESAJ
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-neutral-800 text-neutral-400 border border-neutral-700">
+                              <Check className="h-3 w-3 text-emerald-400" />
+                              Okundu
+                            </span>
+                          )}
+
+                          {/* Subject Badge */}
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${subjInfo.badgeClass}`}>
+                            {subjInfo.label}
+                          </span>
+                        </div>
+
+                        {/* Date and Time (Europe/Istanbul) */}
+                        <div className="flex items-center gap-1.5 text-xs text-neutral-400 mt-0.5">
+                          <Clock className="h-3 w-3 text-neutral-500" />
+                          <span>{formatTurkeyDate(msg.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Contact Badges (Phone & Email) */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {msg.phone && (
+                        <div className="flex items-center gap-1 bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1 text-xs">
+                          <PhoneCall className="h-3 w-3 text-emerald-400" />
+                          <a
+                            href={`tel:${msg.phone}`}
+                            className="font-mono text-neutral-200 hover:text-[#d4af37] font-semibold transition-colors"
+                          >
+                            {msg.phone}
+                          </a>
+                          <button
+                            onClick={() => handleCopyMessageText(msg.phone, msg.id)}
+                            title="Numarayı Kopyala"
+                            className="ml-1 text-neutral-500 hover:text-white p-0.5 transition-colors"
+                          >
+                            {isCopied ? (
+                              <Check className="h-3 w-3 text-emerald-400" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      {msg.email && (
+                        <div className="flex items-center gap-1 bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1 text-xs">
+                          <Mail className="h-3 w-3 text-sky-400" />
+                          <a
+                            href={`mailto:${msg.email}`}
+                            className="text-neutral-300 hover:text-white transition-colors"
+                          >
+                            {msg.email}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Message Content Body */}
+                  <div className="mt-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
+                      Gelen Mesaj:
+                    </p>
+                    <div className="rounded-xl border border-neutral-800/80 bg-neutral-950/70 p-4 sm:p-5 text-sm leading-relaxed text-neutral-200 whitespace-pre-wrap font-sans select-text">
+                      {msg.message}
+                    </div>
+                  </div>
+
+                  {/* Message Action Footer Bar */}
+                  <div className="mt-4 pt-4 border-t border-neutral-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    {/* Primary Response Actions */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* WhatsApp Button */}
+                      {msg.phone && (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-emerald-950/40 active:scale-95 transition-all"
+                        >
+                          <MessageCircle className="h-4 w-4 fill-white" />
+                          <span>WhatsApp&apos;tan Yanıtla</span>
+                          <ExternalLink className="h-3 w-3 opacity-70" />
+                        </a>
+                      )}
+
+                      {/* Direct Phone Call Button */}
+                      {msg.phone && (
+                        <a
+                          href={`tel:${msg.phone}`}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold active:scale-95 transition-all"
+                        >
+                          <PhoneCall className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>Hemen Ara</span>
+                        </a>
+                      )}
+
+                      {/* Direct Email Button */}
+                      {msg.email && (
+                        <a
+                          href={`mailto:${msg.email}?subject=${encodeURIComponent("Güner AV - Mesajınız Hakkında")}`}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold active:scale-95 transition-all"
+                        >
+                          <Mail className="h-3.5 w-3.5 text-sky-400" />
+                          <span>E-posta Gönder</span>
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Secondary Management Actions (Toggle Read & Delete) */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      {/* Mark Read/Unread */}
+                      <button
+                        onClick={() => handleToggleMessageRead(msg)}
+                        disabled={isUpdating}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                          msg.is_read
+                            ? "border-neutral-700 bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                            : "border-amber-500/40 bg-amber-500/10 text-[#d4af37] hover:bg-amber-500/20"
+                        }`}
+                      >
+                        {msg.is_read ? (
+                          <>
+                            <EyeOff className="h-3.5 w-3.5" />
+                            <span>Okunmadı Yap</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCheck className="h-3.5 w-3.5" />
+                            <span>Okundu İşaretle</span>
+                          </>
+                        )}
+                      </button>
+
+                      {/* Delete Message */}
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        disabled={isDeleting}
+                        title="Mesajı Kalıcı Olarak Sil"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-950/60 bg-red-950/20 hover:bg-red-950/50 text-red-400 hover:text-red-300 text-xs font-semibold transition-all disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>{isDeleting ? "Siliniyor..." : "Sil"}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Empty State */}
+            {filteredMessages.length === 0 && !isLoadingMessages && (
+              <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-12 text-center">
+                <div className="mx-auto w-12 h-12 rounded-2xl bg-neutral-800/80 border border-neutral-700 flex items-center justify-center text-neutral-400 mb-4 shadow-inner">
+                  <Inbox className="h-6 w-6 text-[#d4af37]" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1">
+                  {messageSearchQuery || messageFilterStatus !== "all" || messageFilterSubject !== "all"
+                    ? "Filtreye Uygun Mesaj Bulunamadı"
+                    : "Henüz İletişim Mesajı Bulunmuyor"}
+                </h3>
+                <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
+                  {messageSearchQuery || messageFilterStatus !== "all" || messageFilterSubject !== "all"
+                    ? "Arama kriterlerinizi değiştirerek veya filtreleri temizleyerek tekrar deneyebilirsiniz."
+                    : "Ziyaretçiler web sitenizdeki iletişim formunu doldurduklarında tüm detaylarıyla bu alanda listelenecektir."}
+                </p>
+                {(messageSearchQuery || messageFilterStatus !== "all" || messageFilterSubject !== "all") && (
+                  <button
+                    onClick={() => {
+                      setMessageSearchQuery("");
+                      setMessageFilterStatus("all");
+                      setMessageFilterSubject("all");
+                    }}
+                    className="mt-4 px-4 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* DEVICE ALIAS & OPT-OUT MODAL */}
       {editingDevice && (

@@ -24,9 +24,11 @@ export default function ContactForm() {
 
   const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
 
     // Anti-Bot Honeypot Security Trap: Botlar doldurursa istek sessizce engellenir
     if (honeypot.trim().length > 0) {
@@ -37,10 +39,33 @@ export default function ContactForm() {
 
     setStatus("submitting");
 
-    // Vitrin site simulation delay
-    setTimeout(() => {
-      setStatus("success");
-    }, 800);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formState.name,
+          email: formState.email,
+          phone: formState.phone,
+          subject: formState.subject,
+          message: formState.message,
+          gunerav_security_hp: honeypot,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        setStatus("success");
+      } else {
+        setStatus("error");
+        setErrorMessage(data.error || "Mesaj iletilemedi. Lütfen alanları kontrol ediniz.");
+      }
+    } catch (err) {
+      console.error("[ContactForm Error]:", err);
+      setStatus("error");
+      setErrorMessage("Bağlantı hatası oluştu. Lütfen tekrar deneyiniz.");
+    }
   };
 
   return (
@@ -68,6 +93,7 @@ export default function ContactForm() {
             onClick={() => {
               setFormState({ name: "", email: "", phone: "", subject: "general", message: "" });
               setStatus("idle");
+              setErrorMessage(null);
             }}
             className="mt-6 rounded-xl bg-neutral-950 dark:bg-white px-6 py-2 text-xs font-bold uppercase tracking-wider text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-sm"
           >
@@ -166,6 +192,13 @@ export default function ContactForm() {
               className="w-full resize-none rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 px-3.5 py-2.5 text-xs text-neutral-950 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:border-neutral-950 dark:focus:border-white focus:outline-none focus:ring-1 focus:ring-neutral-950 dark:focus:ring-white transition-colors"
             />
           </div>
+
+          {status === "error" && errorMessage && (
+            <div className="flex items-center gap-2 rounded-xl border border-red-300 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 p-3.5 text-xs text-red-700 dark:text-red-400 font-semibold animate-fadeIn">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           <button
             type="submit"
