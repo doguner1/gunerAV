@@ -11,6 +11,7 @@ export function StoreJsonLd({ nonce }: { nonce?: string }) {
     "url": STORE_INFO.siteUrl,
     "telephone": STORE_INFO.phoneIntl,
     "priceRange": "$$",
+    "description": "Malatya Güner Av Bayii; Castello (Arslan Silah) ve Mavoric av tüfeklerinin Malatya resmi yetkili bayisidir. Lisanslı av tüfekleri, mühimmat ve outdoor av malzemeleri satış noktası.",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "Şeyh Bayram, 6. Sk. (Yunus pide fırının yanı)",
