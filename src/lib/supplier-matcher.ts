@@ -291,13 +291,10 @@ export function matchProductWithSupplier(
     nameNorm.includes("castello") ||
     productType === "firearm";
 
-  const targetSupplier: "arslansilah" | "ozlerav" = isFirearm ? "arslansilah" : "ozlerav";
-  const pool = supplierItems.filter((item) => item.supplier === targetSupplier);
-
   let bestMatch: SupplierItem | null = null;
   let highestScore = 0;
 
-  for (const item of pool) {
+  for (const item of supplierItems) {
     // ── Cross-type prevention: ammo should NEVER match a firearm URL ──
     const itemNorm = normalizeText(item.title + " " + item.slug);
     const itemType = detectProductType(itemNorm);
@@ -345,13 +342,22 @@ export function matchProductWithSupplier(
     highestScore = 0;
   }
 
+  // Infer default supplier if no match found
+  let fallbackSupplier = "ozlerav";
+  if (nameNorm.includes("castello") || (product.category && product.category.includes("tufek"))) {
+    // We only default to arslansilah for Castello or generic tufek if no match.
+    // However, since ozlerav also has tufeks, 'ozlerav' is a fine fallback.
+    // The previous logic was forcing all firearms to 'arslansilah'.
+    if (nameNorm.includes("castello")) fallbackSupplier = "arslansilah";
+  }
+
   return {
     id: product.id,
     name_tr: product.name_tr,
     category: product.category || "diger",
     current_url: currentUrl,
     suggested_url: bestMatch ? bestMatch.url : undefined,
-    supplier: targetSupplier,
+    supplier: bestMatch ? bestMatch.supplier : fallbackSupplier,
     confidence: bestMatch ? highestScore : 0,
     alreadyMatched: false,
   };
