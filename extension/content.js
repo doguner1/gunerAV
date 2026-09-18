@@ -2477,7 +2477,12 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       fullText.includes("alabalık hamuru") ||
       fullText.includes("trout pasta") ||
       fullText.includes("c1335") ||
-      (fullText.includes("seagame") && (fullText.includes("pasta") || fullText.includes("hamur") || fullText.includes("bait")))
+      fullText.includes("c1336") ||
+      fullText.includes("c1337") ||
+      fullText.includes("c1338") ||
+      fullText.includes("c1339") ||
+      fullText.includes("c1340") ||
+      (fullText.includes("seagame") && (fullText.includes("pasta") || fullText.includes("hamur") || fullText.includes("bait") || fullText.includes("trout")))
     ) {
       result.category = "kamp-alabalik-hamuru";
       result.requires_license = false;

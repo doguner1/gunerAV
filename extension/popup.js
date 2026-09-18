@@ -2683,7 +2683,17 @@ async function runBatchScrape() {
         pathname.includes("trout-pasta") ||
         pathname.includes("trout_pasta") ||
         pathname.includes("c1335") ||
-        (pathname.includes("seagame") && (pathname.includes("hamur") || pathname.includes("pasta") || pathname.includes("yem")))
+        pathname.includes("c1336") ||
+        pathname.includes("c1337") ||
+        pathname.includes("c1338") ||
+        pathname.includes("c1339") ||
+        pathname.includes("c1340") ||
+        pathname.includes("ciger-c") ||
+        pathname.includes("midye-c") ||
+        pathname.includes("pellet-c") ||
+        pathname.includes("peynir-c") ||
+        pathname.includes("sarimsak-c") ||
+        (pathname.includes("seagame") && (pathname.includes("hamur") || pathname.includes("pasta") || pathname.includes("yem") || pathname.includes("trout")))
       ) {
         autoDetectedCat = "kamp-alabalik-hamuru";
       }
