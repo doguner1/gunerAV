@@ -227,6 +227,13 @@ function secureProduct(p: Product): Product {
     }
   }
 
+  let supplierUrl = p.supplier_url;
+  if (!supplierUrl) {
+    supplierUrl = supplierId === 1 || nameLower.includes("castello")
+      ? "https://arslansilah.com/"
+      : "https://www.ozlerav.com.tr/";
+  }
+
   return {
     ...p,
     category,
@@ -236,7 +243,7 @@ function secureProduct(p: Product): Product {
     specs_tr: cleanSpecsTr,
     specs_en: cleanSpecsEn,
     supplier_id: supplierId,
-    supplier_url: p.supplier_url || undefined,
+    supplier_url: supplierUrl,
   };
 }
 
