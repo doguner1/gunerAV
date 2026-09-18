@@ -92,10 +92,25 @@ export async function POST(req: NextRequest) {
 
     if (!metaRes.ok) {
       console.error("[WhatsApp Notify] Meta Graph API Error:", metaData);
+      const metaErr = metaData?.error || {};
+      const code = metaErr.code;
+      let diagnosis = metaErr.message || "Meta API hatası";
+
+      if (code === 190) {
+        diagnosis = "Access Token süresi dolmuş (Token Expired). Meta panelinden yeni bir geçici token alıp Vercel'e WHATSAPP_API_TOKEN olarak eklemeniz gerekiyor.";
+      } else if (code === 131047) {
+        diagnosis = "24 Saat Kuralı Engeli: Test numarasının (+1 555...) size serbest metin gönderebilmesi için, kendi WhatsApp'ınızdan o +1 555... numarasına son 24 saatte en az bir mesaj ('Selam' vb.) yazmış olmanız gerekir.";
+      } else if (code === 131030) {
+        diagnosis = "Numaranız Meta Test Listesinde Değil: Test modunda sadece Meta panelinde 'To' kısmına eklenip SMS koduyla onaylanmış numaralara mesaj gidebilir.";
+      } else if (code === 100) {
+        diagnosis = "Geçersiz Parametre veya Phone Number ID: Vercel'deki WHATSAPP_PHONE_NUMBER_ID değerini kontrol ediniz.";
+      }
+
       return NextResponse.json({
         success: false,
-        error: metaData?.error?.message || "Meta API error",
-        errorDetails: metaData?.error || metaData,
+        error: diagnosis,
+        metaCode: code,
+        rawMetaError: metaErr,
         status: metaRes.status,
       });
     }

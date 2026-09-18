@@ -301,6 +301,11 @@ export default function AdminClient() {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [updatingMessageId, setUpdatingMessageId] = useState<string | null>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+  const [isTestingWhatsApp, setIsTestingWhatsApp] = useState(false);
+  const [whatsAppTestResult, setWhatsAppTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   // Product Management State
   const [products, setProducts] = useState<Product[]>([]);
@@ -799,6 +804,42 @@ export default function AdminClient() {
     navigator.clipboard.writeText(text);
     setCopiedMessageId(id);
     setTimeout(() => setCopiedMessageId(null), 2000);
+  };
+
+  const handleTestWhatsApp = async () => {
+    setIsTestingWhatsApp(true);
+    setWhatsAppTestResult(null);
+    try {
+      const res = await fetch("/api/whatsapp/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: "TEST - Güner AV Test Bildirimi",
+          productUrl: "https://www.gunerav.site",
+          supplierUrl: "https://www.alestabalik.com (Test)",
+          triggerSource: "Admin Panel Manuel Test",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWhatsAppTestResult({
+          success: true,
+          message: `Mesaj başarıyla Meta sunucularına iletildi (ID: ${data.messageId || "alındı"}). Lütfen telefonunuzdaki WhatsApp uygulamasını kontrol ediniz!`,
+        });
+      } else {
+        setWhatsAppTestResult({
+          success: false,
+          message: data.error || data.reason || "Bilinmeyen bir hata oluştu.",
+        });
+      }
+    } catch {
+      setWhatsAppTestResult({
+        success: false,
+        message: "Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol ediniz.",
+      });
+    } finally {
+      setIsTestingWhatsApp(false);
+    }
   };
 
   const unreadMessagesCount = useMemo(() => {
@@ -2861,17 +2902,61 @@ export default function AdminClient() {
               </select>
             </div>
 
-            {/* Refresh Button */}
-            <button
-              onClick={() => fetchMessages()}
-              disabled={isLoadingMessages}
-              title="Mesajları Yenile"
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-950 hover:bg-neutral-800 text-neutral-300 px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-50 shrink-0"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isLoadingMessages ? "animate-spin text-[#d4af37]" : ""}`} />
-              <span>{isLoadingMessages ? "Yenileniyor..." : "Yenile"}</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {/* WhatsApp Test Button */}
+              <button
+                onClick={handleTestWhatsApp}
+                disabled={isTestingWhatsApp}
+                title="Vercel WhatsApp Cloud API bildirimini test et"
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
+              >
+                <MessageCircle className={`h-3.5 w-3.5 ${isTestingWhatsApp ? "animate-spin text-emerald-400" : ""}`} />
+                <span>{isTestingWhatsApp ? "Gönderiliyor..." : "WhatsApp Test Et"}</span>
+              </button>
+
+              {/* Refresh Button */}
+              <button
+                onClick={() => fetchMessages()}
+                disabled={isLoadingMessages}
+                title="Mesajları Yenile"
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-950 hover:bg-neutral-800 text-neutral-300 px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isLoadingMessages ? "animate-spin text-[#d4af37]" : ""}`} />
+                <span>{isLoadingMessages ? "Yenileniyor..." : "Yenile"}</span>
+              </button>
+            </div>
           </div>
+
+          {/* WhatsApp API Test Result Banner */}
+          {whatsAppTestResult && (
+            <div className={`p-4 rounded-xl border text-xs flex items-start justify-between gap-3 shadow-lg animate-in fade-in duration-200 ${
+              whatsAppTestResult.success
+                ? "bg-emerald-950/50 border-emerald-500/40 text-emerald-300"
+                : "bg-amber-950/50 border-amber-500/40 text-amber-300"
+            }`}>
+              <div className="flex items-start gap-2.5">
+                {whatsAppTestResult.success ? (
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <p className="font-bold text-white text-sm">
+                    {whatsAppTestResult.success ? "✅ WhatsApp Bildirim Testi Başarılı!" : "⚠️ WhatsApp API Hatası Tespit Edildi"}
+                  </p>
+                  <p className="mt-1 text-neutral-200 leading-relaxed font-medium">
+                    {whatsAppTestResult.message}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setWhatsAppTestResult(null)}
+                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
 
           {/* Messages Error Banner */}
           {messagesError && (
