@@ -27,3 +27,16 @@
     - `SP` serisi modeller: `tufek-superpoze` kategorisine atanır.
     - `Neo`, `CY`, `Venza` serisi modeller: `tufek-yari-otomatik` kategorisine atanır.
     - Pompalı modeller: `tufek-pompali` kategorisine atanır.
+
+## 5. Ürün İçe Aktarma, Görsel ve Açıklama Standartları
+- **Görsel Ayrıştırma ve İzolasyon:**
+  - Tedarikçi sitelerinden ürün çekilirken yalnızca ana ürün galerisindeki (`.xzoom` vb.) tüfeğin kendi vitrin resimleri alınır.
+  - Sayfa altındaki/yanındaki önerilen ürünler (`.related-slider`, `.owl-carousel` vb.) kesinlikle filtrelenmeli; alakasız bıçak, kulaklık, çanta, dürbün görselleri ürün galerisine asla dahil edilmemelidir.
+- **Tedarikçi Gizliliği (B2B Confidentiality):**
+  - Müşteri arayüzünde ve teknik özelliklerde (`specs_tr`, `specs_en`) ASLA toptancı/tedarikçi adı (`Tedarikçi: Altunbaş`, `Özler Av`, `Arslan Silah` vb.) yazılmaz.
+  - Tedarikçi bilgisi sadece dahili arka plan alanları olan `supplier_id` ve `supplier_url` içinde tutulur.
+- **Kurumsal Standart Açıklama Şablonu:**
+  - Tedarikçilerdeki ham fabrika metinleri yerine daima aşağıdaki kurumsal standart şablon kullanılır:
+    `[Ürün Adı], Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`
+- **Teknik Özellikler (Specs):**
+  - Kalibre, Fişek Yatağı, Namlu Boyu, Şok, Ağırlık, Kundak, RIB gibi parametreler sayfa içi tablolardan temizlenerek `specs_tr` nesnesine eklenir.
