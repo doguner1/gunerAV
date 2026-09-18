@@ -65,6 +65,14 @@ function detectProductType(normalizedName: string): ProductType {
  */
 export function normalizeText(str: string): string {
   return (str || "")
+    .replace(/İ/g, "i")
+    .replace(/I/g, "i")
+    .replace(/Ş/g, "s")
+    .replace(/Ğ/g, "g")
+    .replace(/Ü/g, "u")
+    .replace(/Ö/g, "o")
+    .replace(/Ç/g, "c")
+    .replace(/i̇/g, "i") // Handle combining dot (i + \u0307)
     .toLowerCase()
     .replace(/ğ/g, "g")
     .replace(/ü/g, "u")
