@@ -56,16 +56,14 @@ export async function POST(req: NextRequest) {
     const pName = productName || "İsimsiz Ürün";
     const pUrl = productUrl || "Belirtilmemiş";
     const sUrl = supplierUrl || "Belirtilmemiş (Tedarikçi URL Yok)";
-    const src = triggerSource ? ` (${triggerSource})` : "";
 
     const messageBody = [
-      "🔔 *Yeni Müşteri WhatsApp Talebi!*",
+      `*${pName}*`,
       "",
-      `📦 *Ürün:* ${pName}`,
+      "",
       `🌐 *Sitemiz:* ${pUrl}`,
-      `🔗 *Tedarikçi:* ${sUrl}`,
       "",
-      `💡 Müşteri sitede WhatsApp destek butonuna tıkladı${src} ve iletişime geçiyor.`,
+      `🔗 *Tedarikçi:* ${sUrl}`,
     ].join("\n");
 
     const endpoint = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
