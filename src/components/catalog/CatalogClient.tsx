@@ -48,10 +48,18 @@ export default function CatalogClient({
   const [visibleCount, setVisibleCount] = useState<number>(isNaN(countParam) ? 20 : countParam);
 
   const isRestoredRef = useRef(false);
+  const prevCategoryPropRef = useRef(initialCategory);
 
   // 1. Mount effect: ONLY restore scroll if returning from a product detail page!
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // If already initialized on mount and category prop hasn't changed, do not scroll
+    if (isRestoredRef.current && prevCategoryPropRef.current === initialCategory) {
+      return;
+    }
+    prevCategoryPropRef.current = initialCategory;
+    isRestoredRef.current = true;
 
     const returnState = getReturnStateForCurrentPage();
 
@@ -73,12 +81,10 @@ export default function CatalogClient({
         }, 50);
       });
     } else {
-      // Fresh intentional navigation or category click: ALWAYS start cleanly at the top!
+      // Fresh intentional navigation: start cleanly at the top!
       window.scrollTo({ top: 0, behavior: "instant" });
     }
-
-    isRestoredRef.current = true;
-  }, [initialCategory, searchParams]);
+  }, [initialCategory]);
 
   // 2. PopState effect: when user clicks browser Back / Forward buttons
   useEffect(() => {
