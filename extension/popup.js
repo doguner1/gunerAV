@@ -899,9 +899,223 @@ function generateStandardDescription(data, specsObj) {
   return `${prefix}, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`;
 }
 
+function isInvalidProductTitle(text) {
+  if (!text || typeof text !== "string") return true;
+  const t = text.trim().toLowerCase();
+  if (t.length < 3) return true;
+  const blacklist = [
+    "sözleşme koşulları",
+    "sözleşme kosullari",
+    "sözleşme",
+    "sozlesme",
+    "mesafeli satış sözleşmesi",
+    "mesafeli satis sozlesmesi",
+    "ön bilgilendirme formu",
+    "on bilgilendirme formu",
+    "gizlilik ve güvenlik",
+    "gizlilik ve guvenlik",
+    "aydınlatma metni",
+    "aydinlatma metni",
+    "çerez politikası",
+    "cerez politikasi",
+    "kvkk",
+    "üyelik sözleşmesi",
+    "uyelik sozlesmesi",
+    "sepetim",
+    "sepet",
+    "sipariş özeti",
+    "siparis ozeti",
+    "teslimat ve iade",
+    "hakkımızda",
+    "hakkimizda",
+    "iletişim",
+    "iletisim",
+    "bize ulaşın",
+    "bize ulasin",
+    "giriş yap",
+    "giris yap",
+    "üye ol",
+    "uye ol",
+    "kullanıcı girişi",
+    "bayi girişi",
+    "şifremi unuttum",
+    "favorilerim",
+    "favoriler",
+    "arama sonuçları",
+    "kategoriler",
+    "tüm kategoriler",
+    "menü",
+    "menu",
+    "adres bilgileri",
+    "fatura adresi",
+    "teslimat adresi",
+    "kampanyalar",
+    "duyurular"
+  ];
+  return blacklist.some((b) => t === b || t.startsWith(b + " ") || t.endsWith(" " + b) || t.includes("sözleşme") || t.includes("sozlesme"));
+}
+
+function isInvalidBrand(brand) {
+  if (!brand || typeof brand !== "string") return true;
+  const b = brand.trim().toLowerCase();
+  if (b.length < 2 || b.length > 40) return true;
+  const blacklist = [
+    "sözleşme", "sozlesme", "koşulları", "kosullari", "şartlar", "sartlar",
+    "ürün", "urun", "ürünler", "urunler", "detay", "detaylar",
+    "anasayfa", "home", "giriş", "giris", "kategori", "kategoriler",
+    "fiyat", "fiyatı", "fiyati", "stok", "sepet", "sepetim", "menü", "menu",
+    "marka", "brand", "model", "av", "bayi", "alesta", "gunerav", "guner",
+    "resmi", "web", "site", "online", "mağaza", "magaza", "tüm", "tum",
+    "giriş yap", "üye ol"
+  ];
+  return blacklist.includes(b) || b.includes("sözleşme") || b.includes("sozlesme");
+}
+
+function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
+  const newSpecs = { ...existingSpecs };
+  const lines = [];
+
+  if (desc && typeof desc === "string") {
+    const rawLines = desc.split(/\r?\n/);
+    for (const r of rawLines) {
+      const trimmed = r.trim();
+      if (trimmed.length > 5 && trimmed.length < 250) {
+        lines.push(trimmed);
+      }
+    }
+  }
+
+  let bulletIndex = 1;
+
+  for (const rawLine of lines) {
+    const cleanLine = rawLine.replace(/^[•*—\-–►▪▫✓✔\+]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim();
+    if (cleanLine.length < 5) continue;
+
+    const lower = cleanLine
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+    if (
+      (lower.includes("ozellikler") && cleanLine.endsWith(":")) ||
+      lower.includes("taksit") ||
+      lower.includes("havale") ||
+      lower.includes("kargo") ||
+      lower.includes("kdv") ||
+      lower.includes("musteri hizmetleri") ||
+      lower.includes("tum haklari saklidir")
+    ) {
+      continue;
+    }
+
+    if (cleanLine.includes(":") && !cleanLine.startsWith("http")) {
+      const parts = cleanLine.split(":");
+      const k = parts[0].trim();
+      const v = parts.slice(1).join(":").trim();
+      if (k.length >= 2 && k.length <= 40 && v.length >= 1 && v.length <= 200) {
+        newSpecs[k] = v;
+        continue;
+      }
+    }
+    if (cleanLine.includes(" - ") && !cleanLine.startsWith("-")) {
+      const parts = cleanLine.split(" - ");
+      const k = parts[0].trim();
+      const v = parts.slice(1).join(" - ").trim();
+      if (k.length >= 2 && k.length <= 35 && v.length >= 1 && v.length <= 150) {
+        newSpecs[k] = v;
+        continue;
+      }
+    }
+
+    let matched = false;
+
+    // Yüzme / Aksiyon (Hamur, Sahte Yem, Maket vb.)
+    if (/yuzen|floating/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
+      newSpecs["Yüzme Özelliği"] = "Yüzen (Floating)";
+      matched = true;
+    } else if (/batan|sinking/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
+      newSpecs["Yüzme Özelliği"] = "Batan (Sinking)";
+      matched = true;
+    } else if (/askida|suspending/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
+      newSpecs["Yüzme Özelliği"] = "Askıda Kalan (Suspending)";
+      matched = true;
+    }
+
+    // Kullanım Alanı
+    if ((lower.includes("kullanim") || lower.includes("uygun")) && !newSpecs["Kullanım Alanı"]) {
+      let val = cleanLine;
+      const m = cleanLine.match(/^(.*?)(?:için\s*uygundur|kullanımına\s*uygundur|kullanım\s*için)/i);
+      if (m && m[1].trim().length > 3) {
+        val = m[1].trim();
+      }
+      val = val.replace(/kullanım\s*için\s*uygundur\.?/i, "").replace(/için\s*uygundur\.?/i, "").trim();
+      newSpecs["Kullanım Alanı"] = val || cleanLine;
+      matched = true;
+    }
+
+    // Renk / Renk Seçenekleri
+    if ((lower.includes("renk") || lower.includes("renkler")) && !newSpecs["Renk Seçenekleri"]) {
+      newSpecs["Renk Seçenekleri"] = cleanLine.replace(/üretilmektedir\.?/i, "").replace(/sunulmaktadır\.?/i, "").trim();
+      matched = true;
+    }
+
+    // Gramaj / Ağırlık / Ambalaj
+    if (/(\d+(?:[\.,]\d+)?)\s*(?:gram|gr|kg)/i.test(cleanLine) && !newSpecs["Ağırlık / Gramaj"]) {
+      const gm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:gram|gr|kg)(?:'l[ıi]k)?(?:\s*ambalaj[ıi]nda)?)/i);
+      newSpecs["Ağırlık / Gramaj"] = gm ? gm[1].trim() : cleanLine;
+      matched = true;
+    }
+
+    // İğne / Kanca Uyumu
+    if ((lower.includes("igne") || lower.includes("kanca")) && !newSpecs["İğne Uyumu"]) {
+      newSpecs["İğne Uyumu"] = cleanLine.replace(/korur\.?/i, "korur").trim();
+      matched = true;
+    }
+
+    // Aroma / Çekici Formül / Koku
+    if ((lower.includes("formul") || lower.includes("koku") || lower.includes("tat") || lower.includes("aroma") || lower.includes("ceker") || lower.includes("cezbedici")) && !newSpecs["Aroma / Etki"]) {
+      newSpecs["Aroma / Etki"] = cleanLine;
+      matched = true;
+    }
+
+    // Su Geçirmezlik
+    if ((lower.includes("su gecirmez") || lower.includes("waterproof")) && !newSpecs["Su Geçirmezlik"]) {
+      newSpecs["Su Geçirmezlik"] = "Su Geçirmez";
+      matched = true;
+    }
+
+    // Boy / Ebat
+    if (/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i.test(cleanLine) && !newSpecs["Boyut / Ebat"]) {
+      const bm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i);
+      newSpecs["Boyut / Ebat"] = bm ? bm[1] : cleanLine;
+      matched = true;
+    }
+
+    // 3. Fallback: Genel maddeleri yapısal özellik olarak dönüştür
+    if (!matched) {
+      if (cleanLine.includes(",")) {
+        const parts = cleanLine.split(",");
+        const candidateKey = parts[0].trim();
+        const candidateVal = parts.slice(1).join(",").trim();
+        if (candidateKey.length >= 3 && candidateKey.length <= 30 && candidateVal.length >= 3) {
+          const capKey = candidateKey.charAt(0).toUpperCase() + candidateKey.slice(1);
+          newSpecs[capKey] = candidateVal.charAt(0).toUpperCase() + candidateVal.slice(1);
+          continue;
+        }
+      }
+      newSpecs[`Özellik ${bulletIndex}`] = cleanLine;
+      bulletIndex++;
+    }
+  }
+
+  return newSpecs;
+}
+
 function populateForm(data) {
-  if (data.title) document.getElementById("fldNameTr").value = data.title;
-  if (data.name_tr) document.getElementById("fldNameTr").value = data.name_tr;
+  const candidateTitle = data.title || data.name_tr || "";
+  if (candidateTitle && !isInvalidProductTitle(candidateTitle)) {
+    document.getElementById("fldNameTr").value = candidateTitle;
+  }
 
   const supUrl = data.url || data.supplier_url || "";
   const fldSupUrl = document.getElementById("fldSupplierUrl");
@@ -909,12 +1123,17 @@ function populateForm(data) {
     fldSupUrl.value = supUrl;
   }
 
-  const specs = data.specs_tr || data.specs || {};
+  let specs = { ...(data.specs_tr || data.specs || {}) };
 
-  const brandVal =
+  let brandVal =
     data.brand ||
     (specs ? specs["Marka"] || specs["Brand"] : "") ||
     "";
+  if (brandVal && isInvalidBrand(brandVal)) {
+    brandVal = "";
+    delete specs["Marka"];
+    delete specs["Brand"];
+  }
   if (brandVal) document.getElementById("fldBrand").value = brandVal;
 
   if (data.model) {
@@ -961,6 +1180,18 @@ function populateForm(data) {
   for (const ek of excludeSupplierKeys) {
     delete specs[ek];
   }
+
+  // KULLANICI TALEBİ: "ürün özellikleri boş geliyor ise ürün açıklamasındaki maddeler ürün özelliklerine girsin"
+  const validSpecsCount = Object.keys(specs).filter(
+    (k) => !["Marka", "Model", "Kategori", "Stok Kodu", "Ürün Kodu", "SKU", "sku", "Ürün No", "Stok Durumu"].includes(k)
+  ).length;
+
+  const descToParse = data.description || lastScrapedDescription || "";
+  if (validSpecsCount === 0 && descToParse) {
+    const enriched = extractSpecsFromDescription(descToParse, null, specs);
+    Object.assign(specs, enriched);
+  }
+
   document.getElementById("fldSpecsJson").value = JSON.stringify(specs, null, 2);
 
   // Açıklama Yönetimi: Tedarikçi açıklaması vs. Güner AV standart resmi güvence açıklaması

@@ -19,6 +19,7 @@ import { usePageEngagementTracker } from "@/hooks/usePageEngagementTracker";
 import ProductGallery from "@/components/product/ProductGallery";
 import LicenseNotice from "@/components/product/LicenseNotice";
 import { clearReturnState } from "@/lib/navigation-state";
+import { notifyWhatsAppInquiry } from "@/lib/whatsapp-notify";
 import {
   MessageCircle,
   Phone,
@@ -278,7 +279,18 @@ export default function ProductOverview({
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackWhatsAppClick("product_detail_main", { id: product.id, name })}
+            onClick={() => {
+              trackWhatsAppClick("product_detail_main", { id: product.id, name });
+              notifyWhatsAppInquiry({
+                productName: hasVariants && activeVariant
+                  ? `${name} (${activeVariant.color_code || activeVariant.name})`
+                  : name,
+                productUrl: `${STORE_INFO.siteUrl}/${locale}/products/${productSlug}`,
+                supplierUrl: product.supplier_url,
+                productId: product.id,
+                triggerSource: "Ürün Detay Sayfası",
+              });
+            }}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3.5 text-sm font-black uppercase tracking-wider text-neutral-950 shadow-xl transition-all hover:bg-[#20ba59] active:scale-98"
           >
             <MessageCircle className="h-5 w-5 fill-neutral-950 text-neutral-950" />

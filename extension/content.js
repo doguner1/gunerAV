@@ -744,9 +744,237 @@ function extractWithCustomRule(customRule, doc = (typeof document !== "undefined
   return result;
 }
 
+function isInvalidProductTitle(text) {
+  if (!text || typeof text !== "string") return true;
+  const t = text.trim().toLowerCase();
+  if (t.length < 3) return true;
+  const blacklist = [
+    "sözleşme koşulları",
+    "sözleşme kosullari",
+    "sözleşme",
+    "sozlesme",
+    "mesafeli satış sözleşmesi",
+    "mesafeli satis sozlesmesi",
+    "ön bilgilendirme formu",
+    "on bilgilendirme formu",
+    "gizlilik ve güvenlik",
+    "gizlilik ve guvenlik",
+    "aydınlatma metni",
+    "aydinlatma metni",
+    "çerez politikası",
+    "cerez politikasi",
+    "kvkk",
+    "üyelik sözleşmesi",
+    "uyelik sozlesmesi",
+    "sepetim",
+    "sepet",
+    "sipariş özeti",
+    "siparis ozeti",
+    "teslimat ve iade",
+    "hakkımızda",
+    "hakkimizda",
+    "iletişim",
+    "iletisim",
+    "bize ulaşın",
+    "bize ulasin",
+    "giriş yap",
+    "giris yap",
+    "üye ol",
+    "uye ol",
+    "kullanıcı girişi",
+    "bayi girişi",
+    "şifremi unuttum",
+    "favorilerim",
+    "favoriler",
+    "arama sonuçları",
+    "kategoriler",
+    "tüm kategoriler",
+    "menü",
+    "menu",
+    "adres bilgileri",
+    "fatura adresi",
+    "teslimat adresi",
+    "kampanyalar",
+    "duyurular"
+  ];
+  return blacklist.some((b) => t === b || t.startsWith(b + " ") || t.endsWith(" " + b) || t.includes("sözleşme") || t.includes("sozlesme"));
+}
+
+function isInvalidBrand(brand) {
+  if (!brand || typeof brand !== "string") return true;
+  const b = brand.trim().toLowerCase();
+  if (b.length < 2 || b.length > 40) return true;
+  const blacklist = [
+    "sözleşme", "sozlesme", "koşulları", "kosullari", "şartlar", "sartlar",
+    "ürün", "urun", "ürünler", "urunler", "detay", "detaylar",
+    "anasayfa", "home", "giriş", "giris", "kategori", "kategoriler",
+    "fiyat", "fiyatı", "fiyati", "stok", "sepet", "sepetim", "menü", "menu",
+    "marka", "brand", "model", "av", "bayi", "alesta", "gunerav", "guner",
+    "resmi", "web", "site", "online", "mağaza", "magaza", "tüm", "tum",
+    "giriş yap", "üye ol"
+  ];
+  return blacklist.includes(b) || b.includes("sözleşme") || b.includes("sozlesme");
+}
+
+function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
+  const newSpecs = { ...existingSpecs };
+  const lines = [];
+
+  if (desc && typeof desc === "string") {
+    const rawLines = desc.split(/\r?\n/);
+    for (const r of rawLines) {
+      const trimmed = r.trim();
+      if (trimmed.length > 5 && trimmed.length < 250) {
+        lines.push(trimmed);
+      }
+    }
+  }
+
+  if (lines.length < 3 && doc) {
+    const liEls = doc.querySelectorAll(
+      ".product-detail li, .product-description li, #tab-description li, [class*='aciklama'] li, [id*='aciklama'] li, #middleView li, .tab-pane li"
+    );
+    liEls.forEach((li) => {
+      const t = li.textContent.trim();
+      if (t.length > 5 && t.length < 250 && !lines.includes(t)) {
+        lines.push(t);
+      }
+    });
+  }
+
+  let bulletIndex = 1;
+
+  for (const rawLine of lines) {
+    const cleanLine = rawLine.replace(/^[•*—\-–►▪▫✓✔\+]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim();
+    if (cleanLine.length < 5) continue;
+
+    const lower = cleanLine
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+    if (
+      (lower.includes("ozellikler") && cleanLine.endsWith(":")) ||
+      lower.includes("taksit") ||
+      lower.includes("havale") ||
+      lower.includes("kargo") ||
+      lower.includes("kdv") ||
+      lower.includes("musteri hizmetleri") ||
+      lower.includes("tum haklari saklidir")
+    ) {
+      continue;
+    }
+
+    if (cleanLine.includes(":") && !cleanLine.startsWith("http")) {
+      const parts = cleanLine.split(":");
+      const k = parts[0].trim();
+      const v = parts.slice(1).join(":").trim();
+      if (k.length >= 2 && k.length <= 40 && v.length >= 1 && v.length <= 200) {
+        newSpecs[k] = v;
+        continue;
+      }
+    }
+    if (cleanLine.includes(" - ") && !cleanLine.startsWith("-")) {
+      const parts = cleanLine.split(" - ");
+      const k = parts[0].trim();
+      const v = parts.slice(1).join(" - ").trim();
+      if (k.length >= 2 && k.length <= 35 && v.length >= 1 && v.length <= 150) {
+        newSpecs[k] = v;
+        continue;
+      }
+    }
+
+    let matched = false;
+
+    // Yüzme / Aksiyon (Hamur, Sahte Yem, Maket vb.)
+    if (/yuzen|floating/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
+      newSpecs["Yüzme Özelliği"] = "Yüzen (Floating)";
+      matched = true;
+    } else if (/batan|sinking/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
+      newSpecs["Yüzme Özelliği"] = "Batan (Sinking)";
+      matched = true;
+    } else if (/askida|suspending/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
+      newSpecs["Yüzme Özelliği"] = "Askıda Kalan (Suspending)";
+      matched = true;
+    }
+
+    // Kullanım Alanı
+    if ((lower.includes("kullanim") || lower.includes("uygun")) && !newSpecs["Kullanım Alanı"]) {
+      let val = cleanLine;
+      const m = cleanLine.match(/^(.*?)(?:için\s*uygundur|kullanımına\s*uygundur|kullanım\s*için)/i);
+      if (m && m[1].trim().length > 3) {
+        val = m[1].trim();
+      }
+      val = val.replace(/kullanım\s*için\s*uygundur\.?/i, "").replace(/için\s*uygundur\.?/i, "").trim();
+      newSpecs["Kullanım Alanı"] = val || cleanLine;
+      matched = true;
+    }
+
+    // Renk / Renk Seçenekleri
+    if ((lower.includes("renk") || lower.includes("renkler")) && !newSpecs["Renk Seçenekleri"]) {
+      newSpecs["Renk Seçenekleri"] = cleanLine.replace(/üretilmektedir\.?/i, "").replace(/sunulmaktadır\.?/i, "").trim();
+      matched = true;
+    }
+
+    // Gramaj / Ağırlık / Ambalaj
+    if (/(\d+(?:[\.,]\d+)?)\s*(?:gram|gr|kg)/i.test(cleanLine) && !newSpecs["Ağırlık / Gramaj"]) {
+      const gm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:gram|gr|kg)(?:'l[ıi]k)?(?:\s*ambalaj[ıi]nda)?)/i);
+      newSpecs["Ağırlık / Gramaj"] = gm ? gm[1].trim() : cleanLine;
+      matched = true;
+    }
+
+    // İğne / Kanca Uyumu
+    if ((lower.includes("igne") || lower.includes("kanca")) && !newSpecs["İğne Uyumu"]) {
+      newSpecs["İğne Uyumu"] = cleanLine.replace(/korur\.?/i, "korur").trim();
+      matched = true;
+    }
+
+    // Aroma / Çekici Formül / Koku
+    if ((lower.includes("formul") || lower.includes("koku") || lower.includes("tat") || lower.includes("aroma") || lower.includes("ceker") || lower.includes("cezbedici")) && !newSpecs["Aroma / Etki"]) {
+      newSpecs["Aroma / Etki"] = cleanLine;
+      matched = true;
+    }
+
+    // Su Geçirmezlik
+    if ((lower.includes("su gecirmez") || lower.includes("waterproof")) && !newSpecs["Su Geçirmezlik"]) {
+      newSpecs["Su Geçirmezlik"] = "Su Geçirmez";
+      matched = true;
+    }
+
+    // Boy / Ebat
+    if (/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i.test(cleanLine) && !newSpecs["Boyut / Ebat"]) {
+      const bm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i);
+      newSpecs["Boyut / Ebat"] = bm ? bm[1] : cleanLine;
+      matched = true;
+    }
+
+    // 3. Fallback: Genel maddeleri yapısal özellik olarak dönüştür
+    if (!matched) {
+      if (cleanLine.includes(",")) {
+        const parts = cleanLine.split(",");
+        const candidateKey = parts[0].trim();
+        const candidateVal = parts.slice(1).join(",").trim();
+        if (candidateKey.length >= 3 && candidateKey.length <= 30 && candidateVal.length >= 3) {
+          const capKey = candidateKey.charAt(0).toUpperCase() + candidateKey.slice(1);
+          newSpecs[capKey] = candidateVal.charAt(0).toUpperCase() + candidateVal.slice(1);
+          continue;
+        }
+      }
+      newSpecs[`Özellik ${bulletIndex}`] = cleanLine;
+      bulletIndex++;
+    }
+  }
+
+  return newSpecs;
+}
+
 function extractProductData(doc = (typeof document !== "undefined" ? document : null), pageUrl = "") {
   if (!doc) return {};
   const currentUrl = pageUrl || (typeof window !== "undefined" && window.location ? window.location.href : "");
+  const canonicalEl = doc.querySelector('link[rel="canonical"]');
+  const ogUrlEl = doc.querySelector('meta[property="og:url"]');
+  const validUrl = (ogUrlEl && ogUrlEl.content) || (canonicalEl && canonicalEl.href) || currentUrl;
+
   const result = {
     title: "",
     brand: "",
@@ -757,6 +985,8 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     images: [],
     specs: {},
     description: "",
+    url: validUrl,
+    supplier_url: validUrl,
   };
 
   // =========================================================================
@@ -881,21 +1111,69 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // =========================================================================
   // 2. Ürün Başlığı (Title)
   // =========================================================================
-  if (!result.title) {
-    const titleEl = doc.querySelector("h1, h2.product-title, h4.product_name, .product_name, [class*='product_name'], [class*='product-title'], h5.font-weight-bold, .col-12 h5.font-weight-bold, h5, .urunadi");
-    const ogTitle = doc.querySelector('meta[property="og:title"]');
-    if (titleEl && titleEl.textContent.trim()) {
-      result.title = titleEl.textContent.trim();
-    } else if (ogTitle && ogTitle.content) {
-      result.title = ogTitle.content.trim();
-    } else {
-      result.title = (doc.title || "").split(/[-|]/)[0].trim();
+  if (!result.title || isInvalidProductTitle(result.title)) {
+    result.title = "";
+    const ignoredContainers = ".modal, #modal, [role='dialog'], footer, .footer, header, .header, nav, .navbar, .menu, #menu, .sidebar, #sidebar, .cookie, #cookie, .cart, #cart, .basket, #basket, [class*='modal'], [id*='modal'], [class*='sozlesme'], [id*='sozlesme']";
+    const candidateSelectors = [
+      "h1.product-title",
+      "h1.product_name",
+      "h1.proName",
+      "h1[itemprop='name']",
+      ".product-detail h1",
+      ".product-name h1",
+      "#product-name",
+      ".product-title",
+      ".product_name",
+      "[class*='product-title']",
+      "[class*='product_name']",
+      ".urunadi",
+      "h1",
+      "h2.product-title",
+      "h4.product_name"
+    ];
+
+    for (const sel of candidateSelectors) {
+      const els = Array.from(doc.querySelectorAll(sel));
+      for (const el of els) {
+        if (el.closest && el.closest(ignoredContainers)) continue;
+        const text = el.textContent.trim();
+        if (text && text.length >= 3 && !isInvalidProductTitle(text)) {
+          result.title = text;
+          break;
+        }
+      }
+      if (result.title) break;
+    }
+
+    // Fallback to og:title
+    if (!result.title || isInvalidProductTitle(result.title)) {
+      const ogTitle = doc.querySelector('meta[property="og:title"]');
+      if (ogTitle && ogTitle.content) {
+        const cleanOg = ogTitle.content.trim();
+        const parts = cleanOg.split(/\s+[|\-–—]\s+/);
+        if (parts.length > 0 && !isInvalidProductTitle(parts[0])) {
+          result.title = parts[0].trim();
+        }
+      }
+    }
+
+    // Fallback to doc.title
+    if (!result.title || isInvalidProductTitle(result.title)) {
+      const rawTitle = (doc.title || "").trim();
+      const parts = rawTitle.split(/\s+[|\-–—]\s+/);
+      if (parts.length > 0 && !isInvalidProductTitle(parts[0])) {
+        result.title = parts[0].trim();
+      }
     }
   }
 
   // =========================================================================
   // 3. Marka Tespiti (Brand)
   // =========================================================================
+  if (result.brand && isInvalidBrand(result.brand)) {
+    result.brand = "";
+  }
+
   if (!result.brand) {
     const brandSelectors = [
       '[itemprop="brand"] [itemprop="name"]',
@@ -912,7 +1190,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       const el = doc.querySelector(sel);
       if (el) {
         const val = el.getAttribute("content") || el.textContent;
-        if (val && val.trim() && val.trim().length < 40) {
+        if (val && val.trim() && val.trim().length < 40 && !isInvalidBrand(val.trim())) {
           result.brand = val.trim();
           break;
         }
@@ -920,14 +1198,42 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     }
   }
 
-  // Bilinen Av, Silah ve Taktik Aksesuar Markaları Listesi ve Başlıktan Marka Çıkarımı
+  // Brand from og:title parts (e.g. Alesta Balık: "SEAGAME TROUT PASTA ... | MİDYE | SEAGAME | ALESTA SPORTİF BALIKÇILIK")
+  if (!result.brand) {
+    const ogTitle = doc.querySelector('meta[property="og:title"]');
+    if (ogTitle && ogTitle.content) {
+      const parts = ogTitle.content.split(/\s+[|\-–—]\s+/);
+      if (parts.length >= 3) {
+        for (let i = 1; i < parts.length; i++) {
+          const candidate = parts[i].trim();
+          if (
+            candidate.length >= 2 &&
+            candidate.length <= 30 &&
+            !isInvalidBrand(candidate) &&
+            !candidate.toLowerCase().includes("balıkçılık") &&
+            !candidate.toLowerCase().includes("av") &&
+            !candidate.toLowerCase().includes("ticaret") &&
+            !candidate.toLowerCase().includes("ltd") &&
+            !candidate.toLowerCase().includes("şirket")
+          ) {
+            result.brand = candidate;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Bilinen Av, Balık, Silah ve Taktik Aksesuar Markaları Listesi ve Başlıktan Marka Çıkarımı
   const KNOWN_BRANDS = [
     "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
     "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
     "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
     "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
     "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
-    "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex"
+    "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex",
+    "Seagame", "SEAGAME", "Savage Gear", "Daiwa", "Shimano", "Okuma", "Bauer",
+    "Remington", "Federal", "Sterling", "Yavaşçalar", "RC", "Fiocchi", "Bornaghi", "BP"
   ];
 
   if (!result.brand && result.title) {
@@ -941,7 +1247,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   }
 
   // Başlıkta marka yoksa başa ekle (örn: sadece "MAGIC" yazıyorsa "Sarsılmaz MAGIC" yap)
-  if (result.brand && result.title) {
+  if (result.brand && result.title && !isInvalidBrand(result.brand)) {
     const titleLow = result.title.toLowerCase();
     const brandLow = result.brand.toLowerCase();
     if (!titleLow.includes(brandLow) && !brandLow.includes(titleLow)) {
@@ -987,7 +1293,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     const idx = result.title.indexOf(result.model);
     if (idx > 0) {
       const prefix = result.title.substring(0, idx).trim();
-      if (prefix.length > 1 && prefix.length < 30) {
+      if (prefix.length > 1 && prefix.length < 30 && !isInvalidBrand(prefix)) {
         result.brand = prefix;
       }
     }
@@ -996,12 +1302,14 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // Hala boşsa başlıktaki ilk kelimeyi dene
   if (!result.brand && result.title) {
     const words = result.title.split(/\s+/);
-    if (words.length > 1 && words[0].length >= 3 && /^[A-ZÇĞİÖŞÜa-zçğıöşü]+$/.test(words[0])) {
-      result.brand = words[0];
+    if (words.length > 1 && words[0].length >= 3 && /^[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-]+$/.test(words[0])) {
+      if (!isInvalidBrand(words[0])) {
+        result.brand = words[0];
+      }
     }
   }
 
-  if (result.brand) {
+  if (result.brand && !isInvalidBrand(result.brand)) {
     result.specs["Marka"] = result.brand;
   }
 
@@ -1009,6 +1317,26 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // 6. Fiyat Tespiti (Price)
   // =========================================================================
   if (!result.price) {
+    // 0. B2B / Dia E-Ticaret ve metin bazlı fiyat etiketleri (Perakende Fiyatı: 150 TL vb.)
+    const priceTextEls = Array.from(doc.querySelectorAll("div, p, span, b, strong, td, th")).filter((el) => {
+      const t = el.textContent;
+      return (
+        /(?:perakende\s*fiyat[ıi]|liste\s*fiyat[ıi]|sat[ıi][şs]\s*fiyat[ıi]|fiyat[ıi]?)\s*[:\s]*\s*([\d\.,]+)\s*(?:tl|₺)?/i.test(t) &&
+        !t.toLowerCase().includes("havale") &&
+        !t.toLowerCase().includes("taksit")
+      );
+    });
+    for (const pel of priceTextEls) {
+      const m = pel.textContent.match(/(?:perakende\s*fiyat[ıi]|liste\s*fiyat[ıi]|sat[ıi][şs]\s*fiyat[ıi]|fiyat[ıi]?)\s*[:\s]*\s*([\d\.,]+)\s*(?:tl|₺)?/i);
+      if (m && m[1]) {
+        const parsed = parseTurkishPrice(m[1]);
+        if (parsed !== null && parsed > 0) {
+          result.price = parsed;
+          break;
+        }
+      }
+    }
+
     const priceSelectors = [
       "#kdvdahilnetfiyat",
       ".kdvdahilnetfiyat",
@@ -1039,11 +1367,11 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     }
 
     if (!result.price) {
-      const candEls = Array.from(doc.querySelectorAll("span, div, td")).filter((el) =>
+      const candEls = Array.from(doc.querySelectorAll("span, div, td, p, b")).filter((el) =>
         /(\d+[\.,]\d{2}|\d+)\s*(TL|₺)/i.test(el.textContent) &&
-        el.children.length === 0 &&
         !el.textContent.toLowerCase().includes("havale") &&
-        !el.textContent.toLowerCase().includes("taksit")
+        !el.textContent.toLowerCase().includes("taksit") &&
+        !el.textContent.toLowerCase().includes("kargo")
       );
       for (const cand of candEls) {
         const parsed = parseTurkishPrice(cand.textContent);
@@ -1722,11 +2050,31 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     result.model = "";
   }
 
+  // =========================================================================
+  // KULLANICI TALEBİ: "ürün özellikleri boş geliyor ise ürün açıklamasındaki maddeler ürün özelliklerine girsin"
+  // =========================================================================
+  const validSpecsList = Object.keys(specs).filter(
+    (k) => !["Marka", "Model", "Kategori", "Stok Kodu", "Ürün Kodu", "SKU", "sku", "Ürün No", "Stok Durumu"].includes(k)
+  );
+
+  if (validSpecsList.length === 0) {
+    const enrichedSpecs = extractSpecsFromDescription(result.description, doc, specs);
+    Object.assign(specs, enrichedSpecs);
+  }
+
   result.specs = specs;
 
   // Marka / Model son kontrolü
   if (!result.brand && (specs["Marka"] || specs["Brand"])) {
-    result.brand = specs["Marka"] || specs["Brand"];
+    const candBrand = specs["Marka"] || specs["Brand"];
+    if (!isInvalidBrand(candBrand)) {
+      result.brand = candBrand;
+    }
+  }
+  if (result.brand && isInvalidBrand(result.brand)) {
+    result.brand = "";
+    delete specs["Marka"];
+    delete specs["Brand"];
   }
   if (!result.model && specs["Model"]) {
     result.model = specs["Model"];
@@ -2058,6 +2406,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   }
 
   result.url = currentUrl;
+  result.supplier_url = currentUrl;
 
   // Supplier ID Otomatik Tespiti (Castello/Arslan Silah = 1, Özler Av = 2)
   const urlLow = (currentUrl || "").toLowerCase();
