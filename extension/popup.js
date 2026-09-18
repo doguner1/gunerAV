@@ -1,6 +1,14 @@
 // Güner AV - Chrome Eklentisi Popup Mantığı
+// Bu dosya, ./lib/ai_service.js içindeki AI SERVİSİNİ kullanır.
+
+// Modül olarak import yaparsan browser.runtime.connect ############
+// Ancak biz, yükleme sırasında hizmet modülü çağrılır.
+// Şimdilik statik HTML değişiminden sonra eklentinin içeriğe attaching uygulayamıyoruz.
+// Bu nedenle ai_service.js'ın tüm fonksiyonlarını DOMContentLoaded içinde kullanıyoruz.
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // AI hizmetini yükle (lib/ai_service.js varios fonksiyonlar global shared)
+  // bu nasıl tamamlandı reference.js ile injected? → dışarıdan behöver.
   // 1. Tab Değiştirme
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("batch") === "1") {
@@ -119,6 +127,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           sharedForm.style.display = "block";
         }
       }
+
+      // AI sekmesine geçildiğinde aktif sekme bilgisini yenile
+      if (targetId === "tabAiLearner") {
+        refreshActiveTabInfo();
+      }
     });
   });
 
@@ -142,9 +155,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const sharedForm = document.getElementById("sharedProductForm");
     if (sharedForm) sharedForm.style.display = "none";
+
+    refreshActiveTabInfo();
   });
 
-  // 2. Supabase & AI Ayarlarını Yükle
+  // 2. Supabase & AI ayarlarını yükle
+  // varsayılan anahtarlar (kullanıcı tarafından kaydedilmemişse fallback'ler)
   const DEFAULT_GROQ_KEY = "";
   const DEFAULT_OPENROUTER_KEY = "";
 
@@ -153,6 +169,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "supabaseKey",
     "groqApiKey",
     "openrouterApiKey",
+    "nemotronApiKey",
     "aiEngine",
     "customSiteRules",
   ]);
@@ -161,10 +178,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const currentGroqKey = cfg.groqApiKey || DEFAULT_GROQ_KEY;
   const currentOpenRouterKey = cfg.openrouterApiKey || DEFAULT_OPENROUTER_KEY;
-  const currentAiEngine = cfg.aiEngine || "groq";
+  const currentNemotronKey = cfg.nemotronApiKey || "";
+  const currentAiEngine = cfg.aiEngine || "nemotron";
 
   if (document.getElementById("cfgGroqKey")) document.getElementById("cfgGroqKey").value = currentGroqKey;
   if (document.getElementById("cfgOpenRouterKey")) document.getElementById("cfgOpenRouterKey").value = currentOpenRouterKey;
+  if (document.getElementById("cfgNemotronKey")) document.getElementById("cfgNemotronKey").value = currentNemotronKey;
   if (document.getElementById("selAiEngine")) document.getElementById("selAiEngine").value = currentAiEngine;
 
   document.getElementById("selAiEngine")?.addEventListener("change", (e) => {
@@ -191,17 +210,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     domainBadge.textContent = activeTabDomain || "Sekme Açık Değil";
   }
 
+  // AI sekmesine geçildiğinde aktif sekme bilgisini yenile
+  async function refreshActiveTabInfo() {
+    try {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab && activeTab.url) {
+        activeTabUrl = activeTab.url;
+        activeTabDomain = new URL(activeTab.url).hostname.replace(/^www\./, "").toLowerCase();
+        if (domainBadge) domainBadge.textContent = activeTabDomain;
+      }
+    } catch (e) {}
+  }
+
   document.getElementById("btnSaveConfig")?.addEventListener("click", async () => {
     const url = document.getElementById("cfgSupabaseUrl").value.trim().replace(/\/+$/, "");
     const key = document.getElementById("cfgSupabaseKey").value.trim();
     const groqK = document.getElementById("cfgGroqKey")?.value.trim() || DEFAULT_GROQ_KEY;
     const openRK = document.getElementById("cfgOpenRouterKey")?.value.trim() || DEFAULT_OPENROUTER_KEY;
+    const nemotronK = document.getElementById("cfgNemotronKey")?.value.trim() || "";
 
     await chrome.storage.local.set({
       supabaseUrl: url,
       supabaseKey: key,
       groqApiKey: groqK,
       openrouterApiKey: openRK,
+      nemotronApiKey: nemotronK,
     });
     showStatus("✅ Supabase ve AI ayarları başarıyla kaydedildi!", "success");
   });
@@ -392,9 +425,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const applyExtractedData = (data) => {
-      if (data && !data.url && tab?.url) {
-        data.url = tab.url;
-      }
       populateForm(data);
       saveFormDraft();
       showStatus(`✅ Ürün yakalandı: ${(data.title || "").slice(0, 35)}...`, "success");
@@ -453,175 +483,166 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // =========================================================================
-  // 9b. AI Destekli Site Analizi ve Kural Çıkarma
-  // =========================================================================
-  let lastAiAnalysisResult = null;
+// =========================================================================
+// 9b. AI Destekli Site Analizi ve Kural Çıkarma
+// =========================================================================
+let lastAiAnalysisResult = null;
 
-  document.getElementById("btnAiAnalyzeSite")?.addEventListener("click", async () => {
-    const statusBox = document.getElementById("aiStatusBox");
-    const resultCard = document.getElementById("aiResultCard");
-    const engine = document.getElementById("selAiEngine")?.value || "groq";
-    const customPrompt = document.getElementById("inpAiCustomPrompt")?.value.trim() || "";
+document.getElementById("btnAiAnalyzeSite")?.addEventListener("click", async () => {
+  const statusBox = document.getElementById("aiStatusBox");
+  const resultCard = document.getElementById("aiResultCard");
+  const engine = document.getElementById("selAiEngine")?.value || "groq";
+  const customPrompt = document.getElementById("inpAiCustomPrompt")?.value.trim() || "";
 
-    const showAiStatus = (msg, type = "info") => {
-      if (!statusBox) return;
-      statusBox.style.display = "block";
-      if (type === "loading") {
-        statusBox.style.background = "rgba(99, 102, 241, 0.15)";
-        statusBox.style.color = "#a5b4fc";
-        statusBox.style.border = "1px solid #6366f1";
-      } else if (type === "success") {
-        statusBox.style.background = "rgba(34, 197, 94, 0.15)";
-        statusBox.style.color = "#4ade80";
-        statusBox.style.border = "1px solid #22c55e";
-      } else {
-        statusBox.style.background = "rgba(239, 68, 68, 0.15)";
-        statusBox.style.color = "#f87171";
-        statusBox.style.border = "1px solid #ef4444";
-      }
-      statusBox.innerHTML = msg;
-    };
-
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) {
-      showAiStatus("❌ Açık aktif bir sekme bulunamadı.", "error");
-      return;
+  const showAiStatus = (msg, type = "info") => {
+    if (!statusBox) return;
+    statusBox.style.display = "block";
+    if (type === "loading") {
+      statusBox.style.background = "rgba(99, 102, 241, 0.15)";
+      statusBox.style.color = "#a5b4fc";
+      statusBox.style.border = "1px solid #6366f1";
+    } else if (type === "success") {
+      statusBox.style.background = "rgba(34, 197, 94, 0.15)";
+      statusBox.style.color = "#4ade80";
+      statusBox.style.border = "1px solid #22c55e";
+    } else if (type === "warning") {
+      statusBox.style.background = "rgba(250, 204, 21, 0.15)";
+      statusBox.style.color = "#facc15";
+      statusBox.style.border = "1px solid #facc15";
+    } else {
+      statusBox.style.background = "rgba(239, 68, 68, 0.15)";
+      statusBox.style.color = "#f87171";
+      statusBox.style.border = "1px solid #ef4444";
     }
+    statusBox.innerHTML = msg;
+  };
 
-    showAiStatus("⏳ Sayfa HTML yapısı okunuyor ve optimize ediliyor...", "loading");
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) { showAiStatus("❌ Açık aktif bir sekme bulunamadı.", "error"); return; }
+  
+  activeTabDomain = "";
+  activeTabUrl = tab.url || "";
+  try {
+    activeTabDomain = new URL(tab.url).hostname.replace(/^www\./, "").toLowerCase();
+  } catch (e) {}
 
-    const getHtmlPromise = () =>
-      new Promise((resolve) => {
-        chrome.tabs.sendMessage(tab.id, { action: "GET_CLEAN_PAGE_HTML" }, async (res) => {
-          if (chrome.runtime.lastError || !res?.success) {
-            try {
-              await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                files: ["content.js"],
-              });
-              chrome.tabs.sendMessage(tab.id, { action: "GET_CLEAN_PAGE_HTML" }, (retryRes) => {
-                resolve(retryRes?.success ? retryRes.data : null);
-              });
-            } catch (err) {
-              resolve(null);
-            }
-          } else {
-            resolve(res.data);
-          }
-        });
+  showAiStatus("⏳ Sayfa HTML yapısı okunuyor ve optimize ediliyor...", "loading");
+
+  const getHtmlPromise = () =>
+    new Promise((resolve) => {
+      chrome.tabs.sendMessage(tab.id, { action: "GET_CLEAN_PAGE_HTML" }, async (res) => {
+        if (chrome.runtime.lastError || !res?.success) {
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ["content.js"],
+            });
+            chrome.tabs.sendMessage(tab.id, { action: "GET_CLEAN_PAGE_HTML" }, (retryRes) => {
+              resolve(retryRes?.success ? retryRes.data : null);
+            });
+          } catch (err) { resolve(null); }
+        } else { resolve(res.data); }
       });
+    });
 
-    const pageInfo = await getHtmlPromise();
-    if (!pageInfo || !pageInfo.htmlSnippet) {
-      showAiStatus("❌ Sayfa içeriği okunamadı. Lütfen sayfayı bir kez yenileyip (F5) tekrar deneyin.", "error");
-      return;
+  const pageInfo = await getHtmlPromise();
+  if (!pageInfo || !pageInfo.htmlSnippet) {
+    showAiStatus("❌ Sayfa içeriği okunamadı. Lütfen sayfayı bir kez yenileyip (F5) tekrar deneyin.", "error");
+    return;
+  }
+
+  const savedKeys = await chrome.storage.local.get(["groqApiKey", "openrouterApiKey", "nemotronApiKey"]);
+  const currentGroqKey = savedKeys.groqApiKey || DEFAULT_GROQ_KEY;
+  const currentOpenRouterKey = savedKeys.openrouterApiKey || DEFAULT_OPENROUTER_KEY;
+  const currentNemotronKey = savedKeys.nemotronApiKey || "";
+
+  const engineNames = {
+    nemotron: "NVIDIA Nemotron-3-Ultra",
+    groq: "Groq GPT OSS 120B",
+    openrouter: "OpenRouter Nemotron Lightning"
+  };
+  showAiStatus(`🤖 Yapay zekâ (${engineNames[engine] || engine}) siteyi analiz ediyor...`, "loading");
+
+  try {
+    const aiData = await callAiSiteAnalyzer({
+      engine,
+      groqKey: currentGroqKey,
+      openRouterKey: currentOpenRouterKey,
+      nemotronKey: currentNemotronKey,
+      pageInfo,
+      customPrompt,
+    });
+
+    lastAiAnalysisResult = { ...aiData, domain: pageInfo.domain, url: tab.url };
+    showAiStatus(`🎉 Başarılı! Yapay zekâ <strong>${pageInfo.domain}</strong> için ürün verilerini çıkardı.`, "success");
+
+    if (resultCard) resultCard.style.display = "block";
+    const domainEl = document.getElementById("aiExtractedDomain");
+    if (domainEl) domainEl.textContent = pageInfo.domain;
+
+    const sel = aiData.selectors || {};
+    const lblT = document.getElementById("lblRuleTitle");
+    const lblBrand = document.getElementById("lblRuleBrand");
+    const lblModel = document.getElementById("lblRuleModel");
+    const lblP = document.getElementById("lblRulePrice");
+    const lblI = document.getElementById("lblRuleImages");
+    const lblS = document.getElementById("lblRuleSpecs");
+
+    if (lblT) lblT.textContent = sel.title || "(AI çıkarımı)";
+    if (lblBrand) lblBrand.textContent = sel.brand || (aiData.extracted_preview?.brand) || "(AI çıkarımı)";
+    if (lblModel) lblModel.textContent = sel.model || (aiData.extracted_preview?.model) || "(AI çıkarımı)";
+    if (lblP) lblP.textContent = sel.price || "(AI çıkarımı)";
+    if (lblI) lblI.textContent = `${sel.images || "(AI çıkarımı)"} [attr: ${sel.image_attr || "src"}]`;
+    if (lblS) lblS.textContent = sel.specs_table || sel.specs_row || "(AI çıkarımı)";
+
+    const prevEl = document.getElementById("aiSamplePreview");
+    const prev = aiData.extracted_preview || {};
+    if (prevEl) {
+      prevEl.innerHTML = `
+        <div><b>Başlık:</b> ${prev.title || "(Boş)"}</div>
+        <div><b>Marka:</b> ${prev.brand || "(Boş)"}</div>
+        <div><b>Model:</b> ${prev.model || "(Boş)"}</div>
+        <div><b>Fiyat:</b> ${prev.price ? Number(prev.price).toLocaleString("tr-TR") + " ₺" : "(Boş)"}</div>
+        <div><b>Görseller:</b> ${Array.isArray(prev.images) ? prev.images.length + " adet görsel yakalandı" : "0"}</div>
+        <div><b>Özellikler:</b> ${prev.specs ? Object.keys(prev.specs).length + " parametre çıkarıldı" : "Yok"}</div>
+        <div><b>Açıklama:</b> ${(prev.description || "").slice(0, 120)}${(prev.description && prev.description.length > 120) ? "..." : ""}</div>
+        ${aiData.notes ? `<div style="margin-top:4px; color:#38bdf8;">💡 <em>${aiData.notes}</em></div>` : ""}
+      `;
     }
 
-    const savedKeys = await chrome.storage.local.get(["groqApiKey", "openrouterApiKey"]);
-    const currentGroqKey = (savedKeys.groqApiKey || DEFAULT_GROQ_KEY || "").trim();
-    const currentOpenRouterKey = (savedKeys.openrouterApiKey || DEFAULT_OPENROUTER_KEY || "").trim();
+    showAiStatus("🔧 AI çıktısı çalıştırılabilir seçicilere derleniyor ve kaydediliyor...", "loading");
 
-    if (engine === "groq" && !currentGroqKey) {
-      showAiStatus("❌ <strong>Groq API Anahtarı Bulunamadı:</strong> Lütfen eklentinin <strong>⚙️ Ayarlar</strong> sekmesine gidip Groq API anahtarınızı (gsk_...) girin ve 'Ayarları Kaydet' butonuna basın.", "error");
-      return;
+    const compileResponse = await new Promise((resolve) => {
+      chrome.tabs.sendMessage(tab.id, {
+        action: "COMPILE_AND_SAVE_AI_RULES",
+        aiResult: lastAiAnalysisResult,
+        pageInfo: { url: tab.url, domain: pageInfo.domain, htmlSnippet: pageInfo.htmlSnippet },
+      }, (res) => resolve(res));
+    });
+
+    if (compileResponse?.success) {
+      const compiled = compileResponse.compiled;
+      showAiStatus(
+        `✅ <strong>Tamamlandı!</strong> Site: <code>${compiled.domain}</code> | Güven: %${compiled.extractionConfidence} | Yöntem: ${compiled.source}<br>
+        <small>${compiled.message || "Seçiciler hafızaya kaydedildi. Bir sonraki çekimde AI'ye gerek kalmayacak."}</small>`,
+        "success"
+      );
+      
+      const { customSiteRules } = await chrome.storage.local.get("customSiteRules");
+      renderSavedRulesList(customSiteRules || {});
+    } else {
+      showAiStatus(
+        `⚠️ AI analizi başarılı ama selector derlemesi güven skoru düşük: %${compileResponse?.compiled?.extractionConfidence || 0}<br>
+        <small>${compileResponse?.message || "Manuel kontrol önerilir."}</small>`,
+        "warning"
+      );
     }
 
-    if (engine === "openrouter" && !currentOpenRouterKey) {
-      showAiStatus("❌ <strong>OpenRouter API Anahtarı Bulunamadı:</strong> Lütfen eklentinin <strong>⚙️ Ayarlar</strong> sekmesine gidip OpenRouter API anahtarınızı (sk-or-...) girin ve 'Ayarları Kaydet' butonuna basın.", "error");
-      return;
-    }
+  } catch (err) {
+    showAiStatus(`❌ AI Analiz Hatası: ${err.message}`, "error");
+  }
+});
 
-    showAiStatus(`🤖 Yapay zekâ (${engine === "groq" ? "Groq GPT OSS 120B" : "OpenRouter Nemotron Lightning"}) siteyi analiz ediyor...`, "loading");
-
-    try {
-      const aiData = await callAiSiteAnalyzer({
-        engine,
-        groqKey: currentGroqKey,
-        openRouterKey: currentOpenRouterKey,
-        pageInfo,
-        customPrompt,
-      });
-
-      showAiStatus("🔍 Seçici kuralları sekmedeki canlı sayfada test ediliyor...", "loading");
-
-      // 1. Canlı DOM üzerinde bulunan seçicileri hemen test et
-      let liveData = null;
-      try {
-        const testRes = await new Promise((resolve) => {
-          chrome.tabs.sendMessage(tab.id, {
-            action: "TEST_AI_SELECTORS",
-            selectors: aiData.selectors,
-          }, (res) => resolve(res));
-        });
-        if (testRes?.success && testRes.data) {
-          liveData = testRes.data;
-        }
-      } catch (e) {
-        console.warn("TEST_AI_SELECTORS uyarısı:", e);
-      }
-
-      const finalPreview = {
-        ...(liveData || {}),
-        ...(aiData.perfect_product_data || {}),
-      };
-
-      // Ensure images from liveData (which handles arrays/cleaning well) aren't completely lost
-      if (liveData && liveData.images && liveData.images.length > 0) {
-        if (!finalPreview.images || finalPreview.images.length === 0 || (typeof finalPreview.images === 'string')) {
-          finalPreview.images = liveData.images;
-        } else if (Array.isArray(finalPreview.images) && finalPreview.images.length > 0 && !finalPreview.images[0].startsWith("http")) {
-          finalPreview.images = liveData.images;
-        }
-      }
-
-      lastAiAnalysisResult = {
-        ...aiData,
-        extracted_preview: finalPreview,
-      };
-
-      showAiStatus(`🎉 Başarılı! Yapay zekâ <strong>${pageInfo.domain}</strong> için seçici kurallarını tespit etti ve başarıyla doğruladı.`, "success");
-
-      if (resultCard) resultCard.style.display = "block";
-      const domainEl = document.getElementById("aiExtractedDomain");
-      if (domainEl) domainEl.textContent = pageInfo.domain;
-
-      const sel = aiData.selectors || {};
-      const lblT = document.getElementById("lblRuleTitle");
-      const lblP = document.getElementById("lblRulePrice");
-      const lblI = document.getElementById("lblRuleImages");
-      const lblS = document.getElementById("lblRuleSpecs");
-
-      if (lblT) lblT.textContent = sel.title || "(otomatik)";
-      if (lblP) lblP.textContent = sel.price || (finalPreview.price ? "Tespit Edildi" : "(Katalog / Doğrudan Satış Fiyatı Yok)");
-      if (lblI) lblI.textContent = `${sel.images || "(otomatik)"} [attr: ${sel.image_attr || "src"}]`;
-      if (lblS) lblS.textContent = sel.specs_table || sel.specs_row || "(otomatik)";
-
-      const prevEl = document.getElementById("aiSamplePreview");
-      if (prevEl) {
-        const hasPrice = finalPreview.price !== null && finalPreview.price !== undefined;
-        const priceDisplay = hasPrice
-          ? `<span style="color:#4ade80; font-weight:700;">${Number(finalPreview.price).toLocaleString("tr-TR")} ₺</span>`
-          : `<span style="color:#94a3b8; font-style:italic;">Belirtilmemiş (Katalog / Fiyatsız Ürün)</span>`;
-
-        const specsCount = finalPreview.specs ? Object.keys(finalPreview.specs).length : 0;
-        const specsSampleList = specsCount > 0
-          ? `<div style="font-size:10px; color:#cbd5e1; margin-top:4px; background:rgba(15,23,42,0.6); padding:4px 6px; border-radius:4px;"><b>Örnek Özellikler:</b> ${Object.entries(finalPreview.specs).slice(0, 4).map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join(" • ")}</div>`
-          : "";
-
-        prevEl.innerHTML = `
-          <div><b>📌 Başlık:</b> <span style="color:#38bdf8; font-weight:600;">${finalPreview.title || "(Boş)"}</span></div>
-          <div><b>💰 Fiyat:</b> ${priceDisplay}</div>
-          <div><b>🏷️ Marka:</b> <span style="color:#fcd34d;">${finalPreview.brand || "(Boş)"}</span></div>
-          <div><b>🖼️ Görseller:</b> <span style="color:#4ade80; font-weight:600;">${Array.isArray(finalPreview.images) ? finalPreview.images.length + " adet görsel yakalandı" : "0"}</span></div>
-          <div><b>📋 Özellikler:</b> ${specsCount > 0 ? `<span style="color:#a78bfa; font-weight:600;">${specsCount} adet teknik parametre çıkarıldı</span>` : "Yok"}${specsSampleList}</div>
-          ${aiData.notes ? `<div style="margin-top:6px; color:#38bdf8; font-size:10.5px; border-top:1px dashed #334155; padding-top:4px;">💡 <em>${aiData.notes}</em></div>` : ""}
-        `;
-      }
-    } catch (err) {
-      showAiStatus(`❌ AI Analiz Hatası: ${err.message}`, "error");
-    }
-  });
 
   // AI Kurallarını Hafızaya Kaydet
   document.getElementById("btnSaveAiRules")?.addEventListener("click", async () => {
@@ -656,6 +677,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     populateForm({
       title: prev.title || "",
       brand: prev.brand || "",
+      model: prev.model || "",
       price: prev.price || null,
       images: Array.isArray(prev.images) ? prev.images : [],
       specs: prev.specs || {},
@@ -770,8 +792,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         finalSupplierId = parseInt(supSelect, 10) || 2;
       }
 
-      const supplierUrl = document.getElementById("fldSupplierUrl")?.value.trim() || null;
-
       const payload = {
         id: slug,
         slug_tr: slug,
@@ -793,7 +813,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         specs_tr: specs,
         specs_en: specs,
         supplier_id: finalSupplierId,
-        supplier_url: supplierUrl,
       };
 
       const endpoint = `${savedCfg.supabaseUrl}/rest/v1/products`;
@@ -822,15 +841,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showStatus("🎉 Ürün başarıyla Supabase'e kaydedildi ve yayına alındı!", "success");
       btn.textContent = "✅ Başarıyla Kaydedildi";
-
-      // Sitedeki önbelleği anında temizle (Next.js On-Demand Revalidation)
-      try {
-        await fetch("https://www.gunerav.site/api/revalidate?secret=gunerav_revalidate_secret_2026", {
-          method: "POST",
-        });
-      } catch (revErr) {
-        console.warn("Önbellek temizleme çağrısı uyarısı:", revErr);
-      }
 
       // Başarılı kayıttan sonra taslağı sil
       await chrome.storage.local.remove("productFormDraft");
@@ -908,322 +918,16 @@ function generateStandardDescription(data, specsObj) {
   return `${prefix}, Malatya Av Güner Av Bayii resmi güvencesiyle mağazamızda. Teknik detaylar sayfanın altındadır.`;
 }
 
-function normalizeTurkish(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/İ/g, "i")
-    .replace(/I/g, "i")
-    .replace(/ı/g, "i")
-    .replace(/Ğ/g, "g")
-    .replace(/ğ/g, "g")
-    .replace(/Ü/g, "u")
-    .replace(/ü/g, "u")
-    .replace(/Ş/g, "s")
-    .replace(/ş/g, "s")
-    .replace(/Ö/g, "o")
-    .replace(/ö/g, "o")
-    .replace(/Ç/g, "c")
-    .replace(/ç/g, "c")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
-function isInvalidProductTitle(text) {
-  if (!text || typeof text !== "string") return true;
-  const t = normalizeTurkish(text);
-  if (t.length < 3) return true;
-  const blacklist = [
-    "sozlesme kosullari",
-    "sozlesme",
-    "mesafeli satis sozlesmesi",
-    "on bilgilendirme formu",
-    "gizlilik ve guvenlik",
-    "aydinlatma metni",
-    "cerez politikasi",
-    "kvkk",
-    "uyelik sozlesmesi",
-    "sepetim",
-    "sepet",
-    "siparis ozeti",
-    "teslimat ve iade",
-    "hakkimizda",
-    "iletisim",
-    "bize ulasin",
-    "giris yap",
-    "uye ol",
-    "kullanici girisi",
-    "bayi girisi",
-    "sifremi unuttum",
-    "favorilerim",
-    "favoriler",
-    "arama sonuclari",
-    "kategoriler",
-    "tum kategoriler",
-    "menu",
-    "adres bilgileri",
-    "fatura adresi",
-    "teslimat adresi",
-    "kampanyalar",
-    "duyurular"
-  ];
-  return blacklist.some((b) => t === b || t.startsWith(b + " ") || t.endsWith(" " + b) || t.includes("sozlesme"));
-}
-
-function isInvalidBrand(brand) {
-  if (!brand || typeof brand !== "string") return true;
-  const b = normalizeTurkish(brand);
-  if (b.length < 2 || b.length > 40) return true;
-  const blacklist = [
-    "sozlesme", "kosullari", "sartlar",
-    "urun", "urunler", "detay", "detaylar",
-    "anasayfa", "home", "giris", "kategori", "kategoriler",
-    "fiyat", "fiyati", "stok", "sepet", "sepetim", "menu",
-    "marka", "brand", "model", "av", "bayi", "alesta", "gunerav", "guner",
-    "resmi", "web", "site", "online", "magaza", "tum",
-    "giris yap", "uye ol",
-    // Yem Çeşitleri, Aromalar & Balıkçılık Terimleri (Asla Marka Olamaz)
-    "midye", "ciger", "pellet", "peynir", "sarimsak",
-    "alabalik", "hamur", "hamuru", "yem", "yemi", "yemler",
-    "dogal yem", "canli yem", "trout", "pasta", "bait",
-    "trout pasta", "trout bait", "trout pasta alabalik hamuru",
-    // Renkler (Marka Olamaz)
-    "yesil", "sari", "kirmizi", "turuncu", "beyaz", "siyah", "mavi",
-    "rainbow", "gokkusagi", "kamuflaj"
-  ];
-  return blacklist.includes(b) || b.includes("sozlesme") || b.includes("kosullari");
-}
-
-function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
-  const newSpecs = { ...existingSpecs };
-  const lines = [];
-
-  if (desc && typeof desc === "string") {
-    const rawLines = desc.split(/\r?\n/);
-    for (const r of rawLines) {
-      const trimmed = r.trim();
-      if (trimmed.length > 5 && trimmed.length < 250) {
-        lines.push(trimmed);
-      }
-    }
-  }
-
-  let bulletIndex = 1;
-
-  for (const rawLine of lines) {
-    const cleanLine = rawLine.replace(/^[•*—\-–►▪▫✓✔\+]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim();
-    if (cleanLine.length < 5) continue;
-
-    const lower = normalizeTurkish(cleanLine);
-
-    const forbiddenLineWords = [
-      "anasayfa", "ana sayfa", "dogal yem", "canli yem", "balik avi", "balik yemleri",
-      "urun aciklamasi", "urun ozellikleri", "degerlendirmeler", "yorumlar",
-      "taksit secenekleri", "iade kosullari", "kargo bilgisi"
-    ];
-    if (forbiddenLineWords.includes(lower)) continue;
-
-    // Başlık veya ürün adı tekrarı olan satırları (Örn: "SEAGAME Trout Pasta Alabalık Hamuru") atla
-    if (
-      (lower.includes("trout pasta") && (lower.includes("hamur") || lower.includes("alabalik"))) ||
-      lower.startsWith("seagame trout pasta") ||
-      (doc && doc.title && normalizeTurkish(doc.title).includes(lower) && cleanLine.length > 15)
-    ) {
-      continue;
-    }
-
-    if (
-      (lower.includes("ozellikler") && cleanLine.endsWith(":")) ||
-      lower.includes("taksit") ||
-      lower.includes("havale") ||
-      lower.includes("kargo") ||
-      lower.includes("kdv") ||
-      lower.includes("musteri hizmetleri") ||
-      lower.includes("tum haklari saklidir") ||
-      lower.includes("temin edebilirsiniz") ||
-      lower.includes("bayilerden temin")
-    ) {
-      continue;
-    }
-
-    if (cleanLine.includes(":") && !cleanLine.startsWith("http")) {
-      const parts = cleanLine.split(":");
-      const k = parts[0].trim();
-      const v = parts.slice(1).join(":").trim();
-      if (k.length >= 2 && k.length <= 40 && v.length >= 1 && v.length <= 200) {
-        newSpecs[k] = v;
-        continue;
-      }
-    }
-    if (cleanLine.includes(" - ") && !cleanLine.startsWith("-")) {
-      const parts = cleanLine.split(" - ");
-      const k = parts[0].trim();
-      const v = parts.slice(1).join(" - ").trim();
-      if (k.length >= 2 && k.length <= 35 && v.length >= 1 && v.length <= 150) {
-        newSpecs[k] = v;
-        continue;
-      }
-    }
-
-    let matched = false;
-
-    // 1. Balık Yemi & Hamuru: Aroma / Koku / Çekici Formül
-    if ((lower.includes("aroma") || lower.includes("aromal") || lower.includes("formul") || lower.includes("koku") || lower.includes("tat") || lower.includes("ceker") || lower.includes("cezbedici")) && !newSpecs["Aroma / Formül"] && !newSpecs["Aroma / Etki"]) {
-      const aromaMatch = lower.match(/\b(midye|ciger|peynir|sarimsak|pellet|somon|kalamar|kan|misir|vanilya|cilek|karides|anason|balik)\b/);
-      if (aromaMatch) {
-        const aromaCapMap = {
-          midye: "Midye",
-          ciger: "Ciğer",
-          peynir: "Peynir",
-          sarimsak: "Sarımsak",
-          pellet: "Pellet",
-          somon: "Somon",
-          kalamar: "Kalamar",
-          kan: "Kan",
-          misir: "Mısır",
-          vanilya: "Vanilya",
-          cilek: "Çilek",
-          karides: "Karides",
-          anason: "Anason",
-          balik: "Balık"
-        };
-        const prettyName = aromaCapMap[aromaMatch[1]] || (aromaMatch[1].charAt(0).toUpperCase() + aromaMatch[1].slice(1));
-        newSpecs["Aroma / Formül"] = `${prettyName} Aromalı Özel Formül`;
-      } else {
-        newSpecs["Aroma / Formül"] = cleanLine;
-      }
-      matched = true;
-    }
-
-    // 2. Yüzme / Aksiyon (Hamur, Sahte Yem, Maket vb.)
-    if (/yuzen|floating/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
-      newSpecs["Yüzme Özelliği"] = "Yüzen (Floating)";
-      matched = true;
-    } else if (/batan|sinking/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
-      newSpecs["Yüzme Özelliği"] = "Batan (Sinking)";
-      matched = true;
-    } else if (/askida|suspending/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
-      newSpecs["Yüzme Özelliği"] = "Askıda Kalan (Suspending)";
-      matched = true;
-    }
-
-    // 3. Mukavemet & Dağılmama (Farklı Sıcaklık ve Akıntılara Dayanıklı)
-    if ((lower.includes("dagilma") || lower.includes("catlama") || lower.includes("akinti") || lower.includes("sicaklik")) && !newSpecs["Dayanıklılık & Yapı"]) {
-      newSpecs["Dayanıklılık & Yapı"] = "Farklı sıcaklıklarda ve güçlü akıntılarda dağılmaz ve çatlamaz";
-      matched = true;
-    }
-
-    // 4. Kullanım Alanı
-    if ((lower.includes("kullanim") || lower.includes("uygun") || lower.includes("dere") || lower.includes("irmak") || lower.includes("golet") || lower.includes("baraj")) && !newSpecs["Kullanım Alanı"]) {
-      let val = cleanLine;
-      const m = cleanLine.match(/^(.*?)(?:için\s*uygundur|kullanımına\s*uygundur|kullanım\s*için)/i);
-      if (m && m[1].trim().length > 3) {
-        val = m[1].trim();
-      }
-      val = val.replace(/kullanım\s*için\s*uygundur\.?/i, "").replace(/için\s*uygundur\.?/i, "").trim();
-      newSpecs["Kullanım Alanı"] = val || cleanLine;
-      matched = true;
-    }
-
-    // 5. Renk / Renk Seçenekleri
-    if ((lower.includes("renk") || lower.includes("renkler")) && !newSpecs["Renk Seçenekleri"]) {
-      newSpecs["Renk Seçenekleri"] = cleanLine.replace(/üretilmektedir\.?/i, "").replace(/sunulmaktadır\.?/i, "").trim();
-      matched = true;
-    }
-
-    // 6. Gramaj / Ağırlık / Ambalaj
-    if (/(\d+(?:[\.,]\d+)?)\s*(?:gram|gr|kg)/i.test(cleanLine) && !newSpecs["Ağırlık / Gramaj"]) {
-      const gm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:gram|gr|kg)(?:'l[ıi]k)?(?:\s*ambalaj[ıi]nda)?)/i);
-      newSpecs["Ağırlık / Gramaj"] = gm ? gm[1].trim() : cleanLine;
-      matched = true;
-    }
-
-    // 7. İğne / Kanca Uyumu
-    if ((lower.includes("igne") || lower.includes("kanca")) && !newSpecs["İğne Uyumu"]) {
-      newSpecs["İğne Uyumu"] = cleanLine.replace(/korur\.?/i, "korur").trim();
-      matched = true;
-    }
-
-    // 8. Su Geçirmezlik
-    if ((lower.includes("su gecirmez") || lower.includes("waterproof")) && !newSpecs["Su Geçirmezlik"]) {
-      newSpecs["Su Geçirmezlik"] = "Su Geçirmez";
-      matched = true;
-    }
-
-    // 9. Boy / Ebat
-    if (/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i.test(cleanLine) && !newSpecs["Boyut / Ebat"]) {
-      const bm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i);
-      newSpecs["Boyut / Ebat"] = bm ? bm[1] : cleanLine;
-      matched = true;
-    }
-
-    // 10. Fallback: Genel maddeleri yapısal özellik olarak dönüştür
-    if (!matched) {
-      if (cleanLine.includes(",")) {
-        const parts = cleanLine.split(",");
-        const candidateKey = parts[0].trim();
-        const candidateVal = parts.slice(1).join(",").trim();
-        if (candidateKey.length >= 3 && candidateKey.length <= 30 && candidateVal.length >= 3) {
-          const capKey = candidateKey.charAt(0).toUpperCase() + candidateKey.slice(1);
-          newSpecs[capKey] = candidateVal.charAt(0).toUpperCase() + candidateVal.slice(1);
-          continue;
-        }
-      }
-      newSpecs[`Özellik ${bulletIndex}`] = cleanLine;
-      bulletIndex++;
-    }
-  }
-
-  return newSpecs;
-}
-
 function populateForm(data) {
-  const candidateTitle = data.title || data.name_tr || "";
-  if (candidateTitle && !isInvalidProductTitle(candidateTitle)) {
-    document.getElementById("fldNameTr").value = candidateTitle;
-  }
+  if (data.title) document.getElementById("fldNameTr").value = data.title;
+  if (data.name_tr) document.getElementById("fldNameTr").value = data.name_tr;
 
-  const supUrl = data.url || data.supplier_url || "";
-  const fldSupUrl = document.getElementById("fldSupplierUrl");
-  if (fldSupUrl && supUrl) {
-    fldSupUrl.value = supUrl;
-  }
+  const specs = data.specs_tr || data.specs || {};
 
-  let specs = { ...(data.specs_tr || data.specs || {}) };
-
-  let brandVal =
+  const brandVal =
     data.brand ||
     (specs ? specs["Marka"] || specs["Brand"] : "") ||
     "";
-
-  // Bilinen markaları kontrol et (Başlık SEAGAME içeriyorsa marka kesinlikle SEAGAME'dir)
-  const KNOWN_POPUP_BRANDS = [
-    "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
-    "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
-    "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
-    "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
-    "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
-    "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex",
-    "SEAGAME", "Seagame", "Savage Gear", "Daiwa", "Shimano", "Okuma", "Bauer",
-    "Remington", "Federal", "Sterling", "Yavaşçalar", "RC", "Fiocchi", "Bornaghi", "BP"
-  ];
-  if (candidateTitle) {
-    const normCandidate = normalizeTurkish(candidateTitle);
-    for (const b of KNOWN_POPUP_BRANDS) {
-      const normB = normalizeTurkish(b);
-      if (new RegExp(`(^|\\b)${normB}(\\b|$)`, "i").test(normCandidate)) {
-        brandVal = b;
-        break;
-      }
-    }
-  }
-
-  if (brandVal && isInvalidBrand(brandVal)) {
-    brandVal = "";
-    delete specs["Marka"];
-    delete specs["Brand"];
-  }
   if (brandVal) document.getElementById("fldBrand").value = brandVal;
 
   if (data.model) {
@@ -1270,18 +974,6 @@ function populateForm(data) {
   for (const ek of excludeSupplierKeys) {
     delete specs[ek];
   }
-
-  // KULLANICI TALEBİ: "ürün özellikleri boş geliyor ise ürün açıklamasındaki maddeler ürün özelliklerine girsin"
-  const validSpecsCount = Object.keys(specs).filter(
-    (k) => !["Marka", "Model", "Kategori", "Stok Kodu", "Ürün Kodu", "SKU", "sku", "Ürün No", "Stok Durumu"].includes(k)
-  ).length;
-
-  const descToParse = data.description || lastScrapedDescription || "";
-  if (validSpecsCount === 0 && descToParse) {
-    const enriched = extractSpecsFromDescription(descToParse, null, specs);
-    Object.assign(specs, enriched);
-  }
-
   document.getElementById("fldSpecsJson").value = JSON.stringify(specs, null, 2);
 
   // Açıklama Yönetimi: Tedarikçi açıklaması vs. Güner AV standart resmi güvence açıklaması
@@ -1671,28 +1363,6 @@ function populateForm(data) {
     catSelect.value = "kamp-mat";
     licenseChk.checked = false;
   } else if (
-    fullText.includes("alabalik hamuru") ||
-    fullText.includes("alabalık hamuru") ||
-    fullText.includes("trout pasta") ||
-    fullText.includes("c1335") ||
-    (fullText.includes("seagame") && (fullText.includes("pasta") || fullText.includes("hamur") || fullText.includes("bait")))
-  ) {
-    catSelect.value = "kamp-alabalik-hamuru";
-    licenseChk.checked = false;
-  } else if (
-    fullText.includes("doğal yem") ||
-    fullText.includes("dogal yem") ||
-    fullText.includes("canlı yem") ||
-    fullText.includes("canli yem") ||
-    fullText.includes("alabalık yemi") ||
-    fullText.includes("alabalik yemi") ||
-    fullText.includes("sazan yemi") ||
-    fullText.includes("balık hamuru") ||
-    fullText.includes("balik hamuru")
-  ) {
-    catSelect.value = "kamp-dogal-yem";
-    licenseChk.checked = false;
-  } else if (
     fullText.includes("kamp") ||
     fullText.includes("termos") ||
     fullText.includes("matara") ||
@@ -1737,8 +1407,6 @@ function populateForm(data) {
       const nLow = ((data.title || "") + " " + (data.brand || "")).toLowerCase();
       if (uLow.includes("arslansilah") || nLow.includes("castello")) {
         supId = 1;
-      } else if (uLow.includes("alestabalik") || uLow.includes("alesta")) {
-        supId = 3;
       } else if (uLow.includes("ozlerav")) {
         supId = 2;
       } else {
@@ -1770,7 +1438,6 @@ async function saveFormDraft() {
     model: document.getElementById("fldModel")?.value || "",
     supplierId: document.getElementById("fldSupplierId")?.value || "2",
     supplierIdCustom: document.getElementById("fldSupplierIdCustom")?.value || "",
-    supplierUrl: document.getElementById("fldSupplierUrl")?.value || "",
     images: document.getElementById("fldImages")?.value || "",
     variantsJson: document.getElementById("fldVariantsJson")?.value || "",
     featured: document.getElementById("chkFeatured")?.checked ?? true,
@@ -1802,9 +1469,6 @@ function restoreFormDraft(draft) {
       inpCustom.style.display = draft.supplierId === "custom" ? "block" : "none";
       if (draft.supplierIdCustom) inpCustom.value = draft.supplierIdCustom;
     }
-  }
-  if (draft.supplierUrl && document.getElementById("fldSupplierUrl")) {
-    document.getElementById("fldSupplierUrl").value = draft.supplierUrl;
   }
   if (draft.images) document.getElementById("fldImages").value = draft.images;
 
@@ -2667,128 +2331,61 @@ async function runBatchScrape() {
       appendBatchLog(`🎯 Kullanıcı Seçimi: TÜM ÜRÜNLER istisnasız '${batchCategory}' kategorisine atanıyor. (Ruhsat: ${isFirearmCat ? "Gerektirir" : "Gerekmez"})`, "success");
     } else {
       // Liste linki veya geçerli sekme URL'sinden otomatik kategori tespiti
-      const rawActiveUrl = document.getElementById("fldBatchUrl")?.value || tab?.url || targetTab?.url || "";
-      let pathname = "";
-      try {
-        const u = new URL(rawActiveUrl);
-        pathname = (u.pathname + " " + u.search).toLowerCase();
-      } catch (e) {
-        pathname = rawActiveUrl.toLowerCase();
-      }
-
+      const activeUrl = (document.getElementById("fldBatchUrl")?.value || tab?.url || targetTab?.url || "").toLowerCase();
       let autoDetectedCat = null;
       if (
-        pathname.includes("alabalik-hamuru") ||
-        pathname.includes("alabalik_hamuru") ||
-        pathname.includes("trout-pasta") ||
-        pathname.includes("trout_pasta") ||
-        pathname.includes("c1335") ||
-        pathname.includes("c1336") ||
-        pathname.includes("c1337") ||
-        pathname.includes("c1338") ||
-        pathname.includes("c1339") ||
-        pathname.includes("c1340") ||
-        pathname.includes("ciger-c") ||
-        pathname.includes("midye-c") ||
-        pathname.includes("pellet-c") ||
-        pathname.includes("peynir-c") ||
-        pathname.includes("sarimsak-c") ||
-        (pathname.includes("seagame") && (pathname.includes("hamur") || pathname.includes("pasta") || pathname.includes("yem") || pathname.includes("trout")))
-      ) {
-        autoDetectedCat = "kamp-alabalik-hamuru";
-      }
-      else if (
-        pathname.includes("dogal-yem") ||
-        pathname.includes("dogal_yem") ||
-        pathname.includes("canli-yem") ||
-        pathname.includes("balik-yem") ||
-        pathname.includes("sazan-yem") ||
-        pathname.includes("hamur-yem")
-      ) {
-        autoDetectedCat = "kamp-dogal-yem";
-      }
-      else if (pathname.includes("cadir-aksesuarlari") || pathname.includes("cadir-aksesuar")) {
-        autoDetectedCat = "kamp-cadir-aksesuari";
-      }
-      else if (pathname.includes("cadir-k-") || pathname.includes("cadir") || pathname.includes("cadirlar")) {
-        autoDetectedCat = "kamp-cadir";
-      }
-      else if (pathname.includes("uyku-tulumu") || pathname.includes("uyku_tulumu")) {
-        autoDetectedCat = "kamp-uyku-tulumu";
-      }
-      else if (pathname.includes("mat-k-") || pathname.includes("mat-") || pathname.includes("/mat")) {
-        autoDetectedCat = "kamp-mat";
-      }
-      else if (
-        pathname.includes("durbun") ||
-        pathname.includes("optik") ||
-        pathname.includes("scope") ||
-        pathname.includes("red-dot")
+        activeUrl.includes("durbun") ||
+        activeUrl.includes("optik") ||
+        activeUrl.includes("scope") ||
+        activeUrl.includes("red-dot")
       ) {
         autoDetectedCat = "optik";
       }
       else if (
-        pathname.includes("av-taktik-aksesuar") ||
-        pathname.includes("taktik-aksesuarlari") ||
-        pathname.includes("av-aksesuarlari") ||
-        pathname.includes("k-237") ||
-        pathname.includes("k-238") ||
-        pathname.includes("k-239")
+        activeUrl.includes("av-taktik-aksesuar") ||
+        activeUrl.includes("taktik-aksesuarlari") ||
+        activeUrl.includes("av-aksesuarlari") ||
+        activeUrl.includes("k-237") ||
+        activeUrl.includes("k-238") ||
+        activeUrl.includes("k-239")
       ) {
         autoDetectedCat = "tufek-aksesuar";
       }
-      else if (pathname.includes("havali-tabanca")) autoDetectedCat = "havali-tabanca";
-      else if (pathname.includes("havali-tufek")) autoDetectedCat = "havali-tufek";
-      else if (pathname.includes("kurusiki")) autoDetectedCat = "kurusiki-tabanca";
-      else if (pathname.includes("havali-muhimmat") || pathname.includes("pellet")) autoDetectedCat = "havali-muhimmat";
-      else if (pathname.includes("havali") || pathname.includes("airgun")) autoDetectedCat = "havali-kurusiki";
-      else if (pathname.includes("bakim") || pathname.includes("temizleme") || pathname.includes("harbi")) autoDetectedCat = "tufek-bakim";
-      else if (pathname.includes("giyim") || pathname.includes("pantolon") || pathname.includes("mont") || pathname.includes("yelek") || pathname.includes("bot") || pathname.includes("ayakkabi")) autoDetectedCat = "giyim";
-      else if (pathname.includes("bicak") || pathname.includes("caki") || pathname.includes("balta")) autoDetectedCat = "bicak";
-      else if (pathname.includes("24-gram") || pathname.includes("24-gr")) autoDetectedCat = "muhimmat-24-gram";
-      else if (pathname.includes("28-gram") || pathname.includes("28-gr")) autoDetectedCat = "muhimmat-28-gram";
-      else if (pathname.includes("30-gram") || pathname.includes("30-gr")) autoDetectedCat = "muhimmat-30-gram";
-      else if (pathname.includes("32-gram") || pathname.includes("32-gr")) autoDetectedCat = "muhimmat-32-gram";
-      else if (pathname.includes("34-gram") || pathname.includes("34-gr")) autoDetectedCat = "muhimmat-34-gram";
-      else if (pathname.includes("36-gram") || pathname.includes("36-gr")) autoDetectedCat = "muhimmat-36-gram";
-      else if (pathname.includes("magnum")) autoDetectedCat = "muhimmat-magnum";
-      else if (pathname.includes("tek-kursun")) autoDetectedCat = "muhimmat-tek-kursun";
-      else if (pathname.includes("savrotin")) autoDetectedCat = "muhimmat-savrotin";
-      else if (pathname.includes("trap") || pathname.includes("skeet")) autoDetectedCat = "muhimmat-trap-skeet";
-      else if (pathname.includes("kursunsuz") || pathname.includes("celik-sacma")) autoDetectedCat = "muhimmat-kursunsuz-celik";
-      else if (pathname.includes("ozel-dolum")) autoDetectedCat = "muhimmat-ozel-dolum";
-      else if (pathname.includes("fisek") || pathname.includes("muhimmat")) autoDetectedCat = "muhimmat";
-      else if (pathname.includes("yari-otomatik")) autoDetectedCat = "tufek-yari-otomatik";
-      else if (pathname.includes("pompali")) autoDetectedCat = "tufek-pompali";
-      else if (pathname.includes("sarjorlu")) autoDetectedCat = "tufek-sarjorlu";
-      else if (pathname.includes("bullpup")) autoDetectedCat = "tufek-bullpup";
-      else if (pathname.includes("superpoze")) autoDetectedCat = "tufek-superpoze";
-      else if (pathname.includes("cifte")) autoDetectedCat = "tufek-cifte";
-      else if (pathname.includes("tek-kirma")) autoDetectedCat = "tufek-tek-kirma";
-      else if (pathname.includes("kamp") || pathname.includes("balik")) autoDetectedCat = "kamp";
+      else if (activeUrl.includes("havali-tabanca")) autoDetectedCat = "havali-tabanca";
+      else if (activeUrl.includes("havali-tufek")) autoDetectedCat = "havali-tufek";
+      else if (activeUrl.includes("kurusiki")) autoDetectedCat = "kurusiki-tabanca";
+      else if (activeUrl.includes("havali") || activeUrl.includes("airgun")) autoDetectedCat = "havali-kurusiki";
+      else if (activeUrl.includes("bakim") || activeUrl.includes("temizleme") || activeUrl.includes("harbi")) autoDetectedCat = "tufek-bakim";
+      else if (activeUrl.includes("cadir-aksesuarlari")) autoDetectedCat = "kamp-cadir-aksesuari";
+      else if (activeUrl.includes("cadir-k-") || activeUrl.includes("cadir")) autoDetectedCat = "kamp-cadir";
+      else if (activeUrl.includes("uyku-tulumu")) autoDetectedCat = "kamp-uyku-tulumu";
+      else if (activeUrl.includes("mat-k-") || activeUrl.includes("mat-")) autoDetectedCat = "kamp-mat";
+      else if (activeUrl.includes("giyim") || activeUrl.includes("pantolon") || activeUrl.includes("mont") || activeUrl.includes("yelek") || activeUrl.includes("bot") || activeUrl.includes("ayakkabi")) autoDetectedCat = "giyim";
+      else if (activeUrl.includes("bicak") || activeUrl.includes("caki") || activeUrl.includes("balta")) autoDetectedCat = "bicak";
+      else if (activeUrl.includes("fisek") || activeUrl.includes("muhimmat")) autoDetectedCat = "muhimmat";
+      else if (activeUrl.includes("kamp") || activeUrl.includes("balik")) autoDetectedCat = "kamp";
+      else if (activeUrl.includes("yari-otomatik")) autoDetectedCat = "tufek-yari-otomatik";
+      else if (activeUrl.includes("pompali")) autoDetectedCat = "tufek-pompali";
+      else if (activeUrl.includes("sarjorlu")) autoDetectedCat = "tufek-sarjorlu";
+      else if (activeUrl.includes("bullpup")) autoDetectedCat = "tufek-bullpup";
+      else if (activeUrl.includes("superpoze")) autoDetectedCat = "tufek-superpoze";
+      else if (activeUrl.includes("cifte")) autoDetectedCat = "tufek-cifte";
+      else if (activeUrl.includes("tek-kirma")) autoDetectedCat = "tufek-tek-kirma";
 
       if (autoDetectedCat) {
         rawProducts.forEach((p) => {
-          const isGeneric = !p.category || ["kamp", "tufek", "havali-kurusiki", "muhimmat"].includes(p.category);
-          if (isGeneric) {
-            p.category = autoDetectedCat;
-            p.requires_license = autoDetectedCat.startsWith("tufek") && autoDetectedCat !== "tufek-aksesuar" && autoDetectedCat !== "tufek-bakim" && !autoDetectedCat.startsWith("havali");
-          }
+          p.category = autoDetectedCat;
+          p.requires_license = autoDetectedCat.startsWith("tufek") && autoDetectedCat !== "tufek-aksesuar" && autoDetectedCat !== "tufek-bakim" && !autoDetectedCat.startsWith("havali");
         });
         appendBatchLog(`🤖 Tedarikçi liste linkinden kategori otomatik algılandı: ${autoDetectedCat}`, "info");
       } else {
-        // Her ürünün başlığından akıllı kategori tayini (Dürbünler, Aksesuarlar, Giyim, Balık ve Kamp tayin edilir)
+        // Her ürünün başlığından akıllı kategori tayini (Dürbünler, Aksesuarlar, Giyim ve Kamp tayin edilir)
         rawProducts.forEach((p) => {
-          // Eğer ürün sayfasından spesifik bir alt kategori (örn: kamp-alabalik-hamuru, tufek-yari-otomatik vb.) zaten belirlendiyse koru
-          if (p.category && !["kamp", "tufek", "muhimmat", "havali-kurusiki"].includes(p.category)) {
-            return;
-          }
-
           const titleLower = (p.title || "").toLowerCase();
 
           const isAccessory =
             (p.category && (p.category.startsWith("aksesuar") || p.category === "tufek-aksesuar")) ||
-            rawActiveUrl.toLowerCase().includes("taktik-aksesuar") ||
+            activeUrl.includes("taktik-aksesuar") ||
             titleLower.includes("aparati") ||
             titleLower.includes("aparatı") ||
             titleLower.includes("montaj rayı") ||
@@ -2876,8 +2473,8 @@ async function runBatchScrape() {
             titleLower.includes("havalı saçma") ||
             titleLower.includes("havali sacma") ||
             titleLower.includes("pellet") ||
-            rawActiveUrl.toLowerCase().includes("havali") ||
-            rawActiveUrl.toLowerCase().includes("kurusiki");
+            activeUrl.includes("havali") ||
+            activeUrl.includes("kurusiki");
 
           const isOptic =
             !isAccessory &&
@@ -2897,8 +2494,8 @@ async function runBatchScrape() {
               titleLower.includes("sifirlama lazeri") ||
               titleLower.includes("monoküler") ||
               titleLower.includes("monokuler") ||
-              rawActiveUrl.toLowerCase().includes("durbun") ||
-              rawActiveUrl.toLowerCase().includes("optik")
+              activeUrl.includes("durbun") ||
+              activeUrl.includes("optik")
             );
 
           const isClothing =
@@ -2927,31 +2524,8 @@ async function runBatchScrape() {
               titleLower.includes("giyim")
             );
 
-          const isTroutBait =
-            titleLower.includes("alabalık hamur") ||
-            titleLower.includes("alabalik hamur") ||
-            titleLower.includes("trout pasta") ||
-            titleLower.includes("trout bait") ||
-            (titleLower.includes("seagame") && (titleLower.includes("hamur") || titleLower.includes("pasta") || titleLower.includes("yem"))) ||
-            (titleLower.includes("hamur") && (titleLower.includes("alabalik") || titleLower.includes("alabalık")));
-
-          const isNaturalBait =
-            !isTroutBait && (
-              titleLower.includes("doğal yem") ||
-              titleLower.includes("dogal yem") ||
-              titleLower.includes("canlı yem") ||
-              titleLower.includes("canli yem") ||
-              titleLower.includes("balık yemi") ||
-              titleLower.includes("balik yemi") ||
-              titleLower.includes("mısır yemi") ||
-              titleLower.includes("misir yemi") ||
-              titleLower.includes("balık hamuru") ||
-              titleLower.includes("balik hamuru") ||
-              titleLower.includes("boilie")
-            );
-
           const isCamping =
-            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && !isTroutBait && !isNaturalBait && (
+            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && (
               titleLower.includes("uyku tulumu") ||
               titleLower.includes("tulum") ||
               titleLower.includes("çadır") ||
@@ -2967,7 +2541,7 @@ async function runBatchScrape() {
             );
 
           const isKnife =
-            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && !isCamping && !isTroutBait && !isNaturalBait && (
+            !isAccessory && !isBakim && !isAirgun && !isOptic && !isClothing && !isCamping && (
               titleLower.includes("bıçak") ||
               titleLower.includes("bicak") ||
               titleLower.includes("çakı") ||
@@ -3004,12 +2578,6 @@ async function runBatchScrape() {
           } else if (isClothing) {
             p.requires_license = false;
             p.category = "giyim";
-          } else if (isTroutBait) {
-            p.requires_license = false;
-            p.category = "kamp-alabalik-hamuru";
-          } else if (isNaturalBait) {
-            p.requires_license = false;
-            p.category = "kamp-dogal-yem";
           } else if (isCamping) {
             p.requires_license = false;
             if (titleLower.includes("uyku tulumu") || titleLower.includes("tulum")) p.category = "kamp-uyku-tulumu";
@@ -3069,7 +2637,12 @@ async function runBatchScrape() {
           slug = `${slug}-${prevWithSameSlug.length + 1}`;
         }
       }
-      const specs = p.specs_tr || p.specs || {};
+      const specs = { ...(p.specs_tr || p.specs || {}) };
+      delete specs["Tedarikçi"];
+      delete specs["tedarikçi"];
+      delete specs["Tedarikci"];
+      delete specs["tedarikci"];
+      delete specs["Supplier"];
       const variants = p.variants || [];
       if (variants.length > 0) {
         specs.variants = variants;
@@ -3115,8 +2688,8 @@ async function runBatchScrape() {
         brand: brandVal,
         model: modelVal,
         name_tr: nameTr,
-        description_tr: p.description_tr || generateStandardDescription(p, specs),
-        description_en: p.description_en || generateStandardDescription(p, specs),
+        description_tr: (useSupplierDesc && p.description_tr) ? p.description_tr : generateStandardDescription(p, specs),
+        description_en: (useSupplierDesc && p.description_en) ? p.description_en : generateStandardDescription(p, specs),
         price: priceVal,
         discount_percent: null,
         images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ["/images/products/optics-1.webp"],
@@ -3128,7 +2701,6 @@ async function runBatchScrape() {
         specs_tr: specs,
         specs_en: specs,
         supplier_id: finalSupplierId,
-        supplier_url: p.supplier_url || p.url || null,
       };
 
       try {
@@ -3165,17 +2737,6 @@ async function runBatchScrape() {
       `${successCount} / ${finalProducts.length}`
     );
     appendBatchLog(`🎉 Tebrikler! Toplu aktarım başarıyla tamamlandı. Toplam ${successCount} adet ürün sitenizde yayına alındı.`, "success");
-
-    if (successCount > 0) {
-      try {
-        await fetch("https://www.gunerav.site/api/revalidate?secret=gunerav_revalidate_secret_2026", {
-          method: "POST",
-        });
-        appendBatchLog("⚡ Site önbelleği anında temizlendi, ürünler anında vitrinde!", "info");
-      } catch (revErr) {
-        console.warn("Önbellek temizleme çağrısı:", revErr);
-      }
-    }
   } catch (err) {
     appendBatchLog(`❌ Beklenmeyen hata: ${err.message}`, "error");
     updateBatchProgress(0, `Hata: ${err.message}`);
@@ -3189,45 +2750,87 @@ async function runBatchScrape() {
 // =========================================================================
 
 async function callAiSiteAnalyzer({ engine, groqKey, openRouterKey, pageInfo, customPrompt }) {
-  const systemPrompt = `Sen evrensel bir Web Scraper, Veri Analisti ve Çevirmen Uzmanısın. Herhangi bir e-ticaret, B2B veya üretici web sitesi (${pageInfo.domain}) için hem CSS seçicilerini çıkar hem de sayfadaki ürünü kusursuz bir şekilde analiz edip Türkçe'ye çevir.
+  // Domain özel_AI_ İpuçları (marka/model odaklama)
+  let brandHints = {
+    focusBrands: [],
+    avoidAsBrand: [],
+    exampleBrand: "",
+    exampleModel: "",
+  };
+  try {
+    const stored = await chrome.storage.local.get(["aiHints"]);
+    if (stored.aiHints && stored.aiHints[pageInfo.domain]) {
+      brandHints = Object.assign(brandHints, stored.aiHints[pageInfo.domain]);
+    }
+  } catch (e) { /* hata görmezden gel */ }
 
-ÖNEMLİ EVRENSEL KURALLAR:
-1. CSS Seçicileri (selectors): Sitedeki diğer ürünlerde de çalışacak en temiz kuralları bul.
-2. Kusursuz Ürün Verisi (perfect_product_data): HTML içeriğini OKU. Marka ve modeli ürün başlığında, açıklamasında veya özelliklerinde mantıksal olarak ara. 
-   - Başlık (title) her zaman [Marka] + [Model] şeklinde birleştirilmiş tam bir isim olmalıdır. (örn: Eğer sitede başlık sadece "MAGIC" ise ve sayfanın başka bir yerinde veya sitenin kendisinde marka "Sarsılmaz" ise başlık "Sarsılmaz Magic" olmalıdır).
-   - Özellikler (specs) İSTİSNASIZ TÜRKÇE olmalıdır. İngilizce olan (örn: "Caliber", "Barrel Length", "Semi Auto") tüm anahtarları ve değerleri Türkçe'ye çevir ("Kalibre", "Namlu Uzunluğu", "Yarı Otomatik"). 
-   - Tüm gereksiz boşlukları ve HTML taglerini temizle.
-   - Bu "perfect_product_data" objesi, kullanıcının o anki ürünü anında forma aktarabilmesi için kusursuz hazırlanmış bir önizlemedir.
+  const hintText = [];
+  if (brandHints.focusBrands && brandHints.focusBrands.length) {
+    hintText.push(`ÖNEMLİ: Bu site için ODALAKLANACAKLARIN MARKALAR ŞUNLAR: ${brandHints.focusBrands.join(", ")}`);
+  }
+  if (brandHints.avoidAsBrand && brandHints.avoidAsBrand.length) {
+    hintText.push(`DİKKAT: Şu kelimeler MARKA DEĞİLDİR, sadece malzeme/tasarım/b가족 vb. olarak geçebilir: ${brandHints.avoidAsBrand.join(", ")}`);
+  }
+  if (brandHints.exampleBrand) {
+    hintText.push(`ÖRNEK MARKA: ${brandHints.exampleBrand}`);
+  }
+  if (brandHints.exampleModel) {
+    hintText.push(`ÖRNEK MODEL: ${brandHints.exampleModel}`);
+  }
+  const brandHintSection = hintText.length ? `\n\n${hintText.join("\n")}\n` : "";
 
-SADECE AŞAĞIDAKİ JSON ŞEMASINI DÖNDÜR:
+  const systemPrompt = `Sen e-ticaret siteleri için uzman bir Web Scraper ve DOM/CSS seçici analistisin.
+Sana bir ürün detay sayfasının temizlenmiş HTML yapısı ve açıklaması verilecek.
+Görevin bu web sitesi (domain: ${pageInfo.domain}) için CSS seçicilerini (selectors) tespit etmek ve bu sayfadaki örnek verileri (title, brand, model, price, images, specs, description) çıkarmaktır.
+
+AÇIKLAMA VE ÖZELLİKLER:
+Sayfadaki ürün açıklaması ve teknik özellikler HTML içinde <!--AÇIKLAMA--> ve <!--ÖZELLİKLER--> gövdesleri ile işaretlenmiştir. Bu bölümleri okuyarak ürün adı, marka, model, fiyat, görseller, özellikler ve açıklama metnini çıkar.
+
+MARKA/MODEL AYRIŞTIRMA:
+- Bir kelime marka olabilir, ancak seçim yaparken sayfadaki bağlamı kullan.
+- Eğer bir kelime açıklama metninde malzeme, renk, tasarım veya teknik özellik olarak geçiyorsa, marka olarak alma.
+- Bilinen marka listesi genel olarak: ... (liste buraya eklenebilir).
+${brandHintSection}
+
+TEMSİLGİ:
+Marka ve modeli belirsizlik durumunda, ürün adından tahmin etme, yerine boş bırak.
+
+DÖNDÜRÜLECEK JSON FORMATI (Başka hiçbir açıklama, selamlama veya markdown yazma, SADECE saf JSON):
 {
   "domain": "${pageInfo.domain}",
   "selectors": {
-    "title": "...",
-    "price": null,
-    "brand": null,
-    "images": "...",
-    "image_attr": "src",
-    "specs_table": "...",
-    "specs_row": "...",
-    "specs_key": "...",
-    "specs_val": "...",
-    "description": "...",
-    "listing_link": "..."
+    "title": "Ürün başlığı seçicisi (örn: h1.product-title, .col-12 h5.font-weight-bold)",
+    "price": "Fiyat alanının seçicisi (örn: .product-price, span.fiyat)",
+    "brand": "Varsa marka seçicisi",
+    "images": "Görsellerin seçicisi (örn: .product-gallery img, .swiper-slide img)",
+    "image_attr": "Görsel URL niteliği ('src', 'data-src', 'data-zoom-image' vs.)",
+    "specs_table": "Teknik özellikler tablosu veya ana liste seçicisi (örn: table.product-specs, .product-features)",
+    "specs_row": "Özellik satırları seçicisi (örn: tr, li)",
+    "specs_key": "Özellik adı seçicisi (örn: th, td:first-child)",
+    "specs_val": "Özellik değeri seçicisi (örn: td:last-child)",
+    "description": "Ürün açıklama metni seçicisi",
+    "listing_link": "Kategori sayfalarındaki ürün linkleri seçicisi (örn: .product-item a, .uruncard a)"
   },
-  "perfect_product_data": {
-    "title": "Marka ve Model Birleştirilmiş Tam Başlık",
-    "brand": "Sadece Marka",
-    "model": "Sadece Model",
-    "price": "15000",
-    "specs": {
-      "Kalibre": "12 GA",
-      "Namlu Uzunluğu": "71 cm"
-    },
-    "description": "..."
+  "extracted_preview": {
+    "title": "Sayfadaki ürün adı",
+    "brand": "Sayfadaki marka",
+    "model": "Sayfadaki model (varsa)",
+    "price": 12500,
+    "images": ["görsel linki 1", "görsel linki 2"],
+    "specs": { "Özellik 1": "Değer 1", "Özellik 2": "Değer 2" },
+    "description": "Sayfadaki açıklama metni"
   },
-  "notes": "Kısa analiz ve çalışma mantığı notu"
+  "notes": "Site hakkında kısa analiz notun"
 }`;
+
+  const userPrompt = `Domain: ${pageInfo.domain}
+URL: ${pageInfo.url}
+Sayfa Başlığı: ${pageInfo.title}
+${pageInfo.description ? `Sayfa Açıklaması (meta): ${pageInfo.description}\n` : ""}
+${customPrompt ? `Kullanıcı Özel İsteği: ${customPrompt}\n` : ""}
+
+HTML İÇERİĞİ:
+${pageInfo.htmlSnippet}`;
 
   let endpoint = "";
   let authHeader = "";
@@ -3251,79 +2854,60 @@ SADECE AŞAĞIDAKİ JSON ŞEMASINI DÖNDÜR:
   let lastError = null;
   let parsed = null;
 
-  // Başlangıçta 5000 karakter, TPM hatası durumunda 2500 karaktere indirilip otomatik tekrarlanır
-  const snippetLengths = [5000, 2500];
+  for (const modelName of candidates) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+          ...extraHeaders,
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+        }),
+      });
 
-  for (const snippetLen of snippetLengths) {
-    const snippetToUse = (pageInfo.htmlSnippet || "").slice(0, snippetLen);
-    let metaRefTxt = "";
-    if (pageInfo.referenceMeta) {
-      const ref = pageInfo.referenceMeta;
-      metaRefTxt = `\nSAYFA REFERANS BİLGİLERİ (Doğrulama ve Eşleştirme İçin):
-- Hedef Ürün Başlığı: "${ref.title || ""}"
-- Varsa Marka: "${ref.brand || ""}"
-- Varsa Ana Görsel: "${ref.image || ""}"
-- Varsa Fiyat: "${ref.price !== null && ref.price !== undefined ? ref.price : "Doğrudan Satış Fiyatı Yok / Katalog"}"
-${ref.specsSample && ref.specsSample.length ? "- Örnek Özellikler: " + ref.specsSample.join(", ") : ""}
-${pageInfo.suggestedHeadingSelector ? `- Başlık Eleman Adayı: "${pageInfo.suggestedHeadingSelector}"` : ""}\n`;
-    }
-    const userPrompt = `Domain: ${pageInfo.domain}\nURL: ${pageInfo.url}${metaRefTxt}\n${customPrompt ? "Özel İstek: " + customPrompt + "\n" : ""}HTML İÇERİĞİ:\n${snippetToUse}`;
-
-    for (const modelName of candidates) {
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: authHeader,
-            ...extraHeaders,
-          },
-          body: JSON.stringify({
-            model: modelName,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            temperature: 0.1,
-            max_tokens: 1000,
-            response_format: { type: "json_object" },
-          }),
-        });
-
-        if (!res.ok) {
-          const errBody = await res.text();
-          lastError = new Error(`HTTP ${res.status}: ${errBody}`);
-          // Eğer token limiti hatasıysa (413 / TPM), daha küçük snippet ile tekrar dene
-          if (res.status === 413 || errBody.includes("TPM") || errBody.includes("too large")) {
-            break;
-          }
-          continue;
-        }
-
-        const data = await res.json();
-        const rawContent = data.choices?.[0]?.message?.content || "";
-        try {
-          parsed = JSON.parse(rawContent);
-        } catch (e) {
-          const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]);
-          }
-        }
-
-        if (parsed) break;
-      } catch (netErr) {
-        lastError = netErr;
+      if (!res.ok) {
+        const errBody = await res.text();
+        lastError = new Error(`HTTP ${res.status}: ${errBody}`);
+        continue;
       }
-    }
 
-    if (parsed) break;
+      const data = await res.json();
+      const rawContent = data.choices?.[0]?.message?.content || "";
+      try {
+        parsed = JSON.parse(rawContent);
+      } catch (e) {
+        // markdown code fence içine alınmış JSON'ı çek
+        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsed = JSON.parse(jsonMatch[0]);
+          } catch (e2) { /* atl findings */ }
+        }
+        // eğer hala cols then try to extract via eval? no.
+      }
+
+      if (parsed) break;
+    } catch (netErr) {
+      lastError = netErr;
+    }
   }
 
   if (!parsed) {
     throw lastError || new Error("Yapay zekâ yanıtı geçerli JSON formatına dönüştürülemedi.");
   }
 
+  //eksik alanları tamamla
+  if (!parsed.extracted_preview) parsed.extracted_preview = {};
+  if (!parsed.selectors) parsed.selectors = {};
   return parsed;
 }
 

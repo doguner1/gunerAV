@@ -217,8 +217,6 @@
             <option value="muhimmat">Mühimmat &amp; Fişek (Genel)</option>
           </optgroup>
           <optgroup label="Balık &amp; Kamp">
-            <option value="kamp-alabalik-hamuru">Seagame Alabalık Hamuru</option>
-            <option value="kamp-dogal-yem">Doğal Yem &amp; Hamur</option>
             <option value="kamp-cadir">Çadır</option>
             <option value="kamp-cadir-aksesuari">Çadır Aksesuarları</option>
             <option value="kamp-mat">Mat</option>
@@ -243,7 +241,7 @@
             <option value="auto" selected>✨ Otomatik Algıla (Castello=1, ÖzlerAv=2)</option>
             <option value="2">2 - Özler Av (ozlerav.com)</option>
             <option value="1">1 - Arslan Silah (arslansilah.com)</option>
-            <option value="3">3 - Alesta Balık (alestabalik.com)</option>
+            <option value="3">3 - Tedarikçi 3</option>
             <option value="4">4 - Tedarikçi 4</option>
             <option value="5">5 - Tedarikçi 5</option>
             <option value="custom">Özel ID Gir...</option>
@@ -307,10 +305,11 @@
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom: 8px;">
+<div class="form-group" style="margin-bottom: 8px;">
         <label>Yapay Zekâ Motoru:</label>
         <select id="selAiEngine">
-          <option value="groq" selected>⚡ GROQ - GPT OSS 120B (Süper Hızlı &amp; Ücretsiz - Önerilen)</option>
+          <option value="nemotron" selected>🟢 NVIDIA Nemotron-3-8B (En Hızlı & Akıllı - Önerilen)</option>
+          <option value="groq">⚡ GROQ - GPT OSS 120B (Süper Hızlı & Ücretsiz)</option>
           <option value="openrouter">🧠 OpenRouter - Nemotron Lightning (Ücretsiz)</option>
         </select>
       </div>
@@ -337,6 +336,8 @@
         <!-- Çıkarılan Seçiciler Özeti -->
         <div style="font-size: 10.5px; background: #07090e; padding: 8px; border-radius: 6px; border: 1px solid #1e293b; margin-bottom: 8px;">
           <div style="color: #cbd5e1; margin-bottom: 2px;">📌 <strong>Başlık:</strong> <span id="lblRuleTitle" style="color: #38bdf8; font-family: monospace;"></span></div>
+          <div style="color: #cbd5e1; margin-bottom: 2px;">🏷️ <strong>Marka:</strong> <span id="lblRuleBrand" style="color: #38bdf8; font-family: monospace;"></span></div>
+          <div style="color: #cbd5e1; margin-bottom: 2px;">🔧 <strong>Model:</strong> <span id="lblRuleModel" style="color: #38bdf8; font-family: monospace;"></span></div>
           <div style="color: #cbd5e1; margin-bottom: 2px;">💰 <strong>Fiyat:</strong> <span id="lblRulePrice" style="color: #38bdf8; font-family: monospace;"></span></div>
           <div style="color: #cbd5e1; margin-bottom: 2px;">🖼️ <strong>Görseller:</strong> <span id="lblRuleImages" style="color: #38bdf8; font-family: monospace;"></span></div>
           <div style="color: #cbd5e1;">📋 <strong>Özellikler:</strong> <span id="lblRuleSpecs" style="color: #38bdf8; font-family: monospace;"></span></div>
@@ -355,6 +356,34 @@
             📝 Forma Doldur
           </button>
         </div>
+      </div>
+
+      <!-- AI'ya Site Özel İpuçları (Marka/Model Odaklama) -->
+      <div style="background: #11151f; border: 1px solid #1e293b; border-radius: 8px; padding: 8px 10px; margin-top: 8px; margin-bottom: 12px;">
+        <div style="font-size: 11px; font-weight: 700; color: #a5b4fc; margin-bottom: 6px;">🎯 Bu Site İçin AI'ya İpucu Ver (Marka/Model Odaklama)</div>
+        <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">Örneğin, bu site için AI'nın 'Sarılmaz' kelimesini marka olarak, 'Magic' kelimesini ise model olarak odaklamasını sağlayabilirsiniz.</div>
+        <div class="row" style="margin-bottom: 6px;">
+          <div class="col">
+            <label style="font-size: 10px; color: #94a3b8;">Odaklanan Markalar (virgülle):</label>
+            <input type="text" id="inpAiFocusBrands" placeholder="Örn: Sarılmaz, Grundig" style="margin-top: 2px;">
+          </div>
+          <div class="col">
+            <label style="font-size: 10px; color: #94a3b8;">Marka Olarak Alınmayacak Kelimeler:</label>
+            <input type="text" id="inpAiAvoidAsBrand" placeholder="Örn: Magic, Sentetik" style="margin-top: 2px;">
+          </div>
+        </div>
+        <div class="row" style="margin-bottom: 6px;">
+          <div class="col">
+            <label style="font-size: 10px; color: #94a3b8;">Örnek Marka:</label>
+            <input type="text" id="inpAiExampleBrand" placeholder="Örn: Sarılmaz" style="margin-top: 2px;">
+          </div>
+          <div class="col">
+            <label style="font-size: 10px; color: #94a3b8;">Örnek Model:</label>
+            <input type="text" id="inpAiExampleModel" placeholder="Örn: Magic" style="margin-top: 2px;">
+          </div>
+        </div>
+        <button class="btn-secondary" id="btnSaveAiHints" style="width: 100%; margin-top: 4px; padding: 6px; font-size: 10.5px;">💾 Bu Site İçin İpuçlarını Kaydet</button>
+        <div id="aiHintsStatus" style="font-size: 10px; margin-top: 4px; color: #38bdf8;"></div>
       </div>
 
       <!-- Kayıtlı Kurallar Listesi -->
@@ -397,6 +426,11 @@
       <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #232a3b;">
         <div style="font-size: 11px; font-weight: 800; color: #a5b4fc; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
           🤖 Yapay Zekâ (AI) API Anahtarları
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label>NVIDIA Nemotron-3-8B API Key:</label>
+          <input type="password" id="cfgNemotronKey" placeholder="nvapi-...">
+          <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">🔗 <a href="https://build.nvidia.com/nvidia/nemotron-3-8b" target="_blank" style="color: #38bdf8;">API Key almak için tıklayın (build.nvidia.com)</a></div>
         </div>
         <div class="form-group" style="margin-bottom: 8px;">
           <label>GROQ API Key (GPT OSS 120B):</label>
@@ -487,8 +521,6 @@
               <option value="muhimmat">Mühimmat &amp; Fişek (Genel)</option>
             </optgroup>
             <optgroup label="Balık ve Kamp Ekipmanları">
-              <option value="kamp-alabalik-hamuru">Seagame Alabalık Hamuru</option>
-              <option value="kamp-dogal-yem">Doğal Yem &amp; Hamur</option>
               <option value="kamp-uyku-tulumu">Kamp - Uyku Tulumu</option>
               <option value="kamp-cadir">Kamp - Çadır</option>
               <option value="kamp-cadir-aksesuari">Kamp - Çadır Aksesuarları</option>
@@ -527,18 +559,13 @@
           <select id="fldSupplierId" style="flex: 1;">
             <option value="2">2 - Özler Av (ozlerav.com)</option>
             <option value="1">1 - Arslan Silah (arslansilah.com)</option>
-            <option value="3">3 - Alesta Balık (alestabalik.com)</option>
+            <option value="3">3 - Tedarikçi 3</option>
             <option value="4">4 - Tedarikçi 4</option>
             <option value="5">5 - Tedarikçi 5</option>
             <option value="custom">Özel ID Gir...</option>
           </select>
           <input type="number" id="fldSupplierIdCustom" style="display: none; width: 85px;" placeholder="ID (örn: 6)" min="1">
         </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 10px;">
-        <label style="color: #d4af37; font-weight: 700; font-size: 11px;">🔗 Tedarikçi Ürün Linki (Admin Gizli):</label>
-        <input type="url" id="fldSupplierUrl" placeholder="https://ozlerav.com/urun/... (Otomatik çekilir)" style="width: 100%; font-size: 11px; margin-top: 4px;">
       </div>
 
       <div class="form-group">
