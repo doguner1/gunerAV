@@ -57,6 +57,7 @@ import {
   Send,
   User,
   MessageSquare,
+  Link2,
 } from "lucide-react";
 
 interface AnalyticsEvent {
@@ -306,6 +307,30 @@ export default function AdminClient() {
     success: boolean;
     message: string;
   } | null>(null);
+
+  // Supplier Auto-Matcher State
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [isLoadingSupplierMatches, setIsLoadingSupplierMatches] = useState(false);
+  const [isSavingSupplierMatches, setIsSavingSupplierMatches] = useState(false);
+  const [supplierMatchData, setSupplierMatchData] = useState<{
+    totalCount: number;
+    alreadyMatchedCount: number;
+    newlyMatchedCount: number;
+    unmatchedCount: number;
+    supplierIndexCount: number;
+    matches: Array<{
+      id: string;
+      name_tr: string;
+      category: string;
+      current_url?: string;
+      suggested_url?: string;
+      supplier: "ozlerav" | "arslansilah";
+      confidence: number;
+      alreadyMatched: boolean;
+    }>;
+  } | null>(null);
+  const [supplierFilter, setSupplierFilter] = useState<"all" | "new" | "already" | "unmatched">("new");
+  const [supplierModalSaveSuccess, setSupplierModalSaveSuccess] = useState<string | null>(null);
 
   // Product Management State
   const [products, setProducts] = useState<Product[]>([]);
@@ -842,6 +867,76 @@ export default function AdminClient() {
     }
   };
 
+  const fetchSupplierMatches = async () => {
+    setIsLoadingSupplierMatches(true);
+    setSupplierModalSaveSuccess(null);
+    try {
+      const headers: Record<string, string> = {};
+      if (password) headers["x-admin-key"] = password;
+      const res = await fetch("/api/admin/match-suppliers", { headers });
+      const data = await res.json();
+      if (data.success) {
+        setSupplierMatchData(data);
+      } else {
+        alert(data.error || "Tedarikçi taraması yapılamadı.");
+      }
+    } catch {
+      alert("Tedarikçi taraması sırasında bağlantı hatası oluştu.");
+    } finally {
+      setIsLoadingSupplierMatches(false);
+    }
+  };
+
+  const handleSaveSupplierMatches = async () => {
+    if (!supplierMatchData) return;
+    const updates = supplierMatchData.matches
+      .filter((m) => !m.alreadyMatched && m.suggested_url && m.confidence >= 50)
+      .map((m) => ({ id: m.id, supplier_url: m.suggested_url! }));
+
+    if (updates.length === 0) {
+      alert("Kaydedilecek yeni eşleşme bulunamadı.");
+      return;
+    }
+
+    if (!window.confirm(`${updates.length} ürünün tedarikçi linkini Supabase'e kaydetmek istediğinize emin misiniz?`)) {
+      return;
+    }
+
+    setIsSavingSupplierMatches(true);
+    setSupplierModalSaveSuccess(null);
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (password) headers["x-admin-key"] = password;
+      const res = await fetch("/api/admin/match-suppliers", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ updates }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSupplierModalSaveSuccess(`🎉 ${data.updatedCount} ürünün tedarikçi linki başarıyla kaydedildi!`);
+        await fetchProducts();
+        await fetchSupplierMatches();
+      } else {
+        alert(data.error || "Kaydetme başarısız.");
+      }
+    } catch {
+      alert("Kaydetme sırasında bağlantı hatası oluştu.");
+    } finally {
+      setIsSavingSupplierMatches(false);
+    }
+  };
+
+  const filteredSupplierMatches = useMemo(() => {
+    if (!supplierMatchData) return [];
+    return supplierMatchData.matches.filter((m) => {
+      if (supplierFilter === "new") return !m.alreadyMatched && !!m.suggested_url;
+      if (supplierFilter === "already") return m.alreadyMatched;
+      if (supplierFilter === "unmatched") return !m.suggested_url;
+      return true;
+    });
+  }, [supplierMatchData, supplierFilter]);
+
   const unreadMessagesCount = useMemo(() => {
     return messages.filter((m) => !m.is_read).length;
   }, [messages]);
@@ -1279,6 +1374,19 @@ export default function AdminClient() {
               )}
             </button>
           </div>
+
+          {/* Supplier Auto-Match Button */}
+          <button
+            onClick={() => {
+              setShowSupplierModal(true);
+              if (!supplierMatchData) fetchSupplierMatches();
+            }}
+            title="434 ürünün tedarikçi linklerini otomatik tara ve eşleştir"
+            className="flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 px-3.5 py-2 text-xs font-bold transition-all shadow-sm"
+          >
+            <Link2 className="h-3.5 w-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">Tedarikçi Linklerini Eşle</span>
+          </button>
 
           {/* On-demand Cache & Site Revalidate Button */}
           <button
@@ -3293,6 +3401,308 @@ export default function AdminClient() {
               >
                 {isSavingDevice ? "Kaydediliyor..." : "Kaydet"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUPPLIER LINK MATCHER MODAL */}
+      {showSupplierModal && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setShowSupplierModal(false)}
+        >
+          <div 
+            className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col relative shadow-2xl overflow-hidden" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-neutral-950/60">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/20">
+                  <Link2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base md:text-lg font-bold text-white">
+                      Otomatik Tedarikçi Link Eşleştirici
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#d4af37]/15 text-[#d4af37] border border-[#d4af37]/30">
+                      Özler Av & Arslan Silah
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Sistemdeki ürünleri tedarikçilerin canlı ürün katalogları ve sitemap&apos;leri ile nokta atışı eşler.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={fetchSupplierMatches}
+                  disabled={isLoadingSupplierMatches}
+                  className="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                  title="Yeniden tara ve eşleştir"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSupplierMatches ? "animate-spin" : ""}`} />
+                  <span className="hidden sm:inline">Yeniden Tara</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setShowSupplierModal(false)} 
+                  className="p-2 rounded-xl bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Stats Cards */}
+            {supplierMatchData && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 px-6 py-3 bg-neutral-950/40 border-b border-neutral-800 text-xs">
+                <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 flex flex-col">
+                  <span className="text-neutral-400 text-[11px]">Toplam Ürün</span>
+                  <span className="text-base font-bold text-white mt-0.5">{supplierMatchData.totalCount}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col">
+                  <span className="text-emerald-400 text-[11px] font-medium">Yeni Eşleşen</span>
+                  <span className="text-base font-bold text-emerald-400 mt-0.5">{supplierMatchData.newlyMatchedCount}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col">
+                  <span className="text-blue-400 text-[11px] font-medium">Zaten Bağlı</span>
+                  <span className="text-base font-bold text-blue-400 mt-0.5">{supplierMatchData.alreadyMatchedCount}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-neutral-800/40 border border-neutral-700/50 flex flex-col">
+                  <span className="text-neutral-400 text-[11px]">Eşleşmeyen</span>
+                  <span className="text-base font-bold text-neutral-400 mt-0.5">{supplierMatchData.unmatchedCount}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Success notification banner */}
+            {supplierModalSaveSuccess && (
+              <div className="mx-6 mt-4 p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+                <span>{supplierModalSaveSuccess}</span>
+                <button
+                  type="button"
+                  onClick={() => setSupplierModalSaveSuccess(null)}
+                  className="text-emerald-400 hover:text-emerald-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1.5 px-6 pt-3 pb-2 border-b border-neutral-800/80 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setSupplierFilter("new")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  supplierFilter === "new"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold"
+                    : "text-neutral-400 hover:text-white hover:bg-neutral-800 border border-transparent"
+                }`}
+              >
+                <span>Yeni Eşleşenler</span>
+                {supplierMatchData && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/30 text-emerald-200">
+                    {supplierMatchData.newlyMatchedCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSupplierFilter("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  supplierFilter === "all"
+                    ? "bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/40 font-semibold"
+                    : "text-neutral-400 hover:text-white hover:bg-neutral-800 border border-transparent"
+                }`}
+              >
+                <span>Tümü</span>
+                {supplierMatchData && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-neutral-300">
+                    {supplierMatchData.totalCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSupplierFilter("already")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  supplierFilter === "already"
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 font-semibold"
+                    : "text-neutral-400 hover:text-white hover:bg-neutral-800 border border-transparent"
+                }`}
+              >
+                <span>Zaten Bağlı Olanlar</span>
+                {supplierMatchData && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-500/30 text-blue-200">
+                    {supplierMatchData.alreadyMatchedCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSupplierFilter("unmatched")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  supplierFilter === "unmatched"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold"
+                    : "text-neutral-400 hover:text-white hover:bg-neutral-800 border border-transparent"
+                }`}
+              >
+                <span>Eşleşme Bulunamayan</span>
+                {supplierMatchData && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/30 text-amber-200">
+                    {supplierMatchData.unmatchedCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* List Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2.5 min-h-[320px]">
+              {isLoadingSupplierMatches ? (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <RefreshCw className="w-8 h-8 text-[#d4af37] animate-spin mb-3" />
+                  <p className="text-sm font-semibold text-white">Tedarikçi Kataloğu Taranıyor...</p>
+                  <p className="text-xs text-neutral-400 mt-1 max-w-sm">
+                    Özler Av ve Arslan Silah canlı sitemap ve ürün listesi taranarak ürünlerinizle eşleştiriliyor.
+                  </p>
+                </div>
+              ) : !supplierMatchData ? (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <Link2 className="w-10 h-10 text-neutral-600 mb-3" />
+                  <p className="text-sm text-neutral-300">Taramayı başlatmak için yukarıdaki veya aşağıdaki butona tıklayın.</p>
+                  <button
+                    type="button"
+                    onClick={fetchSupplierMatches}
+                    className="mt-4 px-4 py-2 rounded-xl bg-[#d4af37] text-black font-bold text-xs hover:bg-[#c5a030] transition-colors"
+                  >
+                    Taramayı Başlat
+                  </button>
+                </div>
+              ) : filteredSupplierMatches.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center text-neutral-400 text-xs">
+                  Bu filtreye uyan ürün bulunamadı.
+                </div>
+              ) : (
+                filteredSupplierMatches.map((m) => (
+                  <div
+                    key={m.id}
+                    className="p-3 rounded-xl bg-neutral-950/60 border border-neutral-800 hover:border-neutral-700 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-xs md:text-sm font-semibold text-white truncate max-w-md">
+                          {m.name_tr}
+                        </h4>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-neutral-800 text-neutral-400 border border-neutral-700">
+                          {m.category}
+                        </span>
+                        {m.alreadyMatched ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            Zaten Bağlı
+                          </span>
+                        ) : m.suggested_url ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Yeni Eşleşme
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-800 text-neutral-500 border border-neutral-700">
+                            Eşleşmedi
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-neutral-400">
+                        <span className="font-semibold text-neutral-300">
+                          {m.supplier === "arslansilah" ? "Arslan Silah" : "Özler Av"}:
+                        </span>
+                        {m.suggested_url ? (
+                          <a
+                            href={m.suggested_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 truncate max-w-lg"
+                          >
+                            <span className="truncate">{m.suggested_url}</span>
+                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-neutral-500 italic">Uygun tedarikçi linki bulunamadı</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {m.suggested_url && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-800">
+                          <span className="text-[10px] text-neutral-400 font-mono">Güven:</span>
+                          <span
+                            className={`text-xs font-bold font-mono ${
+                              m.confidence >= 80
+                                ? "text-emerald-400"
+                                : m.confidence >= 60
+                                ? "text-yellow-400"
+                                : "text-amber-400"
+                            }`}
+                          >
+                            %{m.confidence}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-800 bg-neutral-950/80">
+              <div className="text-xs text-neutral-400">
+                {supplierMatchData ? (
+                  <span>
+                    <strong className="text-white">{supplierMatchData.newlyMatchedCount}</strong> yeni ürün tedarikçi linkiyle güncellenmeye hazır.
+                  </span>
+                ) : (
+                  <span>Önce eşleştirme taraması yapınız.</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSupplierModal(false)}
+                  className="px-4 py-2 rounded-xl border border-neutral-700 text-xs font-medium text-neutral-300 hover:bg-neutral-800 transition-colors"
+                >
+                  Kapat
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    isSavingSupplierMatches ||
+                    !supplierMatchData ||
+                    supplierMatchData.newlyMatchedCount === 0
+                  }
+                  onClick={handleSaveSupplierMatches}
+                  className="px-5 py-2 rounded-xl bg-[#d4af37] text-black text-xs font-bold hover:bg-[#c5a030] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-[#d4af37]/10"
+                >
+                  {isSavingSupplierMatches ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Kaydediliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>
+                        Yeni Eşleşenleri Kaydet ({supplierMatchData?.newlyMatchedCount || 0})
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
