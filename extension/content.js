@@ -13,15 +13,162 @@ if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
   });
 }
 
+// =========================================================================
+// NETWORK/API YAKALAMA SİSTEMİ - SPA siteler için ürün verisini API'den çeker
+// =========================================================================
+const capturedApiData = {
+  product: null,
+  responses: [],
+  productUrls: new Set(),
+};
+
+function initApiInterceptor() {
+  if (window._gunerAvApiInterceptorInitialized) return;
+  window._gunerAvApiInterceptorInitialized = true;
+
+  const productUrlPatterns = [
+    /\/api\/.*product/i,
+    /\/api\/.*urun/i,
+    /\/graphql/i,
+    /\/product\//i,
+    /\/urun\//i,
+    /\/item\//i,
+    /\/p\//i,
+    /product.*detail/i,
+    /urun.*detay/i,
+  ];
+
+  function isProductRelatedUrl(url) {
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      const path = urlObj.pathname.toLowerCase();
+      const search = urlObj.search.toLowerCase();
+      return productUrlPatterns.some(p => p.test(path) || p.test(search));
+    } catch {
+      return false;
+    }
+  }
+
+  function tryExtractProductFromJson(json) {
+    if (!json || typeof json !== "object") return null;
+
+    const candidates = [];
+
+    function traverse(obj, depth = 0) {
+      if (depth > 4) return;
+      if (!obj || typeof obj !== "object") return;
+
+      if (Array.isArray(obj)) {
+        obj.forEach(item => traverse(item, depth + 1));
+        return;
+      }
+
+      // Ürün benzeri obje mi?
+      const keys = Object.keys(obj).map(k => k.toLowerCase());
+      const hasProductFields = keys.some(k =>
+        ["name", "title", "urunadi", "urun_adi", "productname", "product_name", "adi"].includes(k)
+      ) && keys.some(k =>
+        ["price", "fiyat", "saleprice", "satis_fiyati", "satisfiyati", "amount", "tutar"].includes(k)
+      );
+
+      if (hasProductFields) {
+        candidates.push(obj);
+      }
+
+      Object.values(obj).forEach(v => traverse(v, depth + 1));
+    }
+
+    traverse(json);
+
+    if (candidates.length > 0) {
+      // En kapsamlı olanı seç
+      return candidates.reduce((best, curr) =>
+        Object.keys(curr).length > Object.keys(best).length ? curr : best
+      );
+    }
+    return null;
+  }
+
+  // fetch intercept
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async function (url, options = {}) {
+    const isProductUrl = isProductRelatedUrl(url.toString());
+    const response = await originalFetch(url, options);
+
+    if (isProductUrl && response.ok) {
+      const cloned = response.clone();
+      try {
+        const contentType = cloned.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const json = await cloned.json();
+          const product = tryExtractProductFromJson(json);
+          if (product) {
+            capturedApiData.product = product;
+            capturedApiData.responses.push({ url: url.toString(), data: product, timestamp: Date.now() });
+            console.log("[GünerAV] API'den ürün verisi yakalandı:", url);
+          }
+        }
+      } catch (e) {}
+    }
+    return response;
+  };
+
+  // XHR intercept
+  const originalXHROpen = XMLHttpRequest.prototype.open;
+  const originalXHRSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function (method, url) {
+    this._gunerAvUrl = url;
+    this._gunerAvIsProduct = isProductRelatedUrl(url.toString());
+    return originalXHROpen.apply(this, arguments);
+  };
+
+  XMLHttpRequest.prototype.send = function (body) {
+    if (this._gunerAvIsProduct) {
+      this.addEventListener("load", function () {
+        if (this.status >= 200 && this.status < 300) {
+          const contentType = this.getResponseHeader("content-type") || "";
+          if (contentType.includes("application/json")) {
+            try {
+              const json = JSON.parse(this.responseText);
+              const product = tryExtractProductFromJson(json);
+              if (product) {
+                capturedApiData.product = product;
+                capturedApiData.responses.push({ url: this._gunerAvUrl, data: product, timestamp: Date.now() });
+                console.log("[GünerAV] XHR'dan ürün verisi yakalandı:", this._gunerAvUrl);
+              }
+            } catch (e) {}
+          }
+        }
+      });
+    }
+    return originalXHRSend.apply(this, arguments);
+  };
+
+  console.log("[GünerAV] API Interceptor aktif");
+}
+
+// Sayfa yüklendiğinde başlat
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApiInterceptor);
+} else {
+  initApiInterceptor();
+}
+
+// Global erişim için
+window._gunerAvCapturedApiData = capturedApiData;
+
 if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "GET_CLEAN_PAGE_HTML") {
-      try {
-        const info = getCleanPageHtml();
-        sendResponse({ success: true, data: info });
-      } catch (error) {
-        sendResponse({ success: false, error: error.message });
-      }
+      (async () => {
+        try {
+          const info = await getCleanPageHtml();
+          sendResponse({ success: true, data: info });
+        } catch (error) {
+          sendResponse({ success: false, error: error.message });
+        }
+      })();
       return true;
     }
 
@@ -36,12 +183,14 @@ if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage)
     }
 
     if (request.action === "EXTRACT_PRODUCT") {
-      try {
-        const data = extractProductData();
-        sendResponse({ success: true, data });
-      } catch (error) {
-        sendResponse({ success: false, error: error.message });
-      }
+      (async () => {
+        try {
+          const data = await extractProductData();
+          sendResponse({ success: true, data });
+        } catch (error) {
+          sendResponse({ success: false, error: error.message });
+        }
+      })();
       return true;
     }
 
@@ -88,7 +237,7 @@ if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage)
           const html = await res.text();
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
-          const data = extractProductData(doc, request.url);
+          const data = await extractProductData(doc, request.url);
           sendResponse({ success: true, data });
         } catch (error) {
           sendResponse({ success: false, error: error.message });
@@ -130,9 +279,30 @@ function extractListingLinks(doc = (typeof document !== "undefined" ? document :
     }
   }
 
-  // Özler Av, Alesta Balık (.product-catalog, .product-item, -p8422) ve genel e-ticaret seçicileri
+  // Altunbaş Bayi Sistemi özel yakalama
+  if (pageDomain.includes("altunbasas")) {
+    const altAnchors = doc.querySelectorAll(
+      ".product-item-1 a, [class*='product-item'] a, .product-details h5 a, .product-details a"
+    );
+    altAnchors.forEach((a) => {
+      let href = a.getAttribute("href");
+      if (!href) return;
+      href = href.trim();
+      if (href.startsWith("#") || href.startsWith("javascript:")) return;
+      if (href.includes("-urunleri") || href.includes("brandid=") || href.includes("hesabim") || href.includes("sepet")) return;
+      try {
+        const fullUrl = new URL(href, origin).href;
+        foundUrls.add(fullUrl);
+      } catch (e) {}
+    });
+    if (foundUrls.size > 0) {
+      return Array.from(foundUrls);
+    }
+  }
+
+  // Özler Av (.uruncard, .kobi-urunlist, .urun-grid), Altunbaş ve genel e-ticaret seçicileri
   const candidateAnchors = doc.querySelectorAll(
-    ".urun-grid a, .kobi-urunlist a, .uruncard a, .product-item a, .product-card a, .product-box a, .product-catalog a, [id*='products-list'] a, a[href*='-p']"
+    ".urun-grid a, .kobi-urunlist a, .uruncard a, .product-item a, [class*='product-item'] a, .product-details a, .product-card a, .product-box a, a[href*='-p-']"
   );
 
   candidateAnchors.forEach((a) => {
@@ -152,17 +322,16 @@ function extractListingLinks(doc = (typeof document !== "undefined" ? document :
       trimmed.includes("/sepet") ||
       trimmed.includes("/hesabim") ||
       trimmed.includes("/login") ||
-      trimmed.includes("/uye") ||
-      trimmed.includes("/categories")
+      trimmed.includes("/uye")
     ) {
       return;
     }
 
-    // Ürün sayfaları: -p- (Kobimaster), -p8422 (DIA E-Ticaret/Alesta Balık) veya /urun/
+    // Ürün sayfaları genellikle -p- (Kobimaster/Özler Av) veya /urun/ içerir
     const isLikelyProduct =
-      /-p-?\d+/i.test(trimmed) ||
+      /-p-\d+/i.test(trimmed) ||
       /\/urun\/|\/product\//i.test(trimmed) ||
-      (a.closest && a.closest(".uruncard, .kobi-urunlist, .product-item, .product-card, .product-catalog") && !trimmed.includes("?"));
+      (a.closest && a.closest(".uruncard, .kobi-urunlist, .product-item, .product-card") && !trimmed.includes("?"));
 
     if (isLikelyProduct) {
       try {
@@ -179,10 +348,10 @@ function extractPaginationPages(doc = (typeof document !== "undefined" ? documen
   if (!doc) return [];
   const foundPages = new Set();
   const origin = typeof window !== "undefined" && window.location ? window.location.origin : "";
-  const anchors = doc.querySelectorAll("a[href*='PageNumber='], a[href*='sayfa='], .pagination a, .sayfalama a");
+  const anchors = doc.querySelectorAll("a[href*='PageNumber='], a[href*='sayfa='], a[href*='page='], .pagination a, .sayfalama a");
   anchors.forEach((a) => {
     const href = a.getAttribute("href");
-    if (href && (href.includes("PageNumber=") || href.includes("sayfa="))) {
+    if (href && (href.includes("PageNumber=") || href.includes("sayfa=") || href.includes("page="))) {
       try {
         const full = new URL(href, origin || "https://www.ozlerav.com.tr").href;
         foundPages.add(full);
@@ -216,282 +385,39 @@ function parseTurkishPrice(rawStr) {
   return isNaN(num) ? null : Math.round(num);
 }
 
-// =========================================================================
-// EVRENSEL SEMANTİK ÜRÜN VE DOM ANALİZÖRÜ (Universal Semantic Locator)
-// Hiçbir site adına, özel sınıfa veya hardcoded kurala ihtiyaç duymaz.
-// Her e-ticaret, katalog veya özel yazılmış sitede doğrudan çalışır.
-// =========================================================================
-
-function findUniversalProductHeading(doc = document) {
-  const docTitle = doc.title || "";
-  const ogTitle = doc.querySelector('meta[property="og:title"]')?.content || "";
-
-  let jsonLdName = "";
-  try {
-    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
-    for (const sc of scripts) {
-      const txt = sc.textContent.trim();
-      if (!txt) continue;
-      const parsed = JSON.parse(txt);
-      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
-      for (const it of items) {
-        if (it && (it["@type"] === "Product" || it["@type"]?.includes?.("Product"))) {
-          if (it.name) jsonLdName = String(it.name).trim();
-          break;
-        }
-      }
-      if (jsonLdName) break;
-    }
-  } catch (e) {}
-
-  const headings = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, [class*='title'], [class*='name']"));
-  let bestEl = null;
-  let bestScore = -999;
-
-  const genericBlacklist = [
-    "menü", "menu", "sepet", "sepetim", "giriş", "üye", "iletişim", "kategori",
-    "kategoriler", "anasayfa", "home", "search", "ara", "benzer", "kampanya",
-    "footer", "hakkımızda", "dokümanlar", "bülten", "sosyal medya", "hesabım",
-    "sipariş", "teslimat", "iade", "yardım", "blog", "haberler", "filtre"
-  ];
-
-  for (const el of headings) {
-    if (el.closest("nav, header, footer, aside, .navbar, .header, .footer, .menu, #menu, .sidebar, #sidebar, .navigation, .megamenu")) {
-      continue;
-    }
-
-    const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
-    if (!txt || txt.length < 2 || txt.length > 180) continue;
-
-    const lower = txt.toLowerCase();
-    if (genericBlacklist.some(g => lower === g || (g.length > 4 && lower.includes(g)))) continue;
-
-    let score = 0;
-    const tag = el.tagName.toLowerCase();
-    if (tag === "h1") score += 60;
-    else if (tag === "h2") score += 35;
-    else if (tag === "h3") score += 25;
-    else if (tag === "h4") score += 20;
-    else if (tag === "h5") score += 10;
-    else score += 5;
-
-    const cls = (el.className || "").toLowerCase();
-    if (cls.includes("product") || cls.includes("title") || cls.includes("name") || cls.includes("urun")) {
-      score += 25;
-    }
-
-    if (jsonLdName) {
-      const jl = jsonLdName.toLowerCase();
-      if (lower === jl) score += 150;
-      else if (jl.includes(lower) || lower.includes(jl)) score += 100;
-    }
-
-    const dtLower = docTitle.toLowerCase();
-    const ogLower = ogTitle.toLowerCase();
-    if (dtLower.includes(lower) || ogLower.includes(lower)) {
-      score += 80;
-    } else {
-      const words = lower.split(/\s+/).filter(w => w.length > 2);
-      if (words.length > 0) {
-        const matched = words.filter(w => dtLower.includes(w) || ogLower.includes(w));
-        score += Math.round((matched.length / words.length) * 60);
-      }
-    }
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestEl = el;
-    }
-  }
-
-  return bestEl;
-}
-
-function findUniversalProductContainer(headingEl, doc = document) {
-  if (!headingEl) {
-    return doc.querySelector("main, article, #content, .content") || doc.body;
-  }
-
-  let curr = headingEl.parentElement;
-  let bestContainer = curr;
-
-  while (curr && curr.tagName !== "BODY" && curr.tagName !== "HTML") {
-    if (["NAV", "HEADER", "FOOTER", "ASIDE"].includes(curr.tagName)) break;
-
-    const imgs = curr.querySelectorAll("img");
-    const hasImages = Array.from(imgs).some(img => {
-      const w = img.naturalWidth || img.width || 0;
-      const h = img.naturalHeight || img.height || 0;
-      const src = img.getAttribute("src") || "";
-      return !src.includes("logo") && !src.includes("icon") && (w > 60 || h > 60 || (!w && !h));
-    });
-
-    if (hasImages) {
-      bestContainer = curr;
-      const hasPriceOrDesc = curr.querySelector("p, .price, [class*='price'], [class*='fiyat'], button, .btn");
-      if (hasPriceOrDesc) {
-        bestContainer = curr;
-        break;
-      }
-    }
-
-    curr = curr.parentElement;
-  }
-
-  return bestContainer || headingEl.parentElement;
-}
-
-function findUniversalSpecsContainer(doc = document, heroContainer = null) {
-  const tables = doc.querySelectorAll("table");
-  for (const t of tables) {
-    if (t.closest("nav, header, footer, aside, .cart, .sepet")) continue;
-    if (t.querySelectorAll("tr").length >= 2) return t;
-  }
-
-  const dls = doc.querySelectorAll("dl");
-  for (const dl of dls) {
-    if (dl.closest("nav, header, footer, aside")) continue;
-    if (dl.querySelectorAll("dt").length >= 2) return dl;
-  }
-
-  const specCandidates = doc.querySelectorAll(
-    "[id*='spec'], [id*='ozellik'], [id*='teknik'], [id*='detail'], [id*='param'], " +
-    "[class*='spec'], [class*='ozellik'], [class*='teknik'], [class*='feature-box'], [class*='attribute']"
-  );
-  for (const el of specCandidates) {
-    if (el.closest("nav, header, footer, aside, script, style")) continue;
-    if (heroContainer && heroContainer.contains(el)) continue;
-    const text = el.textContent.trim();
-    if (text.length > 50 && text.length < 5000) {
-      return el;
-    }
-  }
-
-  return null;
-}
-
-function generateCleanCssSelector(el, doc = document) {
-  if (!el || el === doc.body || el === doc.documentElement) return "";
-
-  if (el.id && !/\d{4,}/.test(el.id)) {
-    try {
-      if (doc.querySelectorAll("#" + CSS.escape(el.id)).length === 1) {
-        return "#" + CSS.escape(el.id);
-      }
-    } catch (e) {}
-  }
-
-  if (el.classList && el.classList.length > 0) {
-    const validClasses = Array.from(el.classList).filter(c =>
-      !c.startsWith("ng-") && !c.startsWith("v-") && !c.includes("active") &&
-      !c.includes("show") && !c.includes("focus") && !c.includes("hover") &&
-      c.length > 2 && !/^[0-9_-]+$/.test(c)
-    );
-    for (const c of validClasses) {
-      const candidate = el.tagName.toLowerCase() + "." + CSS.escape(c);
-      try {
-        if (doc.querySelectorAll(candidate).length === 1) {
-          return candidate;
-        }
-      } catch (e) {}
-    }
-  }
-
-  const tag = el.tagName.toLowerCase();
-  const parent = el.parentElement;
-  if (parent && parent !== doc.body) {
-    const parentSel = generateCleanCssSelector(parent, doc);
-    if (parentSel) {
-      return `${parentSel} ${tag}`;
-    }
-  }
-
-  return tag;
-}
-
-// AI Destekli Site Analizi İçin Temizlenmiş ve Odaklanmış HTML İskeleti Çıkarıcı
-function getCleanPageHtml() {
+// AI Destekli Site Analizi İçin Temizlenmiş HTML İskeleti Çıkarıcı
+async function getCleanPageHtml() {
   const doc = document;
 
-  // 1. Zengin Metadata Taraması (JSON-LD, OpenGraph, Meta)
-  const referenceMeta = {
-    title: "",
-    brand: "",
-    category: "",
-    image: "",
-    price: null,
-    specsSample: [],
-  };
+  // SPA siteler için: ürün verisi DOM'a yüklenene kadar bekle (max 3 sn)
+  await waitForProductContent(doc, 3000);
 
+  const clone = doc.cloneNode(true);
+
+  // Yakalanan API verisini de HTML snippet'e ekle (AI için)
+  let apiHtmlAddition = "";
   try {
-    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
-    for (const sc of scripts) {
-      const txt = sc.textContent.trim();
-      if (!txt) continue;
-      const parsed = JSON.parse(txt);
-      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
-      for (const item of items) {
-        if (item && (item["@type"] === "Product" || item["@type"]?.includes?.("Product"))) {
-          if (item.name) referenceMeta.title = String(item.name).trim();
-          if (item.brand?.name || item.brand) referenceMeta.brand = String(item.brand?.name || item.brand).trim();
-          if (item.category) referenceMeta.category = String(item.category).trim();
-          if (item.image) {
-            referenceMeta.image = typeof item.image === "string" ? item.image : (Array.isArray(item.image) ? item.image[0] : item.image?.url);
-          }
-          if (item.offers) {
-            const p = item.offers.price || (Array.isArray(item.offers) ? item.offers[0]?.price : null);
-            if (p) referenceMeta.price = p;
-          }
-          if (Array.isArray(item.additionalProperty)) {
-            referenceMeta.specsSample = item.additionalProperty.slice(0, 5).map(p => `${p.name}: ${p.value}`);
-          }
-          break;
-        }
-      }
-      if (referenceMeta.title) break;
+    const apiData = window._gunerAvCapturedApiData?.product;
+    if (apiData) {
+      apiHtmlAddition = "\n<!--YAKALANAN_API_VERISI-->\n" + JSON.stringify(apiData, null, 2).slice(0, 5000);
     }
   } catch (e) {}
 
-  if (!referenceMeta.title) {
-    referenceMeta.title = doc.querySelector('meta[property="og:title"]')?.content || doc.title || "";
-  }
-  if (!referenceMeta.image) {
-    referenceMeta.image = doc.querySelector('meta[property="og:image"]')?.content || "";
-  }
-  if (!referenceMeta.brand) {
-    referenceMeta.brand = doc.querySelector('meta[property="og:site_name"]')?.content || "";
-  }
-
-  // 2. Evrensel Algoritma ile Sayfanın Ürün Başlığını ve Konteynerini Keşfet
-  const headingEl = findUniversalProductHeading(doc);
-  const heroContainer = findUniversalProductContainer(headingEl, doc);
-  const specsContainer = findUniversalSpecsContainer(doc, heroContainer);
-  const suggestedHeadingSelector = headingEl ? generateCleanCssSelector(headingEl, doc) : "";
-
-  // 3. Konteyneri Klonla ve Token Optimizasyonu Yap
-  const clone = heroContainer ? heroContainer.cloneNode(true) : doc.body.cloneNode(true);
-
+  // Gereksiz etiketleri kaldırarak token ve boyut tasarrufu sağla
   const removeSelectors = [
-    "script", "style", "svg", "noscript", "iframe", "nav", ".navbar", ".menu",
-    ".cookie-banner", ".modal", "#modal", ".search", "#search", ".comments",
-    ".reviews", ".similar-products", ".related-products", ".benzer-urunler",
-    ".megamenu", ".sub-menu", ".navigation", ".share", ".social", "footer"
+    "script", "style", "svg", "noscript", "iframe", "header", "footer",
+    "nav", ".navbar", ".header", ".footer", ".nav", ".menu", ".sidebar",
+    "#header", "#footer", "#menu", "#sidebar", ".cookie-banner", ".modal",
+    "#modal", ".cart", "#cart", ".sepet", ".search", "#search", ".comments",
+    ".reviews", ".similar-products", ".related-products", ".benzer-urunler"
   ];
   removeSelectors.forEach((sel) => {
     clone.querySelectorAll(sel).forEach((el) => el.remove());
   });
 
-  // Slider ve galeri tekrarlarını buda (en fazla 2 adet bırak)
-  clone.querySelectorAll(".swiper-wrapper, .slick-track, .carousel-inner, .owl-stage, .gallery-boxes, [class*='thumb']").forEach((wrapper) => {
-    const children = Array.from(wrapper.children);
-    if (children.length > 2) {
-      children.slice(2).forEach((c) => c.remove());
-    }
-  });
-
-  // Nitelikleri filtrele
+  // Sadece gerekli nitelikleri (class, id, src, data-src) bırak, gerisini temizle
   clone.querySelectorAll("*").forEach((el) => {
-    const allowedAttrs = ["class", "id", "src", "data-src", "data-zoom-image", "data-large", "itemprop", "href"];
+    const allowedAttrs = ["class", "id", "src", "data-src", "data-zoom-image", "data-large"];
     Array.from(el.attributes).forEach((attr) => {
       if (!allowedAttrs.includes(attr.name)) {
         el.removeAttribute(attr.name);
@@ -506,36 +432,95 @@ function getCleanPageHtml() {
     }
   });
 
-  let html = clone.innerHTML;
+  // Ürün ana gövdesi adayı
+  const mainCandidate = clone.querySelector(".product-detail, .product-container, .urun-detay, .product-page, [itemtype*='Product'], main, #content");
+  let html = mainCandidate ? mainCandidate.innerHTML : (clone.body ? clone.body.innerHTML : clone.innerHTML);
 
-  // Varsa specs konteynerini de ekle
-  if (specsContainer && (!heroContainer || !heroContainer.contains(specsContainer))) {
-    const specsClone = specsContainer.cloneNode(true);
-    specsClone.querySelectorAll("script, style, svg").forEach(e => e.remove());
-    html += "\n<!-- TEKNIK OZELLIKLER BOLUMU -->\n" + specsClone.outerHTML;
-  }
+  // Açıklama ve özellikler için ek bölümleri dahil et (mainCandidate dışında kalanlar)
+  const descSelectors = [".product-description", ".product-detail .description", "#tab_Ürün-açıklaması", "#tab-Ürün-açıklaması", ".entry-content", ".divAciklamaIcerik", "[itemprop='description']"];
+  descSelectors.forEach(sel => {
+    const el = clone.querySelector(sel);
+    if (el && el.innerHTML.trim().length > 10) {
+      html += "\n<!--AÇIKLAMA-->" + el.innerHTML;
+    }
+  });
 
+  // Teknik özellikler tabloları
+  const specSelectors = ["table.product-specs", ".tech-specs", ".specifications", ".product-list-row", ".product-feature-row", ".feature-row", ".spec-row", "table"];
+  specSelectors.forEach(sel => {
+    const els = clone.querySelectorAll(sel);
+    els.forEach(el => {
+      if (el.innerHTML.trim().length > 5) {
+        html += "\n<!--ÖZELLİKLER-->" + el.outerHTML;
+      }
+    });
+  });
+
+  // API verisini de ekle
+  if (apiHtmlAddition) html += apiHtmlAddition;
+
+  // Boşlukları sıkıştır
   html = html.replace(/\s+/g, " ").trim();
-  if (html.length > 4800) {
-    html = html.slice(0, 4800) + "... [HTML kısaltıldı]";
+
+  // Daha düşük token limitiyle çalışmak için en fazla 18.000 karakter tut (AI bağlamı daha büyük)
+  const MAX_CHARS = 18000;
+  if (html.length > MAX_CHARS) {
+    html = html.slice(0, MAX_CHARS) + "... [HTML kesildi]";
   }
+
+  // Sayfa başlığı ve açıklamasını da eklemek için metin içeriği
+  const pageTitle = doc.title || "";
+  const metaDesc = (doc.querySelector('meta[name="description"]') || {}).content || "";
+  const ogDesc = (doc.querySelector('meta[property="og:description"]') || {}).content || "";
+  const descriptionText = metaDesc || ogDesc || "";
 
   return {
     url: window.location.href,
     domain: window.location.hostname.replace(/^www\./, "").toLowerCase(),
-    title: doc.title || "",
-    referenceMeta,
-    suggestedHeadingSelector,
+    title: pageTitle,
+    description: descriptionText,
     htmlSnippet: html,
   };
+}
+
+function waitForProductContent(doc, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    const productSelectors = [
+      "[itemprop='name']", "[itemprop='price']", "[itemprop='description']",
+      "h1.product-title", "h1.product-name", ".product-title", ".product-name", ".urun-adi",
+      ".price", ".product-price", ".fiyat", "[itemprop='price']",
+      ".product-description", ".description", "[itemprop='description']",
+      ".product-gallery", ".product-images", ".gallery",
+      ".specifications", ".product-specs", ".tech-specs"
+    ];
+
+    function checkContent() {
+      const hasContent = productSelectors.some(sel => doc.querySelector(sel));
+      if (hasContent) return resolve();
+
+      if (Date.now() - startTime > timeoutMs) return resolve();
+
+      requestAnimationFrame(checkContent);
+    }
+
+    // MutationObserver ile daha hızlı tepki
+    const observer = new MutationObserver(() => {
+      if (productSelectors.some(sel => doc.querySelector(sel))) {
+        observer.disconnect();
+        resolve();
+      }
+    });
+    observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
+
+    checkContent();
+  });
 }
 
 // AI ile Üretilmiş Özel Seçicileri (Selectors) Sayfada Çalıştırıp Veri Çekme
 function extractWithCustomRule(customRule, doc = (typeof document !== "undefined" ? document : null)) {
   if (!doc || !customRule || !customRule.selectors) return null;
   const sel = customRule.selectors;
-  const origin = (doc.location && doc.location.origin) || (typeof window !== "undefined" && window.location ? window.location.origin : "");
-
   const result = {
     title: "",
     price: null,
@@ -545,86 +530,33 @@ function extractWithCustomRule(customRule, doc = (typeof document !== "undefined
     description: "",
   };
 
-  // 1. JSON-LD Temel Verilerini Ön Yükle (Varsa en doğru temel bilgileri sağlar)
-  try {
-    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
-    for (const sc of scripts) {
-      const txt = sc.textContent.trim();
-      if (!txt) continue;
-      const parsed = JSON.parse(txt);
-      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
-      for (const item of items) {
-        if (item && (item["@type"] === "Product" || item["@type"]?.includes?.("Product"))) {
-          if (item.name) result.title = String(item.name).trim();
-          if (item.brand?.name || item.brand) result.brand = String(item.brand?.name || item.brand).trim();
-          if (item.description) result.description = String(item.description).trim();
-          if (item.offers) {
-            const p = item.offers.price || (Array.isArray(item.offers) ? item.offers[0]?.price : null);
-            if (p) result.price = parseTurkishPrice(p);
-          }
-          if (item.image) {
-            const imList = Array.isArray(item.image) ? item.image : [item.image];
-            imList.forEach((im) => {
-              const u = typeof im === "string" ? im : im?.url;
-              if (u) {
-                const fullUrl = u.startsWith("http") ? u : (origin + u);
-                const cl = cleanImageUrl(fullUrl);
-                if (cl && !result.images.includes(cl)) result.images.push(cl);
-              }
-            });
-          }
-          if (Array.isArray(item.additionalProperty)) {
-            item.additionalProperty.forEach((prop) => {
-              if (prop.name && prop.value) {
-                result.specs[String(prop.name).trim()] = String(prop.value).trim();
-              }
-            });
-          }
-          break;
-        }
-      }
-      if (result.title) break;
-    }
-  } catch (e) {}
-
-  // 2. Custom Selector: Title
+  // Title
   if (sel.title) {
     try {
       const el = doc.querySelector(sel.title);
       if (el && el.textContent.trim()) result.title = el.textContent.trim();
     } catch (e) {}
   }
-  if (!result.title) {
-    const fallbackTitle = doc.querySelector("h1, h2, h4.product_name, [class*='product_name'], [class*='product-title'], meta[property='og:title']");
-    if (fallbackTitle) {
-      result.title = (fallbackTitle.getAttribute("content") || fallbackTitle.textContent || "").trim();
-    }
-  }
 
-  // 3. Custom Selector: Price
+  // Price
   if (sel.price) {
     try {
       const el = doc.querySelector(sel.price);
       if (el) {
-        const parsed = parseTurkishPrice(el.textContent.trim());
-        if (parsed !== null) result.price = parsed;
+        result.price = parseTurkishPrice(el.textContent.trim());
       }
     } catch (e) {}
   }
 
-  // 4. Custom Selector: Brand
+  // Brand
   if (sel.brand) {
     try {
       const el = doc.querySelector(sel.brand);
       if (el && el.textContent.trim()) result.brand = el.textContent.trim();
     } catch (e) {}
   }
-  if (!result.brand) {
-    const ogSite = doc.querySelector('meta[property="og:site_name"]');
-    if (ogSite && ogSite.content) result.brand = ogSite.content.trim();
-  }
 
-  // 5. Custom Selector: Description
+  // Description
   if (sel.description) {
     try {
       const el = doc.querySelector(sel.description);
@@ -632,416 +564,46 @@ function extractWithCustomRule(customRule, doc = (typeof document !== "undefined
     } catch (e) {}
   }
 
-  // 6. Custom Selector: Images
+  // Images
   if (sel.images) {
     try {
       const attr = sel.image_attr || "src";
       const imgs = doc.querySelectorAll(sel.images);
       imgs.forEach((img) => {
-        let rawSrc = img.getAttribute(attr) || img.getAttribute("data-src") || img.getAttribute("src") || img.getAttribute("data-zoom-image") || img.getAttribute("href");
-        if (rawSrc && !rawSrc.startsWith("data:") && !rawSrc.includes("blank.gif")) {
-          let fullSrc = rawSrc;
-          try {
-            fullSrc = new URL(rawSrc, origin || (typeof window !== "undefined" ? window.location.origin : "")).href;
-          } catch (e) {}
-          const clean = cleanImageUrl(fullSrc);
+        const src = img.getAttribute(attr) || img.getAttribute("data-src") || img.getAttribute("src") || img.getAttribute("data-zoom-image");
+        if (src && !src.startsWith("data:") && !src.includes("blank.gif")) {
+          const clean = cleanImageUrl(src);
           if (clean && !result.images.includes(clean)) result.images.push(clean);
         }
       });
     } catch (e) {}
   }
 
-  // 7. Custom Selector: Specs Table / Rows / Lists
+  // Specs Table
   if (sel.specs_table || sel.specs_row) {
     try {
-      const container = sel.specs_table ? doc.querySelector(sel.specs_table) : doc;
-      if (container) {
-        const rowSelector = sel.specs_row || "tr, li, .row, .spec-item";
-        const rows = container.querySelectorAll(rowSelector);
-        rows.forEach((row) => {
-          let keyEl = sel.specs_key ? row.querySelector(sel.specs_key) : null;
-          let valEl = sel.specs_val ? row.querySelector(sel.specs_val) : null;
-
-          if (!keyEl) keyEl = row.querySelector("th, td:first-child, dt, strong, .col-lg-4, .col-md-4, .col-4, .spec-title, .title");
-          if (!valEl) valEl = row.querySelector("td:last-child, dd, span, .col-lg-8, .col-md-8, .col-8, .spec-value, .val");
-
-          if (keyEl && valEl && keyEl !== valEl) {
-            let k = keyEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").replace(/[:：]$/, "").trim();
-            let v = valEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").trim();
-            if (k && v && k !== v && k.length < 60 && v.length < 400) {
-              result.specs[k] = v;
-            }
-          }
-        });
-      }
-    } catch (e) {}
-  }
-
-  // Feature boxes fallback (örn: Sarsılmaz .feature-box-content)
-  if (Object.keys(result.specs).length === 0) {
-    try {
-      const fBoxes = doc.querySelectorAll(".feature-box-content");
-      fBoxes.forEach((fb) => {
-        const txt = fb.innerText || fb.textContent || "";
-        const lines = txt.split("\n").map(l => l.trim()).filter(Boolean);
-        if (lines.length >= 2) {
-          result.specs[lines[1]] = lines[0];
-        }
-      });
-    } catch (e) {}
-  }
-
-  // =========================================================================
-  // EVRENSEL OTOMATİK TAMAMLAMA & KENDİ KENDİNİ İYİLEŞTİRME (Self-Healing)
-  // AI seçicisi herhangi bir alanda boş dönerse, evrensel algılayıcı devreye girer.
-  // =========================================================================
-  if (!result.title) {
-    const autoH = findUniversalProductHeading(doc);
-    if (autoH && autoH.textContent.trim()) {
-      result.title = autoH.textContent.trim();
-    }
-  }
-
-  if (result.images.length === 0) {
-    const hero = findUniversalProductContainer(findUniversalProductHeading(doc), doc);
-    if (hero) {
-      const imgs = hero.querySelectorAll("img");
-      imgs.forEach((img) => {
-        let src = img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-zoom-image");
-        if (src && !src.startsWith("data:") && !src.includes("logo") && !src.includes("icon")) {
-          let full = src;
-          try {
-            full = new URL(src, origin || (typeof window !== "undefined" ? window.location.origin : "")).href;
-          } catch (e) {}
-          const cl = cleanImageUrl(full);
-          if (cl && !result.images.includes(cl)) result.images.push(cl);
-        }
-      });
-    }
-  }
-
-  if (Object.keys(result.specs).length === 0) {
-    const specCont = findUniversalSpecsContainer(doc);
-    if (specCont) {
-      const rows = specCont.querySelectorAll("tr, dl, li, .row");
-      rows.forEach((r) => {
-        const kEl = r.querySelector("th, td:first-child, dt, strong, .col-4, .col-md-4, .col-lg-4");
-        const vEl = r.querySelector("td:last-child, dd, span, .col-8, .col-md-8, .col-lg-8");
-        if (kEl && vEl && kEl !== vEl) {
-          let k = kEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").replace(/[:：]$/, "").trim();
-          let v = vEl.textContent.trim().replace(/^[\d✓\s\.\-]+/, "").trim();
-          if (k && v && k !== v && k.length < 60 && v.length < 400) {
+      const rowSelector = sel.specs_row || `${sel.specs_table} tr, ${sel.specs_table} li`;
+      const rows = doc.querySelectorAll(rowSelector);
+      rows.forEach((row) => {
+        const keyEl = sel.specs_key ? row.querySelector(sel.specs_key) : row.querySelector("th, td:first-child, dt, strong");
+        const valEl = sel.specs_val ? row.querySelector(sel.specs_val) : row.querySelector("td:last-child, dd, span");
+        if (keyEl && valEl) {
+          const k = keyEl.textContent.trim().replace(/[:：]$/, "");
+          const v = valEl.textContent.trim();
+          if (k && v && k !== v && k.length < 50) {
             result.specs[k] = v;
           }
         }
       });
-    }
-  }
-
-  if (result.images && result.images.length > 0) {
-    result.images = dedupeImages(result.images);
+    } catch (e) {}
   }
 
   return result;
 }
 
-function normalizeTurkish(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/İ/g, "i")
-    .replace(/I/g, "i")
-    .replace(/ı/g, "i")
-    .replace(/Ğ/g, "g")
-    .replace(/ğ/g, "g")
-    .replace(/Ü/g, "u")
-    .replace(/ü/g, "u")
-    .replace(/Ş/g, "s")
-    .replace(/ş/g, "s")
-    .replace(/Ö/g, "o")
-    .replace(/ö/g, "o")
-    .replace(/Ç/g, "c")
-    .replace(/ç/g, "c")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
-function isInvalidProductTitle(text) {
-  if (!text || typeof text !== "string") return true;
-  const t = normalizeTurkish(text);
-  if (t.length < 3) return true;
-  const blacklist = [
-    "sozlesme kosullari",
-    "sozlesme",
-    "mesafeli satis sozlesmesi",
-    "on bilgilendirme formu",
-    "gizlilik ve guvenlik",
-    "aydinlatma metni",
-    "cerez politikasi",
-    "kvkk",
-    "uyelik sozlesmesi",
-    "sepetim",
-    "sepet",
-    "siparis ozeti",
-    "teslimat ve iade",
-    "hakkimizda",
-    "iletisim",
-    "bize ulasin",
-    "giris yap",
-    "uye ol",
-    "kullanici girisi",
-    "bayi girisi",
-    "sifremi unuttum",
-    "favorilerim",
-    "favoriler",
-    "arama sonuclari",
-    "kategoriler",
-    "tum kategoriler",
-    "menu",
-    "adres bilgileri",
-    "fatura adresi",
-    "teslimat adresi",
-    "kampanyalar",
-    "duyurular"
-  ];
-  return blacklist.some((b) => t === b || t.startsWith(b + " ") || t.endsWith(" " + b) || t.includes("sozlesme"));
-}
-
-function isInvalidBrand(brand) {
-  if (!brand || typeof brand !== "string") return true;
-  const b = normalizeTurkish(brand);
-  if (b.length < 2 || b.length > 40) return true;
-  const blacklist = [
-    "sozlesme", "kosullari", "sartlar",
-    "urun", "urunler", "detay", "detaylar",
-    "anasayfa", "home", "giris", "kategori", "kategoriler",
-    "fiyat", "fiyati", "stok", "sepet", "sepetim", "menu",
-    "marka", "brand", "model", "av", "bayi", "alesta", "gunerav", "guner",
-    "resmi", "web", "site", "online", "magaza", "tum",
-    "giris yap", "uye ol",
-    // Yem Çeşitleri, Aromalar & Balıkçılık Terimleri (Asla Marka Olamaz)
-    "midye", "ciger", "pellet", "peynir", "sarimsak",
-    "alabalik", "hamur", "hamuru", "yem", "yemi", "yemler",
-    "dogal yem", "canli yem", "trout", "pasta", "bait",
-    "trout pasta", "trout bait", "trout pasta alabalik hamuru",
-    // Renkler (Marka Olamaz)
-    "yesil", "sari", "kirmizi", "turuncu", "beyaz", "siyah", "mavi",
-    "rainbow", "gokkusagi", "kamuflaj"
-  ];
-  return blacklist.includes(b) || b.includes("sozlesme") || b.includes("kosullari");
-}
-
-function extractSpecsFromDescription(desc, doc, existingSpecs = {}) {
-  const newSpecs = { ...existingSpecs };
-  const lines = [];
-
-  if (desc && typeof desc === "string") {
-    const rawLines = desc.split(/\r?\n/);
-    for (const r of rawLines) {
-      const trimmed = r.trim();
-      if (trimmed.length > 5 && trimmed.length < 250) {
-        lines.push(trimmed);
-      }
-    }
-  }
-
-  // Fallback: Sadece gerçek ürün açıklama alanındaki li ve p etiketlerini tara!
-  // Kesinlikle breadcrumb, nav-tabs, navbar, header, footer taranmaz!
-  if (lines.length < 3 && doc) {
-    const candidateNodes = doc.querySelectorAll(
-      ".tab-pane:not(.nav-tabs *) li, .product-description li, [id*='aciklama']:not(.breadcrumb *):not(nav *) li, [class*='aciklama']:not(.breadcrumb *):not(nav *) li, .product-detail li:not(.breadcrumb *):not(nav *), .tab-pane.active p, #tab_urun_aciklamasi p"
-    );
-    candidateNodes.forEach((node) => {
-      // Ekmek kırıntısı veya navigasyon içinde mi kontrol et
-      if (node.closest && node.closest(".breadcrumb, .breadcrumbs, .nav, .nav-tabs, nav, header, footer, #menu, .menu, .pagination, #sidebar")) {
-        return;
-      }
-      const t = node.textContent.trim();
-      if (t.length > 5 && t.length < 250 && !lines.includes(t)) {
-        lines.push(t);
-      }
-    });
-  }
-
-  let bulletIndex = 1;
-
-  for (const rawLine of lines) {
-    const cleanLine = rawLine.replace(/^[•*—\-–►▪▫✓✔\+]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim();
-    if (cleanLine.length < 5) continue;
-
-    const lower = normalizeTurkish(cleanLine);
-
-    // Breadcrumb ve menü başlıklarını kesinlikle ele
-    const forbiddenLineWords = [
-      "anasayfa", "ana sayfa", "dogal yem", "canli yem", "balik avi", "balik yemleri",
-      "urun aciklamasi", "urun ozellikleri", "degerlendirmeler", "yorumlar",
-      "taksit secenekleri", "iade kosullari", "kargo bilgisi"
-    ];
-    if (forbiddenLineWords.includes(lower)) continue;
-
-    // Başlık veya ürün adı tekrarı olan satırları (Örn: "SEAGAME Trout Pasta Alabalık Hamuru") atla
-    if (
-      (lower.includes("trout pasta") && (lower.includes("hamur") || lower.includes("alabalik"))) ||
-      lower.startsWith("seagame trout pasta") ||
-      (doc && doc.title && normalizeTurkish(doc.title).includes(lower) && cleanLine.length > 15)
-    ) {
-      continue;
-    }
-
-    // Satış/pazarlama ve sepet satırlarını ele
-    if (
-      (lower.includes("ozellikler") && cleanLine.endsWith(":")) ||
-      lower.includes("taksit") ||
-      lower.includes("havale") ||
-      lower.includes("kargo") ||
-      lower.includes("kdv") ||
-      lower.includes("musteri hizmetleri") ||
-      lower.includes("tum haklari saklidir") ||
-      lower.includes("temin edebilirsiniz") ||
-      lower.includes("bayilerden temin")
-    ) {
-      continue;
-    }
-
-    if (cleanLine.includes(":") && !cleanLine.startsWith("http")) {
-      const parts = cleanLine.split(":");
-      const k = parts[0].trim();
-      const v = parts.slice(1).join(":").trim();
-      if (k.length >= 2 && k.length <= 40 && v.length >= 1 && v.length <= 200) {
-        newSpecs[k] = v;
-        continue;
-      }
-    }
-    if (cleanLine.includes(" - ") && !cleanLine.startsWith("-")) {
-      const parts = cleanLine.split(" - ");
-      const k = parts[0].trim();
-      const v = parts.slice(1).join(" - ").trim();
-      if (k.length >= 2 && k.length <= 35 && v.length >= 1 && v.length <= 150) {
-        newSpecs[k] = v;
-        continue;
-      }
-    }
-
-    let matched = false;
-
-    // 1. Balık Yemi & Hamuru: Aroma / Koku / Çekici Formül
-    if ((lower.includes("aroma") || lower.includes("aromal") || lower.includes("formul") || lower.includes("koku") || lower.includes("tat") || lower.includes("ceker") || lower.includes("cezbedici")) && !newSpecs["Aroma / Formül"] && !newSpecs["Aroma / Etki"]) {
-      const aromaMatch = lower.match(/\b(midye|ciger|peynir|sarimsak|pellet|somon|kalamar|kan|misir|vanilya|cilek|karides|anason|balik)\b/);
-      if (aromaMatch) {
-        const aromaCapMap = {
-          midye: "Midye",
-          ciger: "Ciğer",
-          peynir: "Peynir",
-          sarimsak: "Sarımsak",
-          pellet: "Pellet",
-          somon: "Somon",
-          kalamar: "Kalamar",
-          kan: "Kan",
-          misir: "Mısır",
-          vanilya: "Vanilya",
-          cilek: "Çilek",
-          karides: "Karides",
-          anason: "Anason",
-          balik: "Balık"
-        };
-        const prettyName = aromaCapMap[aromaMatch[1]] || (aromaMatch[1].charAt(0).toUpperCase() + aromaMatch[1].slice(1));
-        newSpecs["Aroma / Formül"] = `${prettyName} Aromalı Özel Formül`;
-      } else {
-        newSpecs["Aroma / Formül"] = cleanLine;
-      }
-      matched = true;
-    }
-
-    // 2. Yüzme / Aksiyon (Hamur, Sahte Yem, Maket vb.)
-    if (/yuzen|floating/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
-      newSpecs["Yüzme Özelliği"] = "Yüzen (Floating)";
-      matched = true;
-    } else if (/batan|sinking/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
-      newSpecs["Yüzme Özelliği"] = "Batan (Sinking)";
-      matched = true;
-    } else if (/askida|suspending/i.test(lower) && !newSpecs["Yüzme Özelliği"]) {
-      newSpecs["Yüzme Özelliği"] = "Askıda Kalan (Suspending)";
-      matched = true;
-    }
-
-    // 3. Mukavemet & Dağılmama (Farklı Sıcaklık ve Akıntılara Dayanıklı)
-    if ((lower.includes("dagilma") || lower.includes("catlama") || lower.includes("akinti") || lower.includes("sicaklik")) && !newSpecs["Dayanıklılık & Yapı"]) {
-      newSpecs["Dayanıklılık & Yapı"] = "Farklı sıcaklıklarda ve güçlü akıntılarda dağılmaz ve çatlamaz";
-      matched = true;
-    }
-
-    // 4. Kullanım Alanı
-    if ((lower.includes("kullanim") || lower.includes("uygun") || lower.includes("dere") || lower.includes("irmak") || lower.includes("golet") || lower.includes("baraj")) && !newSpecs["Kullanım Alanı"]) {
-      let val = cleanLine;
-      const m = cleanLine.match(/^(.*?)(?:için\s*uygundur|kullanımına\s*uygundur|kullanım\s*için)/i);
-      if (m && m[1].trim().length > 3) {
-        val = m[1].trim();
-      }
-      val = val.replace(/kullanım\s*için\s*uygundur\.?/i, "").replace(/için\s*uygundur\.?/i, "").trim();
-      newSpecs["Kullanım Alanı"] = val || cleanLine;
-      matched = true;
-    }
-
-    // 5. Renk / Renk Seçenekleri
-    if ((lower.includes("renk") || lower.includes("renkler")) && !newSpecs["Renk Seçenekleri"]) {
-      newSpecs["Renk Seçenekleri"] = cleanLine.replace(/üretilmektedir\.?/i, "").replace(/sunulmaktadır\.?/i, "").trim();
-      matched = true;
-    }
-
-    // 6. Gramaj / Ağırlık / Ambalaj
-    if (/(\d+(?:[\.,]\d+)?)\s*(?:gram|gr|kg)/i.test(cleanLine) && !newSpecs["Ağırlık / Gramaj"]) {
-      const gm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:gram|gr|kg)(?:'l[ıi]k)?(?:\s*ambalaj[ıi]nda)?)/i);
-      newSpecs["Ağırlık / Gramaj"] = gm ? gm[1].trim() : cleanLine;
-      matched = true;
-    }
-
-    // 7. İğne / Kanca Uyumu
-    if ((lower.includes("igne") || lower.includes("kanca")) && !newSpecs["İğne Uyumu"]) {
-      newSpecs["İğne Uyumu"] = cleanLine.replace(/korur\.?/i, "korur").trim();
-      matched = true;
-    }
-
-    // 8. Su Geçirmezlik
-    if ((lower.includes("su gecirmez") || lower.includes("waterproof")) && !newSpecs["Su Geçirmezlik"]) {
-      newSpecs["Su Geçirmezlik"] = "Su Geçirmez";
-      matched = true;
-    }
-
-    // 9. Boy / Ebat
-    if (/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i.test(cleanLine) && !newSpecs["Boyut / Ebat"]) {
-      const bm = cleanLine.match(/(\d+(?:[\.,]\d+)?\s*(?:cm|mm|m))\b/i);
-      newSpecs["Boyut / Ebat"] = bm ? bm[1] : cleanLine;
-      matched = true;
-    }
-
-    // 10. Fallback: Genel maddeleri yapısal özellik olarak dönüştür
-    if (!matched) {
-      if (cleanLine.includes(",")) {
-        const parts = cleanLine.split(",");
-        const candidateKey = parts[0].trim();
-        const candidateVal = parts.slice(1).join(",").trim();
-        if (candidateKey.length >= 3 && candidateKey.length <= 30 && candidateVal.length >= 3) {
-          const capKey = candidateKey.charAt(0).toUpperCase() + candidateKey.slice(1);
-          newSpecs[capKey] = candidateVal.charAt(0).toUpperCase() + candidateVal.slice(1);
-          continue;
-        }
-      }
-      newSpecs[`Özellik ${bulletIndex}`] = cleanLine;
-      bulletIndex++;
-    }
-  }
-
-  return newSpecs;
-}
-
-function extractProductData(doc = (typeof document !== "undefined" ? document : null), pageUrl = "") {
+async function extractProductData(doc = (typeof document !== "undefined" ? document : null), pageUrl = "") {
   if (!doc) return {};
   const currentUrl = pageUrl || (typeof window !== "undefined" && window.location ? window.location.href : "");
-  const canonicalEl = doc.querySelector('link[rel="canonical"]');
-  const ogUrlEl = doc.querySelector('meta[property="og:url"]');
-  const validUrl = (ogUrlEl && ogUrlEl.content) || (canonicalEl && canonicalEl.href) || currentUrl;
-
   const result = {
     title: "",
     brand: "",
@@ -1052,8 +614,6 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     images: [],
     specs: {},
     description: "",
-    url: validUrl,
-    supplier_url: validUrl,
   };
 
   // =========================================================================
@@ -1085,54 +645,94 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   }
 
   // =========================================================================
-  // 0.5. Schema.org JSON-LD Product Taraması (Sarsılmaz, Shopify, Modern Siteler)
+  // 0b. YAKALANAN API VERİSİ (SPA siteler için - en yüksek öncelik)
   // =========================================================================
   try {
-    const jsonLdScripts = doc.querySelectorAll('script[type="application/ld+json"]');
-    for (const sc of jsonLdScripts) {
-      const txt = sc.textContent.trim();
-      if (!txt) continue;
-      const parsed = JSON.parse(txt);
-      const items = Array.isArray(parsed) ? parsed : (parsed["@graph"] ? parsed["@graph"] : [parsed]);
-      for (const item of items) {
-        if (item && (item["@type"] === "Product" || item["@type"]?.includes?.("Product"))) {
-          if (!result.title && item.name) result.title = String(item.name).trim();
-          if (!result.brand && (item.brand?.name || item.brand)) {
-            result.brand = String(item.brand?.name || item.brand).trim();
-          }
-          if (!result.category && item.category) result.category = String(item.category).trim();
-          if (!result.description && item.description) result.description = String(item.description).trim();
-          if (result.price === null && item.offers) {
-            const p = item.offers.price || (Array.isArray(item.offers) ? item.offers[0]?.price : null);
-            if (p) result.price = parseTurkishPrice(p);
-          }
-          if (item.image) {
-            const imList = Array.isArray(item.image) ? item.image : [item.image];
-            imList.forEach((im) => {
-              const u = typeof im === "string" ? im : im?.url;
-              if (u) {
-                const fullUrl = u.startsWith("http") ? u : ((doc.location?.origin || "") + u);
-                const cl = cleanImageUrl(fullUrl);
-                if (cl && !result.images.includes(cl)) result.images.push(cl);
-              }
-            });
-          }
-          if (Array.isArray(item.additionalProperty)) {
-            item.additionalProperty.forEach((prop) => {
-              if (prop.name && prop.value) {
-                const pk = String(prop.name).trim();
-                const pv = String(prop.value).trim();
-                if (pk && pv && !result.specs[pk]) result.specs[pk] = pv;
-              }
-            });
-          }
-          break;
+    const apiData = window._gunerAvCapturedApiData?.product;
+    if (apiData) {
+      const mapApiField = (obj, possibleKeys) => {
+        for (const key of possibleKeys) {
+          const val = obj[key] || obj[key.toLowerCase()] || obj[key.toUpperCase()];
+          if (val !== undefined && val !== null && val !== "") return val;
         }
+        return null;
+      };
+
+      // Title: önce tam başlığı dene, yoksa brand+model'den oluştur
+      let title = mapApiField(apiData, [
+        "fullName", "full_name", "fullTitle", "full_title", "displayName", "display_name",
+        "productTitle", "product_title", "productFullName", "product_full_name",
+        "name", "title", "productName", "product_name", "urunAdi", "urun_adi", "adi"
+      ]);
+      
+      const brand = mapApiField(apiData, ["brand", "marka", "brandName", "brand_name", "manufacturer", "uretimci"]);
+      const model = mapApiField(apiData, ["model", "sku", "mpn", "productCode", "product_code", "urunKodu", "urun_kodu", "code", "partNumber", "variant", "variantName", "variant_name"]);
+      const variant = mapApiField(apiData, ["variant", "variantName", "variant_name", "renk", "color", "renkAdi", "renk_adi"]);
+      const caliber = mapApiField(apiData, ["caliber", "kalibre", "kaliber", "gauge"]);
+
+      // Eğer title sadece model ise (kısa, tek kelime, büyük harf) → brand+model birleştir
+      const isJustModel = title && title.trim().length < 30 && 
+        /^[A-ZÇĞİÖŞÜ0-9\s\-]+$/i.test(title.trim()) && 
+        !/\s/.test(title.trim().split(/[\s\-]+/)[0]); // tek kelime görünüyorsa
+
+      if (title && !isJustModel) {
+        result.title = String(title).trim();
+      } else if (brand && model) {
+        // Brand + Model + Variant + Caliber birleştir
+        const parts = [brand, model];
+        if (variant && !model.toLowerCase().includes(variant.toLowerCase())) parts.push(variant);
+        if (caliber && !model.toLowerCase().includes(caliber.toLowerCase())) parts.push(caliber);
+        result.title = parts.join(" ");
+      } else if (title) {
+        result.title = String(title).trim();
       }
-      if (result.title) break;
+
+      if (brand) result.brand = String(brand).trim();
+
+      if (model) result.model = String(model).trim();
+
+      const price = mapApiField(apiData, ["price", "fiyat", "salePrice", "sale_price", "satisFiyati", "satis_fiyati", "amount", "tutar", "listPrice", "list_price"]);
+      if (price !== null) {
+        const parsed = parseTurkishPrice(price);
+        if (parsed) result.price = parsed;
+      }
+
+      const images = mapApiField(apiData, ["images", "resimler", "imageUrls", "image_urls", "photos", "pictures", "gallery", "gorseller"]);
+      if (images && Array.isArray(images)) {
+        images.forEach(img => {
+          const url = typeof img === "string" ? img : (img?.url || img?.src || img?.image);
+          if (url) {
+            const clean = cleanImageUrl(url);
+            if (clean && !result.images.includes(clean)) result.images.push(clean);
+          }
+        });
+      } else if (images && typeof images === "string") {
+        const clean = cleanImageUrl(images);
+        if (clean) result.images.push(clean);
+      }
+
+      const description = mapApiField(apiData, ["description", "aciklama", "aciklama_uzun", "shortDescription", "short_description", "detay", "content", "icerik"]);
+      if (description) result.description = String(description).trim();
+
+      const specs = mapApiField(apiData, ["specifications", "specs", "ozellikler", "attributes", "features", "teknikOzellikler", "teknik_ozellikler", "productAttributes"]);
+      if (specs && typeof specs === "object") {
+        Object.entries(specs).forEach(([k, v]) => {
+          if (v !== null && v !== undefined && v !== "") {
+            result.specs[String(k).trim()] = String(v).trim();
+          }
+        });
+      }
+
+      const category = mapApiField(apiData, ["category", "kategori", "categoryName", "category_name", "categoryPath", "category_path"]);
+      if (category) result.category = String(category).trim();
+
+      const inStock = mapApiField(apiData, ["inStock", "in_stock", "stokDurumu", "stok_durumu", "availability", "stockStatus", "stock_status"]);
+      if (inStock !== null) result.in_stock = Boolean(inStock);
+
+      console.log("[GünerAV] API verisinden ürün dolduruldu:", { title: result.title, brand: result.brand, price: result.price });
     }
   } catch (e) {
-    console.warn("JSON-LD parsing fallback:", e);
+    console.warn("API verisi işlenirken hata:", e);
   }
 
   const html = (doc.documentElement && doc.documentElement.innerHTML) || "";
@@ -1178,91 +778,22 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // =========================================================================
   // 2. Ürün Başlığı (Title)
   // =========================================================================
-  if (!result.title || isInvalidProductTitle(result.title)) {
-    result.title = "";
-    const ignoredContainers = ".modal, #modal, [role='dialog'], footer, .footer, header, .header, nav, .navbar, .menu, #menu, .sidebar, #sidebar, .cookie, #cookie, .cart, #cart, .basket, #basket, [class*='modal'], [id*='modal'], [class*='sozlesme'], [id*='sozlesme']";
-    const candidateSelectors = [
-      "h1.product-title",
-      "h1.product_name",
-      "h1.proName",
-      "h1[itemprop='name']",
-      ".product-detail h1",
-      ".product-name h1",
-      "#product-name",
-      ".product-title",
-      ".product_name",
-      "[class*='product-title']",
-      "[class*='product_name']",
-      ".urunadi",
-      "h1",
-      "h2.product-title",
-      "h4.product_name"
-    ];
-
-    for (const sel of candidateSelectors) {
-      const els = Array.from(doc.querySelectorAll(sel));
-      for (const el of els) {
-        if (el.closest && el.closest(ignoredContainers)) continue;
-        const text = el.textContent.trim();
-        if (text && text.length >= 3 && !isInvalidProductTitle(text)) {
-          result.title = text;
-          break;
-        }
-      }
-      if (result.title) break;
-    }
-
-    // Fallback to og:title
-    if (!result.title || isInvalidProductTitle(result.title)) {
-      const ogTitle = doc.querySelector('meta[property="og:title"]');
-      if (ogTitle && ogTitle.content) {
-        const cleanOg = ogTitle.content.trim();
-        const parts = cleanOg.split(/\s+[|\-–—]\s+/);
-        if (parts.length > 0 && !isInvalidProductTitle(parts[0])) {
-          result.title = parts[0].trim();
-        }
-      }
-    }
-
-    // Fallback to doc.title
-    if (!result.title || isInvalidProductTitle(result.title)) {
-      const rawTitle = (doc.title || "").trim();
-      const parts = rawTitle.split(/\s+[|\-–—]\s+/);
-      if (parts.length > 0 && !isInvalidProductTitle(parts[0])) {
-        result.title = parts[0].trim();
-      }
+  if (!result.title) {
+    const titleEl = doc.querySelector("h1, h5.font-weight-bold, .col-12 h5.font-weight-bold, h5, .urunadi");
+    const ogTitle = doc.querySelector('meta[property="og:title"]');
+    if (titleEl && titleEl.textContent.trim()) {
+      result.title = titleEl.textContent.trim();
+    } else if (ogTitle && ogTitle.content) {
+      result.title = ogTitle.content.trim();
+    } else {
+      result.title = (doc.title || "").split(/[-|]/)[0].trim();
     }
   }
 
   // =========================================================================
   // 3. Marka Tespiti (Brand)
   // =========================================================================
-  const KNOWN_BRANDS = [
-    "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
-    "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
-    "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
-    "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
-    "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
-    "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex",
-    "SEAGAME", "Seagame", "Savage Gear", "Daiwa", "Shimano", "Okuma", "Bauer",
-    "Remington", "Federal", "Sterling", "Yavaşçalar", "RC", "Fiocchi", "Bornaghi", "BP"
-  ];
-
-  // 1. Başlıkta bilinen marka varsa doğrudan onu marka seç (örn. "SEAGAME TROUT PASTA...")
-  if (result.title) {
-    const normTitle = normalizeTurkish(result.title);
-    for (const b of KNOWN_BRANDS) {
-      const normB = normalizeTurkish(b);
-      const regex = new RegExp(`(^|\\b)${normB}(\\b|$)`, "i");
-      if (regex.test(normTitle)) {
-        result.brand = b;
-        break;
-      }
-    }
-  }
-
-  // 2. Standart DOM marka etiketleri
-  if (!result.brand || isInvalidBrand(result.brand)) {
+  if (!result.brand) {
     const brandSelectors = [
       '[itemprop="brand"] [itemprop="name"]',
       '[itemprop="brand"]',
@@ -1278,7 +809,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       const el = doc.querySelector(sel);
       if (el) {
         const val = el.getAttribute("content") || el.textContent;
-        if (val && val.trim() && val.trim().length < 40 && !isInvalidBrand(val.trim())) {
+        if (val && val.trim() && val.trim().length < 40) {
           result.brand = val.trim();
           break;
         }
@@ -1286,56 +817,23 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     }
   }
 
-  // 3. og:title parçalarından marka tespiti (örn: "SEAGAME TROUT PASTA... | MİDYE | SEAGAME | ALESTA SPORTİF BALIKÇILIK")
-  if (!result.brand || isInvalidBrand(result.brand)) {
-    const ogTitle = doc.querySelector('meta[property="og:title"]');
-    if (ogTitle && ogTitle.content) {
-      const parts = ogTitle.content.split(/\s+[|\-–—]\s+/);
-      // Önce og:title parçalarında bilinen bir marka var mı bak! (SEAGAME vb.)
-      for (let i = 1; i < parts.length; i++) {
-        const cand = parts[i].trim();
-        const matchedKnown = KNOWN_BRANDS.find((b) => normalizeTurkish(b) === normalizeTurkish(cand));
-        if (matchedKnown) {
-          result.brand = matchedKnown;
-          break;
-        }
-      }
-      // Bilinen marka bulunamazsa diğer adayları isInvalidBrand süzgecinden geçir
-      if (!result.brand || isInvalidBrand(result.brand)) {
-        if (parts.length >= 3) {
-          for (let i = 1; i < parts.length; i++) {
-            const candidate = parts[i].trim();
-            if (
-              candidate.length >= 2 &&
-              candidate.length <= 30 &&
-              !isInvalidBrand(candidate) &&
-              !candidate.toLowerCase().includes("balıkçılık") &&
-              !candidate.toLowerCase().includes("balikcilik") &&
-              !candidate.toLowerCase().includes("av") &&
-              !candidate.toLowerCase().includes("ticaret") &&
-              !candidate.toLowerCase().includes("ltd") &&
-              !candidate.toLowerCase().includes("şirket") &&
-              !candidate.toLowerCase().includes("sirket")
-            ) {
-              result.brand = candidate;
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
+  // Bilinen Av, Silah ve Taktik Aksesuar Markaları Listesi ve Başlıktan Marka Çıkarımı
+  const KNOWN_BRANDS = [
+    "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
+    "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
+    "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
+    "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
+    "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
+    "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex"
+  ];
 
-  if (result.brand && isInvalidBrand(result.brand)) {
-    result.brand = "";
-  }
-
-  // Başlıkta marka yoksa başa ekle (örn: sadece "MAGIC" yazıyorsa "Sarsılmaz MAGIC" yap)
-  if (result.brand && result.title && !isInvalidBrand(result.brand)) {
-    const titleLow = result.title.toLowerCase();
-    const brandLow = result.brand.toLowerCase();
-    if (!titleLow.includes(brandLow) && !brandLow.includes(titleLow)) {
-      result.title = `${result.brand} ${result.title}`;
+  if (!result.brand && result.title) {
+    for (const b of KNOWN_BRANDS) {
+      const regex = new RegExp(`\\b${b}\\b`, "i");
+      if (regex.test(result.title)) {
+        result.brand = b;
+        break;
+      }
     }
   }
 
@@ -1377,7 +875,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     const idx = result.title.indexOf(result.model);
     if (idx > 0) {
       const prefix = result.title.substring(0, idx).trim();
-      if (prefix.length > 1 && prefix.length < 30 && !isInvalidBrand(prefix)) {
+      if (prefix.length > 1 && prefix.length < 30) {
         result.brand = prefix;
       }
     }
@@ -1386,14 +884,12 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // Hala boşsa başlıktaki ilk kelimeyi dene
   if (!result.brand && result.title) {
     const words = result.title.split(/\s+/);
-    if (words.length > 1 && words[0].length >= 3 && /^[A-ZÇĞİÖŞÜa-zçğıöşü0-9\-]+$/.test(words[0])) {
-      if (!isInvalidBrand(words[0])) {
-        result.brand = words[0];
-      }
+    if (words.length > 1 && words[0].length >= 3 && /^[A-ZÇĞİÖŞÜa-zçğıöşü]+$/.test(words[0])) {
+      result.brand = words[0];
     }
   }
 
-  if (result.brand && !isInvalidBrand(result.brand)) {
+  if (result.brand) {
     result.specs["Marka"] = result.brand;
   }
 
@@ -1401,26 +897,6 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   // 6. Fiyat Tespiti (Price)
   // =========================================================================
   if (!result.price) {
-    // 0. B2B / Dia E-Ticaret ve metin bazlı fiyat etiketleri (Perakende Fiyatı: 150 TL vb.)
-    const priceTextEls = Array.from(doc.querySelectorAll("div, p, span, b, strong, td, th")).filter((el) => {
-      const t = el.textContent;
-      return (
-        /(?:perakende\s*fiyat[ıi]|liste\s*fiyat[ıi]|sat[ıi][şs]\s*fiyat[ıi]|fiyat[ıi]?)\s*[:\s]*\s*([\d\.,]+)\s*(?:tl|₺)?/i.test(t) &&
-        !t.toLowerCase().includes("havale") &&
-        !t.toLowerCase().includes("taksit")
-      );
-    });
-    for (const pel of priceTextEls) {
-      const m = pel.textContent.match(/(?:perakende\s*fiyat[ıi]|liste\s*fiyat[ıi]|sat[ıi][şs]\s*fiyat[ıi]|fiyat[ıi]?)\s*[:\s]*\s*([\d\.,]+)\s*(?:tl|₺)?/i);
-      if (m && m[1]) {
-        const parsed = parseTurkishPrice(m[1]);
-        if (parsed !== null && parsed > 0) {
-          result.price = parsed;
-          break;
-        }
-      }
-    }
-
     const priceSelectors = [
       "#kdvdahilnetfiyat",
       ".kdvdahilnetfiyat",
@@ -1451,11 +927,11 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     }
 
     if (!result.price) {
-      const candEls = Array.from(doc.querySelectorAll("span, div, td, p, b")).filter((el) =>
+      const candEls = Array.from(doc.querySelectorAll("span, div, td")).filter((el) =>
         /(\d+[\.,]\d{2}|\d+)\s*(TL|₺)/i.test(el.textContent) &&
+        el.children.length === 0 &&
         !el.textContent.toLowerCase().includes("havale") &&
-        !el.textContent.toLowerCase().includes("taksit") &&
-        !el.textContent.toLowerCase().includes("kargo")
+        !el.textContent.toLowerCase().includes("taksit")
       );
       for (const cand of candEls) {
         const parsed = parseTurkishPrice(cand.textContent);
@@ -1550,23 +1026,13 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   }
 
   const galleryImgs = doc.querySelectorAll(
-    "a.cloudzoom-gallery, [data-cloudzoom], .cloudzoom, #product-thumb-image a, #product-thumb-image img, .thumb-item a, .thumb-item img, [class*='thumb'] a, [class*='thumb'] img, [id*='thumb'] a, [id*='thumb'] img, .flex-control-thumbs img, .flex-control-nav img, .product-image img, .gallery img, .product-gallery img, .swiper-slide img, .carousel-item img, [data-zoom-image], a[data-standard], .slider-wrapper a, .slider a, a.image-lightbox, a.lightbox-gallery, .slider img, .flickity-slider a, .flickity-slider img, img[src*='/image/'], img[src*='digitaloceanspaces']"
+    ".product-image img, .gallery img, .product-gallery img, .swiper-slide img, .carousel-item img, [data-zoom-image], a[data-standard], #product-thumb-image a, #product-thumb-image img, .thumb-item a, .slider-wrapper a, .slider a, a.image-lightbox, a.lightbox-gallery, .slider img, .flickity-slider a, .flickity-slider img"
   );
 
   galleryImgs.forEach((el) => {
     // Eğer görsel renk varyantları sekmesindeyse ana görsellere dahil etme!
     if (colorTab && colorTab.contains(el)) return;
-    if (el.closest && el.closest("[id*='renk'], .color-variants, .variants, .header, header, footer, .footer")) return;
-
-    // CloudZoom data attribute parser
-    const czAttr = el.getAttribute("data-cloudzoom") || el.parentElement?.getAttribute("data-cloudzoom");
-    if (czAttr) {
-      const zm = czAttr.match(/zoomImage\s*:\s*['"]([^'"]+)['"]/i) || czAttr.match(/image\s*:\s*['"]([^'"]+)['"]/i);
-      if (zm && zm[1]) {
-        const cleaned = cleanImageUrl(zm[1]);
-        if (cleaned && !rawMainImgs.includes(cleaned)) rawMainImgs.push(cleaned);
-      }
-    }
+    if (el.closest && el.closest("[id*='renk'], .color-variants, .variants")) return;
 
     let src =
       el.getAttribute("data-zoom-image") ||
@@ -1579,7 +1045,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       el.getAttribute("data-highres") ||
       el.getAttribute("data-standard") ||
       el.getAttribute("data-src") ||
-      (el.tagName === "A" && el.href && !el.href.endsWith("#") && !el.href.includes("javascript:") ? el.href : "") ||
+      (el.tagName === "A" && el.href && !el.href.endsWith("#") ? el.href : "") ||
       el.src;
 
     if (src) {
@@ -1602,7 +1068,7 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   if (rawMainImgs.length === 0 && result.images.length === 0) {
     doc.querySelectorAll("img").forEach((img) => {
       if (colorTab && colorTab.contains(img)) return;
-      if (img.closest && img.closest("[id*='renk'], .color-variants, .variants, .header, header, footer, .footer")) return;
+      if (img.closest && img.closest("[id*='renk'], .color-variants, .variants")) return;
       let s = img.src;
       if (s && (img.naturalWidth > 250 || img.width > 250)) {
         const cleaned = cleanImageUrl(s);
@@ -1757,40 +1223,13 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   });
 
   // C. Ürün Bilgisi / Detay Metninden Özellik Çıkarımı (.product-detail, .divAciklamaIcerik)
-  let detailEl = null;
-
-  // 1. Sekme bağlantılarından "Açıklama" / "Ürün Açıklaması" olanını bul ve hedef pane'e bak
-  const tabLinks = Array.from(doc.querySelectorAll("a, button, li[role='tab']")).filter((el) => {
-    const txt = (el.textContent || "").trim().toLowerCase();
-    return (txt.includes("açıklama") || txt.includes("aciklama")) && !txt.includes("özellik");
-  });
-  for (const tl of tabLinks) {
-    const targetSelector = tl.getAttribute("href") || tl.getAttribute("data-target") || tl.getAttribute("aria-controls");
-    if (targetSelector && targetSelector.startsWith("#")) {
-      try {
-        const targetPane = doc.querySelector(targetSelector);
-        if (targetPane && targetPane.textContent.trim().length > 20) {
-          detailEl = targetPane;
-          break;
-        }
-      } catch (e) {}
-    }
-  }
-
-  // 2. Doğrudan standart seçiciler
-  if (!detailEl) {
-    detailEl = doc.querySelector(
-      "#tab_urun_aciklamasi, #tab_urun_aciklama, #tab-urun-aciklama, #tab_urun-aciklamasi, .tab-pane.active, .tab-content > .tab-pane:first-child, .product-description, .product-detail, .divAciklamaIcerik, [class*='divAciklama'], #divAciklama, #tabGenelBakis, [id*='genel-bakis'], #tab-description, [itemprop='description'], #tab_Ürün-açıklaması, #tab-Ürün-açıklaması, [id*='Ürün-açıklaması'], [id*='urun-aciklamasi'], .entry-content"
-    );
-  }
-
+  const detailEl = doc.querySelector(
+    ".divAciklamaIcerik, [class*='divAciklama'], #divAciklama, #tabGenelBakis, [id*='genel-bakis'], .product-detail, .product-description, #tab-description, [itemprop='description'], #tab_Ürün-açıklaması, #tab-Ürün-açıklaması, [id*='Ürün-açıklaması'], [id*='urun-aciklamasi']"
+  );
   if (detailEl) {
     let rawLines = [];
     try {
       const cloned = detailEl.cloneNode(true);
-      // Navigasyon, sekmeler ve breadcrumb'ları kesinlikle sil
-      cloned.querySelectorAll(".breadcrumb, .breadcrumbs, .nav, .nav-tabs, nav, header, footer, .pagination, #sidebar").forEach((el) => el.remove());
-
       // Tablo satırlarını "Özellik: Değer" formatında metne dönüştür
       cloned.querySelectorAll("tr").forEach((tr) => {
         const cells = tr.querySelectorAll("th, td");
@@ -1810,13 +1249,13 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       rawLines = cloned.textContent
         .split(/\n+/)
         .map((l) => l.replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim())
-        .filter((l) => l.length > 0 && l.length < 250);
+        .filter((l) => l.length > 0 && l.length < 150);
     } catch {
       rawLines = detailEl.textContent
         .replace(/&nbsp;/g, " ")
         .split(/\n|\r/)
         .map((l) => l.replace(/\s+/g, " ").trim())
-        .filter((l) => l.length > 0 && l.length < 250);
+        .filter((l) => l.length > 0 && l.length < 150);
     }
 
     const descList = [];
@@ -2171,31 +1610,11 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
     result.model = "";
   }
 
-  // =========================================================================
-  // KULLANICI TALEBİ: "ürün özellikleri boş geliyor ise ürün açıklamasındaki maddeler ürün özelliklerine girsin"
-  // =========================================================================
-  const validSpecsList = Object.keys(specs).filter(
-    (k) => !["Marka", "Model", "Kategori", "Stok Kodu", "Ürün Kodu", "SKU", "sku", "Ürün No", "Stok Durumu"].includes(k)
-  );
-
-  if (validSpecsList.length === 0) {
-    const enrichedSpecs = extractSpecsFromDescription(result.description, doc, specs);
-    Object.assign(specs, enrichedSpecs);
-  }
-
   result.specs = specs;
 
   // Marka / Model son kontrolü
   if (!result.brand && (specs["Marka"] || specs["Brand"])) {
-    const candBrand = specs["Marka"] || specs["Brand"];
-    if (!isInvalidBrand(candBrand)) {
-      result.brand = candBrand;
-    }
-  }
-  if (result.brand && isInvalidBrand(result.brand)) {
-    result.brand = "";
-    delete specs["Marka"];
-    delete specs["Brand"];
+    result.brand = specs["Marka"] || specs["Brand"];
   }
   if (!result.model && specs["Model"]) {
     result.model = specs["Model"];
@@ -2473,33 +1892,6 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
       result.category = "kamp-mat";
       result.requires_license = false;
     } else if (
-      fullText.includes("alabalik hamuru") ||
-      fullText.includes("alabalık hamuru") ||
-      fullText.includes("trout pasta") ||
-      fullText.includes("c1335") ||
-      fullText.includes("c1336") ||
-      fullText.includes("c1337") ||
-      fullText.includes("c1338") ||
-      fullText.includes("c1339") ||
-      fullText.includes("c1340") ||
-      (fullText.includes("seagame") && (fullText.includes("pasta") || fullText.includes("hamur") || fullText.includes("bait") || fullText.includes("trout")))
-    ) {
-      result.category = "kamp-alabalik-hamuru";
-      result.requires_license = false;
-    } else if (
-      fullText.includes("doğal yem") ||
-      fullText.includes("dogal yem") ||
-      fullText.includes("canlı yem") ||
-      fullText.includes("canli yem") ||
-      fullText.includes("alabalık yemi") ||
-      fullText.includes("alabalik yemi") ||
-      fullText.includes("sazan yemi") ||
-      fullText.includes("balık hamuru") ||
-      fullText.includes("balik hamuru")
-    ) {
-      result.category = "kamp-dogal-yem";
-      result.requires_license = false;
-    } else if (
       fullText.includes("kamp") ||
       fullText.includes("termos") ||
       fullText.includes("matara") ||
@@ -2554,18 +1946,38 @@ function extractProductData(doc = (typeof document !== "undefined" ? document : 
   }
 
   result.url = currentUrl;
-  result.supplier_url = currentUrl;
 
-  // 10. Tedarikçi Tespiti (Supplier ID)
-  const urlLow = currentUrl.toLowerCase();
-  if (urlLow.includes("arslansilah") || (result.brand && result.brand.toLowerCase().includes("castello"))) {
+  const urlLow = (currentUrl || "").toLowerCase();
+  const nameLow = ((result.title || "") + " " + (result.brand || "")).toLowerCase();
+  if (urlLow.includes("arslansilah") || nameLow.includes("castello")) {
     result.supplier_id = 1;
-  } else if (urlLow.includes("alestabalik") || urlLow.includes("alesta")) {
-    result.supplier_id = 3;
   } else if (urlLow.includes("ozlerav")) {
     result.supplier_id = 2;
   } else {
     result.supplier_id = 2;
+  }
+
+  const hasMinimalData = result.title && (result.price || result.brand || result.images.length > 0);
+  
+  if (!hasMinimalData) {
+    try {
+      const universalResult = await extractProductUniversal(doc, currentUrl, cachedCustomSiteRules);
+      
+      if (universalResult.title) result.title = universalResult.title;
+      if (universalResult.brand) result.brand = universalResult.brand;
+      if (universalResult.model) result.model = universalResult.model;
+      if (universalResult.price !== null) result.price = universalResult.price;
+      if (universalResult.images.length > 0) result.images = [...new Set([...result.images, ...universalResult.images])];
+      if (Object.keys(universalResult.specs).length > 0) result.specs = { ...result.specs, ...universalResult.specs };
+      if (universalResult.description) result.description = universalResult.description;
+      if (universalResult.category) result.category = universalResult.category;
+      if (universalResult.variants?.length > 0) result.variants = universalResult.variants;
+      if (universalResult._needsAiAnalysis) result._needsAiAnalysis = true;
+      if (universalResult._extractionLog) result._extractionLog = universalResult._extractionLog;
+      if (universalResult._extractionMethod) result._extractionMethod = universalResult._extractionMethod;
+    } catch (e) {
+      console.warn("Universal extractor fallback failed:", e);
+    }
   }
 
   return result;
@@ -2578,9 +1990,6 @@ function cleanImageUrl(url) {
 
   // Çift slash temizliği (örn: admin//Images -> admin/Images)
   u = u.replace(/([^:])\/{2,}/g, "$1/");
-
-  // DIA E-Ticaret / DigitalOcean Spaces: thumb_ veya medium_ önekini temizleyip orijinalini al
-  u = u.replace(/\/(thumb|medium|small)_([^\/]+)$/i, "/$2");
 
   // Kobimaster / Özler Av: /Medium/ veya /Small/ veya /Thumb/ -> /Large/
   u = u.replace(/\/Images\/Urun\/(Medium|Small|Thumb)\//gi, "/Images/Urun/Large/");
@@ -2618,7 +2027,6 @@ function dedupeImages(urls) {
     const cleaned = cleanImageUrl(raw);
     const norm = cleaned.replace(/-scaled\.(jpe?g|png|webp)/i, ".$1");
 
-    // Dosya adı bazında tekilleştirme (örn: 33443_15082026095955.jpg)
     const fileMatch = norm.match(/\/([^\/?#]+\.(?:jpe?g|png|webp|avif))/i);
     const filename = fileMatch ? fileMatch[1].toLowerCase() : null;
 
@@ -2634,4 +2042,969 @@ function dedupeImages(urls) {
   }
   return res;
 }
+
+class UniversalProductExtractor {
+  constructor(doc, url, customRules = {}) {
+    this.doc = doc;
+    this.url = url;
+    this.domain = this.extractDomain(url);
+    this.customRules = customRules[this.domain] || null;
+    this.result = {
+      title: "",
+      brand: "",
+      model: "",
+      category: "",
+      price: null,
+      in_stock: true,
+      images: [],
+      specs: {},
+      description: "",
+      variants: [],
+      requires_license: false,
+      supplier_id: 2,
+    };
+    this.extractionLog = [];
+  }
+
+  extractDomain(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    } catch (e) {
+      return "";
+    }
+  }
+
+  log(step, success, details = "") {
+    this.extractionLog.push({ step, success, details, timestamp: Date.now() });
+  }
+
+  async extract() {
+    this.log("start", true, `Domain: ${this.domain}`);
+
+    if (this.customRules?.selectors) {
+      const customData = this.applyCustomRules();
+      if (this.hasMeaningfulData(customData)) {
+        this.mergeResult(customData);
+        this.log("custom_rules", true, "Özel kural ile veri çekildi");
+        return this.finalize();
+      }
+    }
+
+    const strategies = [
+      { name: "schema_org", fn: () => this.extractSchemaOrg() },
+      { name: "open_graph", fn: () => this.extractOpenGraph() },
+      { name: "json_ld", fn: () => this.extractJsonLd() },
+      { name: "meta_tags", fn: () => this.extractMetaTags() },
+      { name: "js_variables", fn: () => this.extractJsVariables() },
+      { name: "microdata", fn: () => this.extractMicrodata() },
+      { name: "heuristic_dom", fn: () => this.extractHeuristicDom() },
+      { name: "fallback_generic", fn: () => this.extractFallbackGeneric() },
+    ];
+
+    for (const strategy of strategies) {
+      try {
+        const data = strategy.fn();
+        if (data && this.hasMeaningfulData(data)) {
+          this.mergeResult(data);
+          this.log(strategy.name, true, `Veri bulundu: ${Object.keys(data).filter(k => data[k]).join(", ")}`);
+          
+          if (this.isResultComplete()) {
+            this.log("complete", true, "Tüm alanlar doldu, erken çıkış");
+            break;
+          }
+        } else {
+          this.log(strategy.name, false, "Anlamlı veri bulunamadı");
+        }
+      } catch (e) {
+        this.log(strategy.name, false, `Hata: ${e.message}`);
+      }
+    }
+
+    if (!this.isResultComplete()) {
+      this.log("needs_ai", true, "Standart yöntemler yetersiz, AI analizi gerekli");
+      this.result._needsAiAnalysis = true;
+      this.result._extractionLog = this.extractionLog;
+    }
+
+    return this.finalize();
+  }
+
+  hasMeaningfulData(data) {
+    if (!data) return false;
+    const meaningfulFields = ["title", "price", "brand", "images"];
+    return meaningfulFields.some(f => data[f] && (Array.isArray(data[f]) ? data[f].length > 0 : data[f].toString().trim().length > 0));
+  }
+
+  isResultComplete() {
+    const required = ["title", "price", "brand", "images"];
+    return required.every(f => this.result[f] && (Array.isArray(this.result[f]) ? this.result[f].length > 0 : this.result[f].toString().trim().length > 0));
+  }
+
+  mergeResult(data) {
+    for (const key of Object.keys(this.result)) {
+      if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
+        if (Array.isArray(this.result[key]) && Array.isArray(data[key])) {
+          this.result[key] = [...new Set([...this.result[key], ...data[key]])];
+        } else if (typeof this.result[key] === "object" && typeof data[key] === "object") {
+          this.result[key] = { ...this.result[key], ...data[key] };
+        } else if (!this.result[key]) {
+          this.result[key] = data[key];
+        }
+      }
+    }
+  }
+
+  applyCustomRules() {
+    if (!this.customRules?.selectors) return null;
+    return extractWithCustomRule(this.customRules, this.doc);
+  }
+
+  extractSchemaOrg() {
+    const data = {};
+    const productNodes = this.doc.querySelectorAll('[itemtype*="Product"], [itemtype*="product"]');
+    
+    for (const node of productNodes) {
+      const nameEl = node.querySelector('[itemprop="name"]');
+      if (nameEl && !data.title) data.title = nameEl.textContent.trim();
+
+      const brandEl = node.querySelector('[itemprop="brand"] [itemprop="name"], [itemprop="brand"]');
+      if (brandEl && !data.brand) {
+        data.brand = brandEl.getAttribute("content") || brandEl.textContent.trim();
+      }
+
+      const priceEl = node.querySelector('[itemprop="price"]');
+      if (priceEl && !data.price) {
+        const price = priceEl.getAttribute("content") || priceEl.textContent;
+        data.price = parseTurkishPrice(price);
+      }
+
+      const imageEl = node.querySelector('[itemprop="image"]');
+      if (imageEl && !data.images) {
+        const src = imageEl.getAttribute("content") || imageEl.src || imageEl.getAttribute("data-src");
+        if (src) data.images = [cleanImageUrl(src)];
+      }
+
+      const descEl = node.querySelector('[itemprop="description"]');
+      if (descEl && !data.description) data.description = descEl.textContent.trim();
+
+      const skuEl = node.querySelector('[itemprop="sku"], [itemprop="mpn"]');
+      if (skuEl && !data.model) data.model = skuEl.getAttribute("content") || skuEl.textContent.trim();
+
+      const availabilityEl = node.querySelector('[itemprop="availability"]');
+      if (availabilityEl) {
+        const href = availabilityEl.getAttribute("href") || "";
+        data.in_stock = !href.includes("OutOfStock") && !href.includes("SoldOut");
+      }
+    }
+    return data;
+  }
+
+  extractOpenGraph() {
+    const data = {};
+    const ogTitle = this.doc.querySelector('meta[property="og:title"]');
+    if (ogTitle) data.title = ogTitle.content.trim();
+
+    const ogPrice = this.doc.querySelector('meta[property="product:price:amount"], meta[property="og:price:amount"]');
+    if (ogPrice) data.price = parseTurkishPrice(ogPrice.content);
+
+    const ogCurrency = this.doc.querySelector('meta[property="product:price:currency"], meta[property="og:price:currency"]');
+    if (ogCurrency && data.price) data.currency = ogCurrency.content;
+
+    const ogBrand = this.doc.querySelector('meta[property="product:brand"], meta[property="og:brand"]');
+    if (ogBrand) data.brand = ogBrand.content.trim();
+
+    const ogImage = this.doc.querySelector('meta[property="og:image"]');
+    if (ogImage) {
+      const src = cleanImageUrl(ogImage.content);
+      if (src && !src.includes("logo") && !src.includes("favicon")) data.images = [src];
+    }
+
+    const ogImages = this.doc.querySelectorAll('meta[property="og:image"]');
+    if (ogImages.length > 1) {
+      data.images = Array.from(ogImages)
+        .map(m => cleanImageUrl(m.content))
+        .filter(u => u && !u.includes("logo") && !u.includes("favicon"));
+    }
+
+    const ogDesc = this.doc.querySelector('meta[property="og:description"]');
+    if (ogDesc) data.description = ogDesc.content.trim();
+
+    const ogAvailability = this.doc.querySelector('meta[property="product:availability"]');
+    if (ogAvailability) data.in_stock = !ogAvailability.content.includes("outofstock");
+
+    return data;
+  }
+
+  extractJsonLd() {
+    const data = {};
+    const scripts = this.doc.querySelectorAll('script[type="application/ld+json"]');
+    
+    for (const script of scripts) {
+      try {
+        const json = JSON.parse(script.textContent);
+        const items = Array.isArray(json) ? json : [json];
+        
+        for (const item of items) {
+          if (item["@type"] === "Product" || item["@type"]?.includes?.("Product")) {
+            if (item.name && !data.title) data.title = item.name;
+            if (item.brand?.name && !data.brand) data.brand = item.brand.name;
+            if (item.offers) {
+              const offers = Array.isArray(item.offers) ? item.offers[0] : item.offers;
+              if (offers.price && !data.price) data.price = parseTurkishPrice(offers.price);
+              if (offers.availability) data.in_stock = !offers.availability.includes("OutOfStock");
+            }
+            if (item.image) {
+              const images = Array.isArray(item.image) ? item.image : [item.image];
+              data.images = images.map(cleanImageUrl).filter(u => u && !u.includes("logo"));
+            }
+            if (item.description && !data.description) data.description = item.description;
+            if (item.sku && !data.model) data.model = item.sku;
+            if (item.mpn && !data.model) data.model = item.mpn;
+          }
+        }
+      } catch (e) {}
+    }
+    return data;
+  }
+
+  extractMetaTags() {
+    const data = {};
+    const metaSelectors = {
+      title: ['meta[name="title"]', 'meta[name="product:title"]', 'meta[itemprop="name"]'],
+      price: ['meta[name="price"]', 'meta[name="product:price"]', 'meta[itemprop="price"]', 'meta[property="product:price"]'],
+      brand: ['meta[name="brand"]', 'meta[name="product:brand"]', 'meta[itemprop="brand"]'],
+      model: ['meta[name="sku"]', 'meta[name="product:sku"]', 'meta[name="mpn"]', 'meta[itemprop="sku"]', 'meta[itemprop="mpn"]'],
+      description: ['meta[name="description"]', 'meta[property="og:description"]', 'meta[itemprop="description"]'],
+      image: ['meta[name="image"]', 'meta[property="og:image"]', 'meta[itemprop="image"]'],
+    };
+
+    for (const [field, selectors] of Object.entries(metaSelectors)) {
+      for (const sel of selectors) {
+        const el = this.doc.querySelector(sel);
+        if (el) {
+          const val = el.getAttribute("content") || el.textContent;
+          if (val && val.trim()) {
+            if (field === "price") data[field] = parseTurkishPrice(val);
+            else if (field === "image") data.images = [cleanImageUrl(val)].filter(u => u);
+            else data[field] = val.trim();
+            break;
+          }
+        }
+      }
+    }
+    return data;
+  }
+
+  extractJsVariables() {
+    const data = {};
+    const html = this.doc.documentElement.innerHTML;
+    
+    const patterns = {
+      title: [
+        /fullName\s*:\s*["']([^"']+)["']/i,
+        /productName\s*:\s*["']([^"']+)["']/i,
+        /product_title\s*:\s*["']([^"']+)["']/i,
+        /pageTitle\s*:\s*["']([^"']+)["']/i,
+        /"name"\s*:\s*"([^"]+)"/i,
+      ],
+      price: [
+        /salePrice\s*:\s*([\d\.]+)/i,
+        /price\s*:\s*([\d\.]+)/i,
+        /productPrice\s*:\s*([\d\.]+)/i,
+        /"price"\s*:\s*([\d\.]+)/i,
+        /priceAmount\s*:\s*([\d\.]+)/i,
+      ],
+      brand: [
+        /brandName\s*:\s*["']([^"']+)["']/i,
+        /brand\s*:\s*["']([^"']+)["']/i,
+        /manufacturer\s*:\s*["']([^"']+)["']/i,
+        /"brand"\s*:\s*"([^"]+)"/i,
+      ],
+      model: [
+        /productCode\s*:\s*["']([^"']+)["']/i,
+        /sku\s*:\s*["']([^"']+)["']/i,
+        /mpn\s*:\s*["']([^"']+)["']/i,
+        /"sku"\s*:\s*"([^"]+)"/i,
+        /"model"\s*:\s*"([^"]+)"/i,
+      ],
+      category: [
+        /categoryName\s*:\s*["']([^"']+)["']/i,
+        /category\s*:\s*["']([^"']+)["']/i,
+        /"category"\s*:\s*"([^"]+)"/i,
+      ],
+      images: [
+        /primaryImageUrl\s*:\s*["']([^"']+)["']/i,
+        /productImage\s*:\s*["']([^"']+)["']/i,
+        /imageUrl\s*:\s*["']([^"']+)["']/i,
+        /"image"\s*:\s*"([^"]+)"/i,
+      ],
+      description: [
+        /description\s*:\s*["']([^"']+)["']/i,
+        /productDescription\s*:\s*["']([^"']+)["']/i,
+        /shortDescription\s*:\s*["']([^"']+)["']/i,
+      ],
+      specs: [
+        /productAttributes\s*:\s*(\{[\s\S]*?\})/i,
+        /attributes\s*:\s*(\{[\s\S]*?\})/i,
+        /specifications\s*:\s*(\{[\s\S]*?\})/i,
+      ],
+    };
+
+    for (const [field, regexes] of Object.entries(patterns)) {
+      for (const regex of regexes) {
+        const match = html.match(regex);
+        if (match && match[1]) {
+          let val = match[1];
+          if (field === "price") {
+            data[field] = parseTurkishPrice(val);
+          } else if (field === "images") {
+            data[field] = [cleanImageUrl(val)].filter(u => u);
+          } else if (field === "specs") {
+            try {
+              const parsed = JSON.parse(val);
+              if (parsed && typeof parsed === "object") data.specs = parsed;
+            } catch (e) {}
+          } else {
+            data[field] = val.trim();
+          }
+          break;
+        }
+      }
+    }
+
+    try {
+      const dataLayerMatch = html.match(/dataLayer\s*=\s*(\[[\s\S]*?\])/);
+      if (dataLayerMatch) {
+        const dataLayer = JSON.parse(dataLayerMatch[1]);
+        for (const item of dataLayer) {
+          if (item.ecommerce?.detail?.products?.[0]) {
+            const p = item.ecommerce.detail.products[0];
+            if (p.name && !data.title) data.title = p.name;
+            if (p.brand && !data.brand) data.brand = p.brand;
+            if (p.price && !data.price) data.price = parseTurkishPrice(p.price);
+            if (p.variant && !data.model) data.model = p.variant;
+            if (p.category && !data.category) data.category = p.category;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return data;
+  }
+
+  extractMicrodata() {
+    const data = {};
+    const productItems = this.doc.querySelectorAll('[itemscope][itemtype*="Product"]');
+    
+    for (const item of productItems) {
+      const props = item.querySelectorAll('[itemprop]');
+      for (const prop of props) {
+        const propName = prop.getAttribute("itemprop");
+        const value = prop.getAttribute("content") || prop.getAttribute("datetime") || prop.textContent.trim();
+        
+        if (!value) continue;
+        
+        switch (propName) {
+          case "name": if (!data.title) data.title = value; break;
+          case "brand": if (!data.brand) data.brand = value; break;
+          case "price": if (!data.price) data.price = parseTurkishPrice(value); break;
+          case "image": if (!data.images) data.images = [cleanImageUrl(value)].filter(u => u); break;
+          case "description": if (!data.description) data.description = value; break;
+          case "sku": case "mpn": if (!data.model) data.model = value; break;
+          case "availability": data.in_stock = !value.includes("OutOfStock"); break;
+        }
+      }
+    }
+    return data;
+  }
+
+  extractHeuristicDom() {
+    const data = {};
+
+    const titleSelectors = [
+      "h1.product-title", "h1.product-name", "h1[itemprop='name']",
+      ".product-title h1", ".product-name h1", ".product-detail h1",
+      ".urun-adi h1", ".product-header h1", "h1.page-title",
+      "h1", ".product-title", ".product-name", ".urun-adi"
+    ];
+    for (const sel of titleSelectors) {
+      const el = this.doc.querySelector(sel);
+      if (el && el.textContent.trim().length > 3) {
+        data.title = el.textContent.trim();
+        break;
+      }
+    }
+
+    const priceSelectors = [
+      '[itemprop="price"]', '.product-price .price', '.price-current',
+      '.sale-price', '.current-price', '.product-price', '#price',
+      '.price', '.urun-fiyat', '.fiyat', '[class*="price"]', '[id*="price"]',
+      '[class*="fiyat"]', '[id*="fiyat"]'
+    ];
+    for (const sel of priceSelectors) {
+      const el = this.doc.querySelector(sel);
+      if (el) {
+        const text = el.textContent || el.getAttribute("content") || "";
+        const price = parseTurkishPrice(text);
+        if (price && price > 0) {
+          data.price = price;
+          break;
+        }
+      }
+    }
+
+    if (!data.price) {
+      const textNodes = this.getAllTextNodes(this.doc.body);
+      for (const text of textNodes) {
+        const price = parseTurkishPrice(text);
+        if (price && price > 100 && price < 1000000) {
+          data.price = price;
+          break;
+        }
+      }
+    }
+
+    const brandSelectors = [
+      '[itemprop="brand"]', '.product-brand', '.brand-name', '.brand a',
+      'a[href*="/marka/"]', 'a[href*="/brand/"]', '.manufacturer',
+      '.product-manufacturer', '[class*="brand"]'
+    ];
+    for (const sel of brandSelectors) {
+      const el = this.doc.querySelector(sel);
+      if (el && el.textContent.trim().length > 1 && el.textContent.trim().length < 50) {
+        data.brand = el.textContent.trim();
+        break;
+      }
+    }
+
+    if (!data.brand && data.title) {
+      const knownBrands = [
+        "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
+        "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
+        "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
+        "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
+        "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
+        "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex"
+      ];
+      for (const b of knownBrands) {
+        if (new RegExp(`\\b${b}\\b`, "i").test(data.title)) {
+          data.brand = b;
+          break;
+        }
+      }
+    }
+
+    const imageSelectors = [
+      '[itemprop="image"]', '.product-image img', '.product-gallery img',
+      '.gallery img', '.main-image img', '#main-image', '#product-image',
+      '.zoom-image', '[data-zoom-image]', '.product-img img',
+      '.slider img', '.carousel img', '.swiper-slide img'
+    ];
+    const images = [];
+    for (const sel of imageSelectors) {
+      const els = this.doc.querySelectorAll(sel);
+      for (const el of els) {
+        const src = el.getAttribute("src") || el.getAttribute("data-src") || 
+                    el.getAttribute("data-zoom-image") || el.getAttribute("data-large") ||
+                    (el.tagName === "A" ? el.href : "");
+        if (src) {
+          const cleaned = cleanImageUrl(src);
+          if (cleaned && this.isValidProductImage(cleaned)) {
+            images.push(cleaned);
+          }
+        }
+      }
+      if (images.length > 0) break;
+    }
+    if (images.length > 0) data.images = [...new Set(images)].slice(0, 10);
+
+    const descSelectors = [
+      '[itemprop="description"]', '.product-description', '.product-detail .description',
+      '.product-info .description', '#description', '.description',
+      '.product-content', '.urun-aciklama', '.product-tabs .tab-content'
+    ];
+    for (const sel of descSelectors) {
+      const el = this.doc.querySelector(sel);
+      if (el && el.textContent.trim().length > 20) {
+        data.description = el.textContent.trim().slice(0, 5000);
+        break;
+      }
+    }
+
+    const specData = this.extractSpecsFromTables();
+    if (Object.keys(specData).length > 0) data.specs = specData;
+
+    return data;
+  }
+
+  isValidProductImage(url) {
+    const exclude = ["logo", "icon", "banner", "favicon", "sprite", "placeholder", "loading", "blank", "default"];
+    const lower = url.toLowerCase();
+    if (exclude.some(x => lower.includes(x))) return false;
+    if (!/\.(jpe?g|png|webp|avif)(\?|$)/i.test(url)) return false;
+    return true;
+  }
+
+  getAllTextNodes(root) {
+    const texts = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while ((node = walker.nextNode())) {
+      const text = node.textContent.trim();
+      if (text.length > 5 && text.length < 200 && /\d/.test(text)) {
+        texts.push(text);
+      }
+    }
+    return texts;
+  }
+
+  extractSpecsFromTables() {
+    const specs = {};
+    const tableSelectors = [
+      "table.product-specs", "table.specifications", "table.tech-specs",
+      ".spec-table table", ".product-attributes table", ".product-specs table",
+      ".specification-table", "#specs table", ".divAciklamaIcerik table",
+      "table", "dl.specs", ".specs-list"
+    ];
+
+    for (const sel of tableSelectors) {
+      const tables = this.doc.querySelectorAll(sel);
+      for (const table of tables) {
+        const rows = table.querySelectorAll("tr");
+        for (const row of rows) {
+          const cells = row.querySelectorAll("th, td");
+          if (cells.length >= 2) {
+            const key = cells[0].textContent.replace(/[:：]/g, "").trim();
+            const val = cells[1].textContent.trim();
+            if (key && val && key.length < 60 && val.length < 300) {
+              specs[key] = val;
+            }
+          }
+        }
+
+        const dts = table.querySelectorAll("dt");
+        for (const dt of dts) {
+          const dd = dt.nextElementSibling;
+          if (dd && dd.tagName.toLowerCase() === "dd") {
+            const key = dt.textContent.replace(/[:：]/g, "").trim();
+            const val = dd.textContent.trim();
+            if (key && val) specs[key] = val;
+          }
+        }
+      }
+    }
+
+    const listSelectors = [
+      ".product-list-row", ".product-feature-row", ".feature-row", ".spec-row",
+      ".product-specs li", ".specifications li", ".attributes li"
+    ];
+    for (const sel of listSelectors) {
+      const items = this.doc.querySelectorAll(sel);
+      for (const item of items) {
+        const keyEl = item.querySelector(".title, .name, .label, dt, strong, th, .product-list-title");
+        const valEl = item.querySelector(".value, .content, .desc, dd, td, .product-list-content");
+        if (keyEl && valEl) {
+          const key = keyEl.textContent.replace(/[:：]/g, "").trim();
+          const val = valEl.textContent.trim();
+          if (key && val && key.length < 60 && val.length < 300) {
+            specs[key] = val;
+          }
+        }
+      }
+    }
+
+    return specs;
+  }
+
+  extractFallbackGeneric() {
+    const data = {};
+    
+    if (!data.title) {
+      data.title = (this.doc.title || "").split(/[-|–]/)[0].trim();
+    }
+
+    if (!data.price) {
+      const allText = this.doc.body.innerText;
+      const priceMatches = allText.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*(?:TL|₺|TRY)/gi);
+      if (priceMatches) {
+        const prices = priceMatches.map(p => parseTurkishPrice(p)).filter(p => p && p > 50 && p < 500000);
+        if (prices.length > 0) {
+          data.price = Math.min(...prices);
+        }
+      }
+    }
+
+    if (!data.images) {
+      const allImages = this.doc.querySelectorAll("img");
+      const images = [];
+      for (const img of allImages) {
+        if (img.naturalWidth > 200 || img.width > 200) {
+          const src = img.src || img.getAttribute("data-src") || img.getAttribute("data-lazy");
+          if (src) {
+            const cleaned = cleanImageUrl(src);
+            if (cleaned && this.isValidProductImage(cleaned)) {
+              images.push(cleaned);
+            }
+          }
+        }
+      }
+      if (images.length > 0) data.images = [...new Set(images)].slice(0, 10);
+    }
+
+    return data;
+  }
+
+  finalize() {
+    if (!this.result.brand && this.result.title) {
+      const knownBrands = [
+        "Hunthink", "Dağlıoğlu", "Daglioglu", "Hunt Group", "Serengeti", "Retay Arms", "Retay",
+        "Castello", "Arslan", "Husan", "Derya", "Armsan", "Ata Arms", "Ata", "Mavoric",
+        "Stoeger", "Beretta", "Benelli", "Browning", "Winchester", "Hatsan",
+        "Kral Arms", "Kral", "Huğlu", "Huglu", "Akdaş", "Akdas",
+        "Yıldız", "Yildiz", "Sarsılmaz", "Sarsilmaz", "Canik", "Girsan",
+        "Tisaş", "Tisas", "Steiner", "Zeiss", "Swarovski", "Optisan", "Hawke", "Vortex"
+      ];
+      for (const b of knownBrands) {
+        if (new RegExp(`\\b${b}\\b`, "i").test(this.result.title)) {
+          this.result.brand = b;
+          break;
+        }
+      }
+    }
+
+    if (!this.result.model && this.result.title && this.result.brand) {
+      const titleWithoutBrand = this.result.title.replace(new RegExp(`\\b${this.result.brand}\\b`, "i"), "").trim();
+      const modelMatch = titleWithoutBrand.match(/\b([A-Z]{1,4}[-\s]?\d{2,4}[A-Z]?|MOD[-\s]?\d+|[A-Z]{2,}-\d+)\b/i);
+      if (modelMatch) this.result.model = modelMatch[1].trim();
+    }
+
+    const specKeys = Object.keys(this.result.specs);
+    for (const key of specKeys) {
+      const lower = key.toLowerCase();
+      if (lower.includes("marka") && !this.result.brand) this.result.brand = this.result.specs[key];
+      if ((lower.includes("model") || lower.includes("sku") || lower.includes("ürün kodu")) && !this.result.model) {
+        this.result.model = this.result.specs[key];
+      }
+    }
+
+    const urlLow = this.url.toLowerCase();
+    const titleLow = (this.result.title || "").toLowerCase();
+    const brandLow = (this.result.brand || "").toLowerCase();
+    
+    if (urlLow.includes("arslansilah") || brandLow.includes("castello")) this.result.supplier_id = 1;
+    else if (urlLow.includes("ozlerav")) this.result.supplier_id = 2;
+
+    this.result.url = this.url;
+    this.result._extractionLog = this.extractionLog;
+    this.result._extractionMethod = this.extractionLog.find(l => l.success)?.step || "unknown";
+
+    return this.result;
+  }
+}
+
+async function extractProductUniversal(doc, url, customRules = {}) {
+  const extractor = new UniversalProductExtractor(doc, url, customRules);
+  return await extractor.extract();
+}
+
+class AiSelectorCompiler {
+  static compile(aiResult, doc, url) {
+    const selectors = {};
+    const domain = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    const extracted = aiResult.extracted_preview || {};
+    const html = doc.documentElement.innerHTML;
+
+    if (extracted.title) {
+      selectors.title = this.findSelectorForText(doc, extracted.title, "title");
+    }
+    if (extracted.price !== null && extracted.price !== undefined) {
+      selectors.price = this.findSelectorForPrice(doc, extracted.price);
+    }
+    if (extracted.brand) {
+      selectors.brand = this.findSelectorForText(doc, extracted.brand, "brand");
+    }
+    if (extracted.model) {
+      selectors.model = this.findSelectorForText(doc, extracted.model, "model");
+    }
+    if (extracted.description) {
+      selectors.description = this.findSelectorForText(doc, extracted.description.slice(0, 200), "description");
+    }
+    if (Array.isArray(extracted.images) && extracted.images.length > 0) {
+      selectors.images = this.findImageSelector(doc, extracted.images[0]);
+      selectors.image_attr = "src";
+    }
+    if (extracted.specs && Object.keys(extracted.specs).length > 0) {
+      const specSelectors = this.findSpecSelectors(doc, extracted.specs);
+      if (specSelectors.table) selectors.specs_table = specSelectors.table;
+      if (specSelectors.row) selectors.specs_row = specSelectors.row;
+      if (specSelectors.key) selectors.specs_key = specSelectors.key;
+      if (specSelectors.val) selectors.specs_val = specSelectors.val;
+    }
+
+    return {
+      domain,
+      updatedAt: new Date().toISOString(),
+      selectors,
+      extractionConfidence: this.calculateConfidence(selectors, extracted),
+      source: "ai_analysis",
+      sampleExtracted: extracted,
+    };
+  }
+
+  static findSelectorForText(doc, targetText, fieldType) {
+    const cleanTarget = targetText.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (!cleanTarget || cleanTarget.length < 3) return "";
+
+    const candidates = [];
+    
+    const allElements = doc.querySelectorAll("*");
+    for (const el of allElements) {
+      const text = el.textContent?.trim() || "";
+      if (text === targetText.trim() || (text.includes(targetText.trim()) && text.length < targetText.length * 2)) {
+        const selector = this.generateSelector(el);
+        if (selector) candidates.push({ selector, score: this.scoreSelector(el, fieldType) });
+      }
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates[0].selector;
+    }
+
+    const metaSelectors = {
+      title: ['h1', '[itemprop="name"]', 'meta[property="og:title"]', '.product-title', '.product-name', '.urun-adi'],
+      brand: ['[itemprop="brand"]', '.product-brand', '.brand-name', 'a[href*="/marka/"]', '[class*="brand"]'],
+      model: ['[itemprop="sku"]', '[itemprop="mpn"]', '.product-code', '.sku', '[class*="model"]', '[class*="sku"]'],
+      description: ['[itemprop="description"]', '.product-description', '.description', '#description', '.product-detail'],
+    };
+
+    const fallbacks = metaSelectors[fieldType] || [];
+    for (const sel of fallbacks) {
+      const el = doc.querySelector(sel);
+      if (el && el.textContent?.includes(targetText.trim().slice(0, 30))) return sel;
+    }
+
+    return "";
+  }
+
+  static findSelectorForPrice(doc, targetPrice) {
+    const priceStr = targetPrice.toString();
+    const candidates = [];
+    
+    const allElements = doc.querySelectorAll("*");
+    for (const el of allElements) {
+      const text = el.textContent?.trim() || "";
+      const parsed = parseTurkishPrice(text);
+      if (parsed === targetPrice) {
+        const selector = this.generateSelector(el);
+        if (selector) candidates.push({ selector, score: this.scoreSelector(el, "price") });
+      }
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates[0].selector;
+    }
+
+    const priceSelectors = ['[itemprop="price"]', '.product-price', '.price', '.fiyat', '#price', '[class*="price"]', '[id*="price"]', '[class*="fiyat"]'];
+    for (const sel of priceSelectors) {
+      const el = doc.querySelector(sel);
+      if (el) {
+        const parsed = parseTurkishPrice(el.textContent || el.getAttribute("content") || "");
+        if (parsed === targetPrice) return sel;
+      }
+    }
+
+    return "";
+  }
+
+  static findImageSelector(doc, targetImageUrl) {
+    const cleanTarget = cleanImageUrl(targetImageUrl);
+    const allImages = doc.querySelectorAll("img, a[href]");
+    
+    for (const el of allImages) {
+      const src = el.src || el.getAttribute("href") || el.getAttribute("data-src") || 
+                  el.getAttribute("data-zoom-image") || el.getAttribute("data-large") || "";
+      if (cleanImageUrl(src) === cleanTarget) {
+        return this.generateSelector(el);
+      }
+    }
+    return "";
+  }
+
+  static findSpecSelectors(doc, specs) {
+    const specKeys = Object.keys(specs);
+    if (specKeys.length === 0) return {};
+
+    const tables = doc.querySelectorAll("table, .spec-table, .specifications, .product-specs, dl, .specs-list");
+    let bestTable = null;
+    let bestScore = 0;
+
+    for (const table of tables) {
+      let score = 0;
+      const tableText = table.textContent.toLowerCase();
+      for (const key of specKeys) {
+        if (tableText.includes(key.toLowerCase())) score++;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestTable = table;
+      }
+    }
+
+    if (bestTable && bestScore >= Math.min(2, specKeys.length)) {
+      const tableSelector = this.generateSelector(bestTable);
+      const rowSelector = `${tableSelector} tr, ${tableSelector} li, ${tableSelector} .spec-row, ${tableSelector} .product-list-row`;
+      return {
+        table: tableSelector,
+        row: rowSelector,
+        key: "th, td:first-child, dt, .title, .name, .label, strong",
+        val: "td:last-child, dd, .value, .content, .desc, span",
+      };
+    }
+
+    return {};
+  }
+
+  static generateSelector(el) {
+    if (!el || el === document.body) return "";
+    
+    if (el.id) return `#${el.id}`;
+    
+    const path = [];
+    let current = el;
+    while (current && current !== document.body && path.length < 4) {
+      let selector = current.tagName.toLowerCase();
+      
+      if (current.className && typeof current.className === "string") {
+        const classes = current.className.trim().split(/\s+/).filter(c => c && !/^\d+$/.test(c) && c.length > 1);
+        if (classes.length > 0) {
+          selector += "." + classes.slice(0, 2).join(".");
+        }
+      }
+      
+      if (current === el && current.parentElement) {
+        const siblings = Array.from(current.parentElement.children).filter(c => c.tagName === current.tagName);
+        if (siblings.length > 1) {
+          const index = siblings.indexOf(current) + 1;
+          selector += `:nth-of-type(${index})`;
+        }
+      }
+      
+      path.unshift(selector);
+      current = current.parentElement;
+    }
+    
+    return path.join(" > ");
+  }
+
+  static scoreSelector(el, fieldType) {
+    let score = 0;
+    const tag = el.tagName.toLowerCase();
+    const className = el.className || "";
+    const id = el.id || "";
+    
+    if (id) score += 100;
+    
+    const fieldClasses = {
+      title: ["title", "name", "heading", "h1", "product-title", "urun-adi", "urunadi"],
+      price: ["price", "fiyat", "cost", "amount", "sale-price", "current-price"],
+      brand: ["brand", "marka", "manufacturer", "producer"],
+      model: ["model", "sku", "mpn", "code", "product-code", "urun-kodu"],
+      description: ["description", "desc", "aciklama", "detail", "content", "about"],
+    };
+    
+    const relevantClasses = fieldClasses[fieldType] || [];
+    for (const rc of relevantClasses) {
+      if (className.toLowerCase().includes(rc) || id.toLowerCase().includes(rc)) score += 50;
+    }
+    
+    if (tag === "h1" && fieldType === "title") score += 30;
+    if (tag === "meta" && fieldType === "title") score += 40;
+    if (el.hasAttribute("itemprop")) score += 40;
+    if (el.hasAttribute("property") && el.getAttribute("property")?.includes("og:")) score += 30;
+    
+    const depth = this.getDepth(el);
+    score -= depth * 2;
+    
+    return score;
+  }
+
+  static getDepth(el) {
+    let depth = 0;
+    while (el && el !== document.body) {
+      depth++;
+      el = el.parentElement;
+    }
+    return depth;
+  }
+
+  static calculateConfidence(selectors, extracted) {
+    const fields = ["title", "price", "brand", "model", "description", "images"];
+    let found = 0;
+    for (const f of fields) {
+      if (selectors[f] || (f === "images" && selectors.images)) found++;
+    }
+    return Math.round((found / fields.length) * 100);
+  }
+}
+
+async function saveLearnedSelectors(domain, compiledRules) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["customSiteRules"], (result) => {
+      const rules = result.customSiteRules || {};
+      rules[domain] = compiledRules;
+      chrome.storage.local.set({ customSiteRules: rules }, () => {
+        cachedCustomSiteRules = rules;
+        resolve(true);
+      });
+    });
+  });
+}
+
+async function triggerAiAnalysisAndLearn(tabId, pageInfo, engine, customPrompt) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      action: "REQUEST_AI_ANALYSIS",
+      pageInfo,
+      engine,
+      customPrompt,
+    }, (response) => {
+      if (response?.success) {
+        resolve(response.data);
+      } else {
+        reject(new Error(response?.error || "AI analysis failed"));
+      }
+    });
+  });
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "COMPILE_AND_SAVE_AI_RULES") {
+    (async () => {
+      try {
+        const { aiResult, pageInfo } = request;
+        const doc = document;
+        const compiled = AiSelectorCompiler.compile(aiResult, doc, pageInfo.url);
+        
+        if (compiled.extractionConfidence >= 50) {
+          await saveLearnedSelectors(compiled.domain, compiled);
+          sendResponse({ success: true, compiled, message: `Kurallar kaydedildi (Güven: %${compiled.extractionConfidence})` });
+        } else {
+          sendResponse({ success: false, compiled, message: `Güven skoru düşük (%${compiled.extractionConfidence}), manuel doğrulama gerekli` });
+        }
+      } catch (e) {
+        sendResponse({ success: false, error: e.message });
+      }
+    })();
+    return true;
+  }
+
+  if (request.action === "GET_EXTRACTION_LOG") {
+    sendResponse({ success: true, log: window.lastExtractionLog || [] });
+    return true;
+  }
+
+  return true;
+});
 
