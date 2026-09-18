@@ -15,3 +15,15 @@
 
 ## 3. Zaman Dilimi Standardı
 - Projedeki tüm zaman damgaları Türkiye Saati (`Europe/Istanbul`, UTC+3) ile uyumlu olmalıdır. Sunucu tarafında tarih/saat formatlanırken `timeZone: "Europe/Istanbul"` parametresi mutlaka eklenmelidir.
+
+## 4. Tedarikçi Entegrasyonları ve B2B Kuralları
+- **Tedarikçi Kimlikleri (Supplier IDs):**
+  - `supplier_id: 1`: Arslan Silah (`arslansilah.com`) - Castello ve yerli markalar.
+  - `supplier_id: 2`: Özler Av (`ozlerav.com.tr`) - Sterling, Huğlu, Retay, yabancı fişekler. B2B ASP.NET Identity çerezi kullanılır.
+  - `supplier_id: 3`: Altunbaş Bayi (`bayi.altunbasas.com.tr`) - Ata Arms yetkili distribütörü. B2B girişi `/hesabim/giris` endpoint'i üzerinden yapılır.
+- **Ateşli Silah ve Ruhsat Kuralları:**
+  - `requires_license: true` olan ateşli silahların fiyatları Türk mevzuatı gereği veritabanında `price: null` olarak tutulur ve vitrinde "Fiyat Bilgisi İçin İletişime Geçin" etiketiyle sunulur.
+  - Ata Arms tüfek modelleri:
+    - `SP` serisi modeller: `tufek-superpoze` kategorisine atanır.
+    - `Neo`, `CY`, `Venza` serisi modeller: `tufek-yari-otomatik` kategorisine atanır.
+    - Pompalı modeller: `tufek-pompali` kategorisine atanır.
