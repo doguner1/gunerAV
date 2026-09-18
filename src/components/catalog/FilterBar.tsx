@@ -8,8 +8,12 @@ import { STORE_INFO } from "@/lib/store";
 
 interface FilterBarProps {
   categories: Category[];
+  categoryCounts?: Record<string, number>;
   selectedCategory: string;
   onSelectCategory: (categoryId: string) => void;
+  availableBrands?: string[];
+  selectedBrand?: string;
+  onSelectBrand?: (brand: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onSearchSubmit?: () => void;
@@ -20,10 +24,35 @@ interface FilterBarProps {
   totalCount: number;
 }
 
+function EmptyDiagonalLine() {
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 h-full w-full stroke-neutral-400/80 dark:stroke-neutral-500/80"
+      preserveAspectRatio="none"
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+    >
+      <line
+        x1="0"
+        y1="100"
+        x2="100"
+        y2="0"
+        stroke="currentColor"
+        strokeWidth="2"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
 export default function FilterBar({
   categories,
+  categoryCounts,
   selectedCategory,
   onSelectCategory,
+  availableBrands = [],
+  selectedBrand = "all",
+  onSelectBrand,
   searchQuery,
   onSearchChange,
   onSearchSubmit,
@@ -79,19 +108,29 @@ export default function FilterBar({
               : cat.id === "bicak"
               ? selectedCategory === "bicak"
               : selectedCategory === cat.id;
+          const count = categoryCounts ? (categoryCounts[cat.id] ?? 0) : undefined;
+          const isEmpty = count !== undefined && count === 0;
           const label = isTr ? cat.name_tr : cat.name_en;
+
           return (
             <button
               key={cat.id}
               type="button"
-              onClick={() => onSelectCategory(cat.id)}
-              className={`shrink-0 rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-wider transition-all ${
-                isSelected
+              disabled={isEmpty}
+              title={isEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+              onClick={() => {
+                if (!isEmpty) onSelectCategory(cat.id);
+              }}
+              className={`shrink-0 rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-wider transition-all relative overflow-hidden ${
+                isEmpty
+                  ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                  : isSelected
                   ? "bg-neutral-950 dark:bg-white text-white dark:text-black shadow-md"
                   : "border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/80 text-neutral-700 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white"
               }`}
             >
               {label}
+              {isEmpty && <EmptyDiagonalLine />}
             </button>
           );
         })}
@@ -107,17 +146,30 @@ export default function FilterBar({
               <span>{isTr ? "Model / Tip:" : "Model / Type:"}</span>
             </span>
 
-            <button
-              type="button"
-              onClick={() => onSelectCategory("tufek")}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                selectedCategory === "tufek"
-                  ? "bg-[#d4af37] text-black shadow-sm font-black"
-                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {isTr ? "Tüm Tüfekler" : "All Shotguns"}
-            </button>
+            {(() => {
+              const allShotgunsCount = categoryCounts ? (categoryCounts["tufek"] ?? 0) : undefined;
+              const isAllShotgunsEmpty = allShotgunsCount !== undefined && allShotgunsCount === 0;
+              return (
+                <button
+                  type="button"
+                  disabled={isAllShotgunsEmpty}
+                  title={isAllShotgunsEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                  onClick={() => {
+                    if (!isAllShotgunsEmpty) onSelectCategory("tufek");
+                  }}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                    isAllShotgunsEmpty
+                      ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                      : selectedCategory === "tufek"
+                      ? "bg-[#d4af37] text-black shadow-sm font-black"
+                      : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  {isTr ? "Tüm Tüfekler" : "All Shotguns"}
+                  {isAllShotgunsEmpty && <EmptyDiagonalLine />}
+                </button>
+              );
+            })()}
 
             {categories
               .find((c) => c.id === "tufek")
@@ -126,21 +178,70 @@ export default function FilterBar({
                   selectedCategory === sub.id ||
                   (sub.id === "tufek-aksesuar" && (selectedCategory === "tufek-aksesuarlar" || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar"));
                 const subLabel = isTr ? sub.name_tr : sub.name_en;
+                const count = categoryCounts ? (categoryCounts[sub.id] ?? 0) : undefined;
+                const isEmpty = count !== undefined && count === 0;
+
                 return (
                   <button
                     key={sub.id}
                     type="button"
-                    onClick={() => onSelectCategory(sub.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                      isSubSelected
+                    disabled={isEmpty}
+                    title={isEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                    onClick={() => {
+                      if (!isEmpty) onSelectCategory(sub.id);
+                    }}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                      isEmpty
+                        ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                        : isSubSelected
                         ? "bg-[#d4af37] text-black shadow-sm font-black"
                         : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                     }`}
                   >
                     {subLabel}
+                    {isEmpty && <EmptyDiagonalLine />}
                   </button>
                 );
               })}
+          </div>
+        </div>
+      )}
+
+      {/* 2.5 Brands Sub-Filter Row (Visible for specific shotgun subcategories) */}
+      {availableBrands.length > 0 && (
+        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-900/70 animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pl-2 sm:pl-4 border-l-2 border-[#d4af37]/40 scrollbar-none">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#d4af37] shrink-0 mr-1 flex items-center gap-1">
+              <span>🏷️</span>
+              <span>{isTr ? "Marka:" : "Brand:"}</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => onSelectBrand?.("all")}
+              className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                selectedBrand === "all"
+                  ? "bg-[#d4af37] text-black shadow-sm font-black"
+                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {isTr ? "[ TÜMÜ ]" : "[ ALL ]"}
+            </button>
+
+            {availableBrands.map((brand) => (
+              <button
+                key={brand}
+                type="button"
+                onClick={() => onSelectBrand?.(brand)}
+                className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                  selectedBrand === brand
+                    ? "bg-[#d4af37] text-black shadow-sm font-black"
+                    : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                {brand}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -154,35 +255,58 @@ export default function FilterBar({
               <span>{isTr ? "Fişek / Gramaj:" : "Cartridge / Weight:"}</span>
             </span>
 
-            <button
-              type="button"
-              onClick={() => onSelectCategory("muhimmat")}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                selectedCategory === "muhimmat"
-                  ? "bg-emerald-600 text-white shadow-sm font-black"
-                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {isTr ? "Tüm Fişekler" : "All Cartridges"}
-            </button>
+            {(() => {
+              const allAmmoCount = categoryCounts ? (categoryCounts["muhimmat"] ?? 0) : undefined;
+              const isAllAmmoEmpty = allAmmoCount !== undefined && allAmmoCount === 0;
+              return (
+                <button
+                  type="button"
+                  disabled={isAllAmmoEmpty}
+                  title={isAllAmmoEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                  onClick={() => {
+                    if (!isAllAmmoEmpty) onSelectCategory("muhimmat");
+                  }}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                    isAllAmmoEmpty
+                      ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                      : selectedCategory === "muhimmat"
+                      ? "bg-emerald-600 text-white shadow-sm font-black"
+                      : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  {isTr ? "Tüm Fişekler" : "All Cartridges"}
+                  {isAllAmmoEmpty && <EmptyDiagonalLine />}
+                </button>
+              );
+            })()}
 
             {categories
               .find((c) => c.id === "muhimmat")
               ?.subcategories?.map((sub) => {
                 const isSubSelected = selectedCategory === sub.id;
                 const subLabel = isTr ? sub.name_tr : sub.name_en;
+                const count = categoryCounts ? (categoryCounts[sub.id] ?? 0) : undefined;
+                const isEmpty = count !== undefined && count === 0;
+
                 return (
                   <button
                     key={sub.id}
                     type="button"
-                    onClick={() => onSelectCategory(sub.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                      isSubSelected
+                    disabled={isEmpty}
+                    title={isEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                    onClick={() => {
+                      if (!isEmpty) onSelectCategory(sub.id);
+                    }}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                      isEmpty
+                        ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                        : isSubSelected
                         ? "bg-emerald-600 text-white shadow-sm font-black"
                         : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                     }`}
                   >
                     {subLabel}
+                    {isEmpty && <EmptyDiagonalLine />}
                   </button>
                 );
               })}
@@ -199,17 +323,30 @@ export default function FilterBar({
               <span>{isTr ? "Ekipman Türü:" : "Equipment Type:"}</span>
             </span>
 
-            <button
-              type="button"
-              onClick={() => onSelectCategory("kamp")}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                selectedCategory === "kamp"
-                  ? "bg-blue-600 text-white shadow-sm font-black"
-                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {isTr ? "Tüm Ekipmanlar" : "All Equipment"}
-            </button>
+            {(() => {
+              const allKampCount = categoryCounts ? (categoryCounts["kamp"] ?? 0) : undefined;
+              const isAllKampEmpty = allKampCount !== undefined && allKampCount === 0;
+              return (
+                <button
+                  type="button"
+                  disabled={isAllKampEmpty}
+                  title={isAllKampEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                  onClick={() => {
+                    if (!isAllKampEmpty) onSelectCategory("kamp");
+                  }}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                    isAllKampEmpty
+                      ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                      : selectedCategory === "kamp"
+                      ? "bg-blue-600 text-white shadow-sm font-black"
+                      : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  {isTr ? "Tüm Ekipmanlar" : "All Equipment"}
+                  {isAllKampEmpty && <EmptyDiagonalLine />}
+                </button>
+              );
+            })()}
 
             {categories
               .find((c) => c.id === "kamp")
@@ -220,18 +357,28 @@ export default function FilterBar({
                   selectedCategory === sub.id ||
                   categories.find((c) => c.id === "kamp")?.subcategories?.some((child) => child.parent_id === sub.id && child.id === selectedCategory);
                 const subLabel = isTr ? sub.name_tr : sub.name_en;
+                const count = categoryCounts ? (categoryCounts[sub.id] ?? 0) : undefined;
+                const isEmpty = count !== undefined && count === 0;
+
                 return (
                   <button
                     key={sub.id}
                     type="button"
-                    onClick={() => onSelectCategory(sub.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                      isSubSelected
+                    disabled={isEmpty}
+                    title={isEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                    onClick={() => {
+                      if (!isEmpty) onSelectCategory(sub.id);
+                    }}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                      isEmpty
+                        ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                        : isSubSelected
                         ? "bg-blue-600 text-white shadow-sm font-black"
                         : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                     }`}
                   >
                     {subLabel}
+                    {isEmpty && <EmptyDiagonalLine />}
                   </button>
                 );
               })}
@@ -246,17 +393,30 @@ export default function FilterBar({
                 <span>{isTr ? "Yem Çeşidi / Marka:" : "Bait Type / Brand:"}</span>
               </span>
 
-              <button
-                type="button"
-                onClick={() => onSelectCategory("kamp-dogal-yem")}
-                className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                  selectedCategory === "kamp-dogal-yem"
-                    ? "bg-emerald-600 text-white shadow-sm font-black"
-                    : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-                }`}
-              >
-                {isTr ? "Tüm Doğal Yemler" : "All Natural Baits"}
-              </button>
+              {(() => {
+                const allDogalYemCount = categoryCounts ? (categoryCounts["kamp-dogal-yem"] ?? 0) : undefined;
+                const isAllDogalYemEmpty = allDogalYemCount !== undefined && allDogalYemCount === 0;
+                return (
+                  <button
+                    type="button"
+                    disabled={isAllDogalYemEmpty}
+                    title={isAllDogalYemEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                    onClick={() => {
+                      if (!isAllDogalYemEmpty) onSelectCategory("kamp-dogal-yem");
+                    }}
+                    className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                      isAllDogalYemEmpty
+                        ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                        : selectedCategory === "kamp-dogal-yem"
+                        ? "bg-emerald-600 text-white shadow-sm font-black"
+                        : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                    }`}
+                  >
+                    {isTr ? "Tüm Doğal Yemler" : "All Natural Baits"}
+                    {isAllDogalYemEmpty && <EmptyDiagonalLine />}
+                  </button>
+                );
+              })()}
 
               {categories
                 .find((c) => c.id === "kamp")
@@ -265,18 +425,28 @@ export default function FilterBar({
                 ?.map((sub) => {
                   const isChildSelected = selectedCategory === sub.id;
                   const subLabel = isTr ? sub.name_tr : sub.name_en;
+                  const count = categoryCounts ? (categoryCounts[sub.id] ?? 0) : undefined;
+                  const isEmpty = count !== undefined && count === 0;
+
                   return (
                     <button
                       key={sub.id}
                       type="button"
-                      onClick={() => onSelectCategory(sub.id)}
-                      className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                        isChildSelected
+                      disabled={isEmpty}
+                      title={isEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                      onClick={() => {
+                        if (!isEmpty) onSelectCategory(sub.id);
+                      }}
+                      className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                        isEmpty
+                          ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                          : isChildSelected
                           ? "bg-emerald-600 text-white shadow-sm font-black"
                           : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                       }`}
                     >
                       {subLabel}
+                      {isEmpty && <EmptyDiagonalLine />}
                     </button>
                   );
                 })}
@@ -294,35 +464,58 @@ export default function FilterBar({
               <span>{isTr ? "Silah / Mühimmat:" : "Type / Ammo:"}</span>
             </span>
 
-            <button
-              type="button"
-              onClick={() => onSelectCategory("havali-kurusiki")}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                selectedCategory === "havali-kurusiki"
-                  ? "bg-amber-600 text-white shadow-sm font-black"
-                  : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {isTr ? "Tümü" : "All"}
-            </button>
+            {(() => {
+              const allHavaliCount = categoryCounts ? (categoryCounts["havali-kurusiki"] ?? 0) : undefined;
+              const isAllHavaliEmpty = allHavaliCount !== undefined && allHavaliCount === 0;
+              return (
+                <button
+                  type="button"
+                  disabled={isAllHavaliEmpty}
+                  title={isAllHavaliEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                  onClick={() => {
+                    if (!isAllHavaliEmpty) onSelectCategory("havali-kurusiki");
+                  }}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                    isAllHavaliEmpty
+                      ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                      : selectedCategory === "havali-kurusiki"
+                      ? "bg-amber-600 text-white shadow-sm font-black"
+                      : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  {isTr ? "Tümü" : "All"}
+                  {isAllHavaliEmpty && <EmptyDiagonalLine />}
+                </button>
+              );
+            })()}
 
             {categories
               .find((c) => c.id === "havali-kurusiki")
               ?.subcategories?.map((sub) => {
                 const isSubSelected = selectedCategory === sub.id;
                 const subLabel = isTr ? sub.name_tr : sub.name_en;
+                const count = categoryCounts ? (categoryCounts[sub.id] ?? 0) : undefined;
+                const isEmpty = count !== undefined && count === 0;
+
                 return (
                   <button
                     key={sub.id}
                     type="button"
-                    onClick={() => onSelectCategory(sub.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                      isSubSelected
+                    disabled={isEmpty}
+                    title={isEmpty ? (isTr ? "Bu kategoride henüz ürün bulunmamaktadır" : "No products available in this category") : undefined}
+                    onClick={() => {
+                      if (!isEmpty) onSelectCategory(sub.id);
+                    }}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all relative overflow-hidden ${
+                      isEmpty
+                        ? "cursor-not-allowed opacity-40 border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/40 text-neutral-400 dark:text-neutral-500 select-none"
+                        : isSubSelected
                         ? "bg-amber-600 text-white shadow-sm font-black"
                         : "border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                     }`}
                   >
                     {subLabel}
+                    {isEmpty && <EmptyDiagonalLine />}
                   </button>
                 );
               })}

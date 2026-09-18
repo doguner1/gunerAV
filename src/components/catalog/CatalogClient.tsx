@@ -15,6 +15,242 @@ import {
   restoreScrollPosition,
 } from "@/lib/navigation-state";
 
+export function isProductMatchingCategory(product: Product, categoryId: string): boolean {
+  if (!categoryId || categoryId === "all") return true;
+
+  const prodCat = product.category || "";
+  const fullText = (
+    (product.name_tr || "") + " " +
+    (product.name_en || "") + " " +
+    (product.description_tr || "") + " " +
+    (product.slug_tr || "") + " " +
+    JSON.stringify(product.specs_tr || {})
+  ).toLocaleLowerCase("tr");
+
+  const isOtherCategory =
+    prodCat.startsWith("kamp") ||
+    prodCat.startsWith("muhimmat") ||
+    prodCat.startsWith("bicak") ||
+    prodCat.startsWith("giyim") ||
+    prodCat === "tufek-bakim" ||
+    prodCat === "havali-kurusiki" ||
+    prodCat.startsWith("havali") ||
+    prodCat.startsWith("kurusiki");
+
+  const isAccessory =
+    prodCat === "tufek-aksesuar" ||
+    prodCat === "tufek-aksesuarlar" ||
+    prodCat.startsWith("aksesuar") ||
+    prodCat === "aksesuar" ||
+    fullText.includes("fener lazer aparatı") ||
+    fullText.includes("lazer aparatı") ||
+    fullText.includes("lazer takma aparatı") ||
+    fullText.includes("dönüştürücü ray") ||
+    fullText.includes("montaj rayı") ||
+    fullText.includes("dürbün ayağı") ||
+    fullText.includes("durbun ayagi") ||
+    fullText.includes("tüfek kılıfı") ||
+    fullText.includes("dipçik fişekliği") ||
+    fullText.includes("atış kulaklığı");
+
+  const isOptic =
+    !isAccessory &&
+    !isOtherCategory && (
+      prodCat === "optik" ||
+      fullText.includes("dürbün") ||
+      fullText.includes("durbun") ||
+      fullText.includes("scope") ||
+      fullText.includes("red dot") ||
+      fullText.includes("reddot") ||
+      fullText.includes("red-dot") ||
+      fullText.includes("termal dürbün") ||
+      fullText.includes("termal kamera") ||
+      fullText.includes("termal nişangah") ||
+      fullText.includes("termal optik") ||
+      fullText.includes("boresighter") ||
+      fullText.includes("sıfırlama lazeri") ||
+      fullText.includes("sifirlama lazeri")
+    );
+
+  if (categoryId === "optik") {
+    if (isAccessory || isOtherCategory) return false;
+    if (!isOptic && prodCat !== "optik") return false;
+    return true;
+  }
+
+  if (categoryId === "tufek") {
+    if (
+      isOptic ||
+      isAccessory ||
+      prodCat === "tufek-aksesuar" ||
+      prodCat === "tufek-aksesuarlar" ||
+      prodCat === "tufek-bakim" ||
+      prodCat.startsWith("aksesuar") ||
+      prodCat === "aksesuar" ||
+      prodCat.startsWith("havali") ||
+      prodCat.startsWith("kurusiki")
+    ) {
+      return false;
+    }
+    const isShotgun =
+      (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim" && !prodCat.startsWith("havali")) ||
+      prodCat === "tufek" ||
+      prodCat === "silah-muhimmat";
+    return isShotgun;
+  }
+
+  if (categoryId === "tufek-bakim") {
+    return prodCat === "tufek-bakim";
+  }
+
+  if (categoryId === "havali-kurusiki") {
+    return (
+      prodCat === "havali-kurusiki" ||
+      prodCat.startsWith("havali") ||
+      prodCat.startsWith("kurusiki")
+    );
+  }
+
+  if (categoryId === "havali-aksesuar") {
+    return prodCat === "havali-aksesuar" || prodCat === "havali-muhimmat";
+  }
+
+  if (categoryId.startsWith("havali-") || categoryId.startsWith("kurusiki-")) {
+    return prodCat === categoryId;
+  }
+
+  if (categoryId === "silah-muhimmat") {
+    if (isOptic || isAccessory || prodCat === "tufek-bakim") return false;
+    const isFirearmOrAmmo =
+      (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim") ||
+      prodCat === "tufek" ||
+      prodCat === "muhimmat" ||
+      prodCat === "silah-muhimmat";
+    return isFirearmOrAmmo;
+  }
+
+  if (categoryId === "bicak") {
+    if (isOptic || isAccessory) return false;
+    return prodCat === "bicak";
+  }
+
+  if (categoryId.startsWith("tufek-") || categoryId.startsWith("aksesuar") || categoryId === "aksesuar") {
+    const isAccessoryFilter =
+      categoryId === "tufek-aksesuar" ||
+      categoryId === "tufek-aksesuarlar" ||
+      categoryId.startsWith("aksesuar") ||
+      categoryId === "aksesuar";
+
+    if (isAccessoryFilter) {
+      if (isOptic) return false;
+      const isDirectMatch =
+        prodCat === "tufek-aksesuar" ||
+        prodCat === "tufek-aksesuarlar" ||
+        prodCat.startsWith("aksesuar") ||
+        prodCat === "aksesuar" ||
+        prodCat === "bicak-av" ||
+        isAccessory;
+      if (isDirectMatch) return true;
+      if (prodCat === "silah-muhimmat" || prodCat === "tufek" || prodCat === "bicak") {
+        const keywords = ["aksesuar", "taktik aksesuar", "arpacık", "arpacik", "gepacik", "gez", "kayış", "askı", "dipçik", "kundak", "şarjör borusu", "fener ayağı", "bipod", "çatal ayak", "ray", "picatinny", "choke", "şok", "kulaklık", "aparat"];
+        return keywords.some((kw) => fullText.includes(kw));
+      }
+      return false;
+    } else {
+      // Specific shotgun subcategory (tufek-yari-otomatik, tufek-sarjorlu, etc.)
+      if (isOptic || isAccessory) return false;
+      if (prodCat === categoryId) return true;
+      if (prodCat === "silah-muhimmat" || prodCat === "tufek") {
+        const subType = categoryId.replace("tufek-", "");
+        const matchKeywords: Record<string, string[]> = {
+          "bullpup": ["bullpup"],
+          "sarjorlu": ["şarjör", "sarjor", "şarjörlü", "sarjorlu"],
+          "yari-otomatik": ["yarı otomatik", "yari otomatik", "otomatik av tüfeği", "gazlı", "kinetik"],
+          "pompali": ["pompalı", "pompali", "pump"],
+          "tek-kirma": ["tek kırma", "tek kirma", "tekkırma"],
+          "superpoze": ["süperpoze", "superpoze", "poze"],
+          "cifte": ["çifte", "cifte"],
+        };
+        const keywords = matchKeywords[subType] || [];
+        return keywords.some((kw) => fullText.includes(kw));
+      }
+      return false;
+    }
+  }
+
+  if (categoryId === "muhimmat") {
+    return prodCat === "muhimmat" || prodCat.startsWith("muhimmat-");
+  }
+
+  if (categoryId.startsWith("muhimmat-")) {
+    if (prodCat === categoryId) return true;
+    if (prodCat === "muhimmat") {
+      const subType = categoryId.replace("muhimmat-", "");
+      if (subType === "tek-kursun") {
+        return fullText.includes("tek kurşun") || fullText.includes("tek kursun") || fullText.includes("slug");
+      } else if (subType === "savrotin") {
+        return fullText.includes("şavrotin") || fullText.includes("savrotin") || fullText.includes("buckshot");
+      } else if (subType === "trap-skeet") {
+        return fullText.includes("trap") || fullText.includes("skeet");
+      } else if (subType === "magnum") {
+        return fullText.includes("magnum");
+      } else if (subType === "kursunsuz-celik") {
+        return fullText.includes("çelik") || fullText.includes("celik") || fullText.includes("kurşunsuz");
+      } else if (subType === "ozel-dolum") {
+        return fullText.includes("özel dolum") || fullText.includes("karışık") || fullText.includes("ozel");
+      } else {
+        const gramMatch = subType.match(/^(\d+)-gram$/);
+        if (gramMatch) {
+          const g = gramMatch[1];
+          return [`${g} gram`, `${g} gr`, `${g}gr`, `${g}g `].some((kw) => fullText.includes(kw));
+        }
+      }
+    }
+    return false;
+  }
+
+  if (categoryId === "kamp") {
+    return prodCat.startsWith("kamp");
+  }
+
+  if (categoryId === "kamp-dogal-yem") {
+    return prodCat === "kamp-dogal-yem" || prodCat === "kamp-alabalik-hamuru";
+  }
+
+  if (categoryId.startsWith("kamp-")) {
+    return prodCat === categoryId;
+  }
+
+  return prodCat === categoryId;
+}
+
+export function normalizeBrand(brand: string | null | undefined): string {
+  if (!brand) return "";
+  const b = brand.trim().toLowerCase();
+  if (b.includes("ata")) return "Ata Arms";
+  if (b.includes("huğlu") || b.includes("huglu")) return "Huğlu";
+  if (b.includes("retay")) return "Retay";
+  if (b.includes("castello")) return "Castello";
+  if (b.includes("hunt group") || b.includes("huntgroup")) return "Hunt Group";
+  if (b.includes("serengeti")) return "Serengeti";
+  if (b.includes("dağlıoğlu") || b.includes("daglioglu")) return "Dağlıoğlu";
+  if (b.includes("uzkon")) return "Uzkon";
+  if (b.includes("bora")) return "Bora";
+  if (b.includes("kral")) return "Kral";
+  if (b.includes("winchester")) return "Winchester";
+  if (b.includes("hatsan")) return "Hatsan";
+  if (b.includes("girsan")) return "Girsan";
+  if (b.includes("sarsılmaz")) return "Sarsılmaz";
+  if (b.includes("stoeger")) return "Stoeger";
+  if (b.includes("franchi")) return "Franchi";
+  if (b.includes("benelli")) return "Benelli";
+  if (b.includes("beretta")) return "Beretta";
+  if (b.includes("browning")) return "Browning";
+
+  // capitalize first letters for others
+  return brand.trim().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 interface CatalogClientProps {
   initialProducts: Product[];
   categories: Category[];
@@ -36,12 +272,14 @@ export default function CatalogClient({
 
   // Initial read from URL query params
   const categoryParam = initialCategory || searchParams.get("category") || "all";
+  const brandParam = searchParams.get("brand") || "all";
   const queryParam = searchParams.get("q") || "";
   const licenseParam = searchParams.get("license") === "1";
   const dealsParam = searchParams.get("deals") === "1";
   const countParam = parseInt(searchParams.get("count") || "20", 10);
 
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam);
+  const [selectedBrand, setSelectedBrand] = useState<string>(brandParam);
   const [searchQuery, setSearchQuery] = useState<string>(queryParam);
   const [licenseOnly, setLicenseOnly] = useState<boolean>(licenseParam);
   const [dealsOnly, setDealsOnly] = useState<boolean>(dealsParam);
@@ -93,12 +331,14 @@ export default function CatalogClient({
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const cat = params.get("category") || initialCategory || "all";
+      const b = params.get("brand") || "all";
       const q = params.get("q") || "";
       const lic = params.get("license") === "1";
       const deals = params.get("deals") === "1";
       const count = parseInt(params.get("count") || "20", 10);
 
       setSelectedCategory(cat);
+      setSelectedBrand(b);
       setSearchQuery(q);
       setLicenseOnly(lic);
       setDealsOnly(deals);
@@ -122,12 +362,14 @@ export default function CatalogClient({
   useEffect(() => {
     if (!isRestoredRef.current) return;
     const cat = searchParams.get("category") || initialCategory || "all";
+    const b = searchParams.get("brand") || "all";
     const q = searchParams.get("q") || "";
     const lic = searchParams.get("license") === "1";
     const deals = searchParams.get("deals") === "1";
     const count = parseInt(searchParams.get("count") || "20", 10);
 
     setSelectedCategory((prev) => (prev !== cat ? cat : prev));
+    setSelectedBrand((prev) => (prev !== b ? b : prev));
     setSearchQuery((prev) => (prev !== q ? q : prev));
     setLicenseOnly((prev) => (prev !== lic ? lic : prev));
     setDealsOnly((prev) => (prev !== deals ? deals : prev));
@@ -143,6 +385,9 @@ export default function CatalogClient({
 
     if (selectedCategory && selectedCategory !== "all") {
       params.set("category", selectedCategory);
+    }
+    if (selectedBrand && selectedBrand !== "all") {
+      params.set("brand", selectedBrand);
     }
     if (searchQuery.trim()) {
       params.set("q", searchQuery.trim());
@@ -163,230 +408,66 @@ export default function CatalogClient({
 
     // Update URL via replaceState so back button returns to this exact filtered view
     window.history.replaceState(null, "", newUrl);
-  }, [selectedCategory, searchQuery, licenseOnly, dealsOnly, visibleCount, basePath]);
+  }, [selectedCategory, selectedBrand, searchQuery, licenseOnly, dealsOnly, visibleCount, basePath]);
+
+  // Calculate live product count for each category & subcategory
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    const allIds = new Set<string>();
+    for (const cat of categories) {
+      allIds.add(cat.id);
+      if (cat.subcategories) {
+        for (const sub of cat.subcategories) {
+          allIds.add(sub.id);
+        }
+      }
+    }
+
+    allIds.forEach((id) => {
+      let count = 0;
+      for (const product of initialProducts) {
+        if (isProductMatchingCategory(product, id)) {
+          count++;
+        }
+      }
+      counts[id] = count;
+    });
+
+    return counts;
+  }, [categories, initialProducts]);
+
+  // Calculate available brands for shotgun subcategories
+  const availableBrands = useMemo(() => {
+    // Sadece tüfek alt kategorileri için marka filtresi gösterelim
+    if (!selectedCategory.startsWith("tufek-") || 
+        selectedCategory === "tufek-aksesuar" || 
+        selectedCategory === "tufek-aksesuarlar" || 
+        selectedCategory === "tufek-bakim") {
+      return [];
+    }
+
+    const brands = new Set<string>();
+    for (const product of initialProducts) {
+      if (isProductMatchingCategory(product, selectedCategory)) {
+        const brand = normalizeBrand(product.brand);
+        if (brand) brands.add(brand);
+      }
+    }
+    return Array.from(brands).sort();
+  }, [initialProducts, selectedCategory]);
 
   // Real-time filtering logic
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
       // Category filter
-      const prodCat = product.category || "";
-      const fullText = (
-        (product.name_tr || "") + " " +
-        (product.name_en || "") + " " +
-        (product.description_tr || "") + " " +
-        (product.slug_tr || "") + " " +
-        JSON.stringify(product.specs_tr || {})
-      ).toLocaleLowerCase("tr");
+      if (selectedCategory !== "all" && !isProductMatchingCategory(product, selectedCategory)) {
+        return false;
+      }
 
-      const isOtherCategory =
-        prodCat.startsWith("kamp") ||
-        prodCat.startsWith("muhimmat") ||
-        prodCat.startsWith("bicak") ||
-        prodCat.startsWith("giyim") ||
-        prodCat === "tufek-bakim" ||
-        prodCat === "havali-kurusiki" ||
-        prodCat.startsWith("havali") ||
-        prodCat.startsWith("kurusiki");
-
-      const isAccessory =
-        prodCat === "tufek-aksesuar" ||
-        prodCat === "tufek-aksesuarlar" ||
-        prodCat.startsWith("aksesuar") ||
-        prodCat === "aksesuar" ||
-        fullText.includes("fener lazer aparatı") ||
-        fullText.includes("lazer aparatı") ||
-        fullText.includes("lazer takma aparatı") ||
-        fullText.includes("dönüştürücü ray") ||
-        fullText.includes("montaj rayı") ||
-        fullText.includes("dürbün ayağı") ||
-        fullText.includes("durbun ayagi") ||
-        fullText.includes("tüfek kılıfı") ||
-        fullText.includes("dipçik fişekliği") ||
-        fullText.includes("atış kulaklığı");
-
-      const isOptic =
-        !isAccessory &&
-        !isOtherCategory && (
-          prodCat === "optik" ||
-          fullText.includes("dürbün") ||
-          fullText.includes("durbun") ||
-          fullText.includes("scope") ||
-          fullText.includes("red dot") ||
-          fullText.includes("reddot") ||
-          fullText.includes("red-dot") ||
-          fullText.includes("termal dürbün") ||
-          fullText.includes("termal kamera") ||
-          fullText.includes("termal nişangah") ||
-          fullText.includes("termal optik") ||
-          fullText.includes("boresighter") ||
-          fullText.includes("sıfırlama lazeri") ||
-          fullText.includes("sifirlama lazeri")
-        );
-
-      if (selectedCategory !== "all") {
-        if (selectedCategory === "optik") {
-          if (isAccessory || isOtherCategory) return false;
-          if (!isOptic && prodCat !== "optik") return false;
-        } else if (selectedCategory === "tufek") {
-          // "Tüm Tüfekler" seçildiğinde müşteriler yalnızca gerçek tüfekleri görmeli. Dürbün, aksesuar, bakım malzemeleri veya havalı/kurusıkı asla görünmemeli.
-          if (
-            isOptic ||
-            isAccessory ||
-            prodCat === "tufek-aksesuar" ||
-            prodCat === "tufek-aksesuarlar" ||
-            prodCat === "tufek-bakim" ||
-            prodCat.startsWith("aksesuar") ||
-            prodCat === "aksesuar" ||
-            prodCat.startsWith("havali") ||
-            prodCat.startsWith("kurusiki")
-          ) {
-            return false;
-          }
-          const isShotgun =
-            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim" && !prodCat.startsWith("havali")) ||
-            prodCat === "tufek" ||
-            prodCat === "silah-muhimmat";
-          if (!isShotgun) return false;
-        } else if (selectedCategory === "tufek-bakim") {
-          if (prodCat !== "tufek-bakim") return false;
-        } else if (selectedCategory === "havali-kurusiki") {
-          const isAirgun =
-            prodCat === "havali-kurusiki" ||
-            prodCat.startsWith("havali") ||
-            prodCat.startsWith("kurusiki");
-          if (!isAirgun) return false;
-        } else if (selectedCategory === "havali-aksesuar") {
-          if (prodCat !== "havali-aksesuar" && prodCat !== "havali-muhimmat") return false;
-        } else if (selectedCategory.startsWith("havali-") || selectedCategory.startsWith("kurusiki-")) {
-          if (prodCat !== selectedCategory) return false;
-        } else if (selectedCategory === "silah-muhimmat") {
-          if (isOptic || isAccessory || prodCat === "tufek-bakim") return false;
-          const isFirearmOrAmmo =
-            (prodCat.startsWith("tufek-") && prodCat !== "tufek-aksesuar" && prodCat !== "tufek-aksesuarlar" && prodCat !== "tufek-bakim") ||
-            prodCat === "tufek" ||
-            prodCat === "muhimmat" ||
-            prodCat === "silah-muhimmat";
-          if (!isFirearmOrAmmo) return false;
-        } else if (selectedCategory === "bicak") {
-          if (isOptic || isAccessory) return false;
-          if (prodCat !== "bicak") return false;
-        } else if (selectedCategory.startsWith("tufek-") || selectedCategory.startsWith("aksesuar") || selectedCategory === "aksesuar") {
-          const isAccessoryFilter =
-            selectedCategory === "tufek-aksesuar" ||
-            selectedCategory === "tufek-aksesuarlar" ||
-            selectedCategory.startsWith("aksesuar") ||
-            selectedCategory === "aksesuar";
-
-          if (isAccessoryFilter) {
-            if (isOptic) return false;
-            const isDirectMatch =
-              prodCat === "tufek-aksesuar" ||
-              prodCat === "tufek-aksesuarlar" ||
-              prodCat.startsWith("aksesuar") ||
-              prodCat === "aksesuar" ||
-              prodCat === "bicak-av" ||
-              isAccessory;
-            if (isDirectMatch) {
-              // Direct match
-            } else if (prodCat === "silah-muhimmat" || prodCat === "tufek" || prodCat === "bicak") {
-              const fullText = (
-                (product.name_tr || "") + " " +
-                (product.description_tr || "") + " " +
-                JSON.stringify(product.specs_tr || {})
-              ).toLocaleLowerCase("tr");
-              const keywords = ["aksesuar", "taktik aksesuar", "arpacık", "arpacik", "gepacik", "gez", "kayış", "askı", "dipçik", "kundak", "şarjör borusu", "fener ayağı", "bipod", "çatal ayak", "ray", "picatinny", "choke", "şok", "kulaklık", "aparat"];
-              const matches = keywords.some((kw) => fullText.includes(kw));
-              if (!matches) return false;
-            } else {
-              return false;
-            }
-          } else {
-            // Specific shotgun subcategory (tufek-yari-otomatik, tufek-sarjorlu, etc.)
-            if (isOptic || isAccessory) return false;
-            const isDirectMatch = prodCat === selectedCategory;
-
-            if (isDirectMatch) {
-              // Direct match
-            } else if (prodCat === "silah-muhimmat" || prodCat === "tufek") {
-              // Backward compatibility matching for legacy Supabase entries
-              const subType = selectedCategory.replace("tufek-", "");
-              const fullText = (
-                (product.name_tr || "") + " " +
-                (product.description_tr || "") + " " +
-                JSON.stringify(product.specs_tr || {})
-              ).toLocaleLowerCase("tr");
-
-              const matchKeywords: Record<string, string[]> = {
-                "bullpup": ["bullpup"],
-                "sarjorlu": ["şarjör", "sarjor", "şarjörlü", "sarjorlu"],
-                "yari-otomatik": ["yarı otomatik", "yari otomatik", "otomatik av tüfeği", "gazlı", "kinetik"],
-                "pompali": ["pompalı", "pompali", "pump"],
-                "tek-kirma": ["tek kırma", "tek kirma", "tekkırma"],
-                "superpoze": ["süperpoze", "superpoze", "poze"],
-                "cifte": ["çifte", "cifte"],
-              };
-
-              const keywords = matchKeywords[subType] || [];
-              const matches = keywords.some((kw) => fullText.includes(kw));
-              if (!matches) return false;
-            } else {
-              return false;
-            }
-          }
-        } else if (selectedCategory === "muhimmat") {
-          const isAmmo =
-            prodCat === "muhimmat" ||
-            prodCat.startsWith("muhimmat-");
-          if (!isAmmo) return false;
-        } else if (selectedCategory.startsWith("muhimmat-")) {
-          if (prodCat === selectedCategory) {
-            // Direct match
-          } else if (prodCat === "muhimmat") {
-            const subType = selectedCategory.replace("muhimmat-", "");
-            const fullText = (
-              (product.name_tr || "") + " " +
-              (product.description_tr || "") + " " +
-              JSON.stringify(product.specs_tr || {})
-            ).toLocaleLowerCase("tr");
-
-            if (subType === "tek-kursun") {
-              if (!fullText.includes("tek kurşun") && !fullText.includes("tek kursun") && !fullText.includes("slug")) return false;
-            } else if (subType === "savrotin") {
-              if (!fullText.includes("şavrotin") && !fullText.includes("savrotin") && !fullText.includes("buckshot")) return false;
-            } else if (subType === "trap-skeet") {
-              if (!fullText.includes("trap") && !fullText.includes("skeet")) return false;
-            } else if (subType === "magnum") {
-              if (!fullText.includes("magnum")) return false;
-            } else if (subType === "kursunsuz-celik") {
-              if (!fullText.includes("çelik") && !fullText.includes("celik") && !fullText.includes("kurşunsuz")) return false;
-            } else if (subType === "ozel-dolum") {
-              if (!fullText.includes("özel dolum") && !fullText.includes("karışık") && !fullText.includes("ozel")) return false;
-            } else {
-              // Gram match (e.g. 34-gram -> 34)
-              const gramMatch = subType.match(/^(\d+)-gram$/);
-              if (gramMatch) {
-                const g = gramMatch[1];
-                const matches = [
-                  `${g} gram`,
-                  `${g} gr`,
-                  `${g}gr`,
-                  `${g}g `,
-                ].some((kw) => fullText.includes(kw));
-                if (!matches) return false;
-              } else {
-                return false;
-              }
-            }
-          } else {
-            return false;
-          }
-        } else if (selectedCategory === "kamp") {
-          if (!prodCat.startsWith("kamp")) return false;
-        } else if (selectedCategory === "kamp-dogal-yem") {
-          if (prodCat !== "kamp-dogal-yem" && prodCat !== "kamp-alabalik-hamuru") return false;
-        } else if (selectedCategory.startsWith("kamp-")) {
-          if (prodCat !== selectedCategory) return false;
-        } else if (prodCat !== selectedCategory) {
+      // Brand filter
+      if (selectedBrand !== "all") {
+        if (normalizeBrand(product.brand) !== selectedBrand) {
           return false;
         }
       }
@@ -424,7 +505,7 @@ export default function CatalogClient({
 
       return true;
     });
-  }, [initialProducts, selectedCategory, licenseOnly, dealsOnly, searchQuery]);
+  }, [initialProducts, selectedCategory, selectedBrand, licenseOnly, dealsOnly, searchQuery]);
 
   // Debounced search query analytics (1000ms debounce to prevent typing spam)
   const lastTrackedQueryRef = useRef<string>("");
@@ -463,6 +544,7 @@ export default function CatalogClient({
   const handleSelectCategory = (cat: string) => {
     clearReturnState();
     setSelectedCategory(cat);
+    setSelectedBrand("all"); // reset brand on category change
     setVisibleCount(20);
     trackCategoryClick(cat);
     if (typeof window !== "undefined") {
@@ -481,8 +563,12 @@ export default function CatalogClient({
       {/* Filter Toolbar */}
       <FilterBar
         categories={categories}
+        categoryCounts={categoryCounts}
         selectedCategory={selectedCategory}
         onSelectCategory={handleSelectCategory}
+        availableBrands={availableBrands}
+        selectedBrand={selectedBrand}
+        onSelectBrand={setSelectedBrand}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={handleSearchSubmit}
