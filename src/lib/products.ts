@@ -436,6 +436,9 @@ export function getProductsByCategory(category: string, list?: Product[]): Produ
   if (category === "kamp") {
     return arr.filter((p) => p.category.startsWith("kamp"));
   }
+  if (category === "kamp-dogal-yem") {
+    return arr.filter((p) => p.category === "kamp-dogal-yem" || p.category === "kamp-alabalik-hamuru");
+  }
   if (category === "optik") {
     return arr.filter((p) => p.category === "optik");
   }

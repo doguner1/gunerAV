@@ -382,6 +382,8 @@ export default function CatalogClient({
           }
         } else if (selectedCategory === "kamp") {
           if (!prodCat.startsWith("kamp")) return false;
+        } else if (selectedCategory === "kamp-dogal-yem") {
+          if (prodCat !== "kamp-dogal-yem" && prodCat !== "kamp-alabalik-hamuru") return false;
         } else if (selectedCategory.startsWith("kamp-")) {
           if (prodCat !== selectedCategory) return false;
         } else if (prodCat !== selectedCategory) {
