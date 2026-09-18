@@ -343,7 +343,7 @@ export function matchProductWithSupplier(
   }
 
   // Infer default supplier if no match found
-  let fallbackSupplier = "ozlerav";
+  let fallbackSupplier: "ozlerav" | "arslansilah" = "ozlerav";
   if (nameNorm.includes("castello") || (product.category && product.category.includes("tufek"))) {
     // We only default to arslansilah for Castello or generic tufek if no match.
     // However, since ozlerav also has tufeks, 'ozlerav' is a fine fallback.

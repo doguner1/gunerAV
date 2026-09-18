@@ -1,6 +1,5 @@
-import ImportOzlerAvClient from "./ImportOzlerAvClient";
-
 "use client";
+import ImportOzlerAvClient from "./ImportOzlerAvClient";
 
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";

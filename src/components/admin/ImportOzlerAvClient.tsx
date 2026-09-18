@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "react-hot-toast";
 
 export default function ImportOzlerAvClient() {
   const [missingUrls, setMissingUrls] = useState<string[]>([]);
@@ -17,12 +16,12 @@ export default function ImportOzlerAvClient() {
       const data = await res.json();
       if (data.success) {
         setMissingUrls(data.missingUrls);
-        toast.success(`${data.missingCount} yeni ürün bulundu!`);
+        alert(`${data.missingCount} yeni ürün bulundu!`);
       } else {
-        toast.error(data.error || "Tarama başarısız");
+        alert(data.error || "Tarama başarısız");
       }
     } catch (e: any) {
-      toast.error("Bir hata oluştu");
+      alert("Bir hata oluştu");
     } finally {
       setLoading(false);
     }
@@ -69,7 +68,7 @@ export default function ImportOzlerAvClient() {
     }
 
     setImporting(false);
-    toast.success(`${successCount} ürün başarıyla eklendi!`);
+    alert(`${successCount} ürün başarıyla eklendi!`);
   };
 
   return (

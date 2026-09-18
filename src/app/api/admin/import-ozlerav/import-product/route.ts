@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     const description = $(".product-description, .aciklama").html() || "";
 
     const supabase = getSupabaseAdminClient();
+    if (!supabase) throw new Error("Supabase client not initialized");
     
     // Insert into products table
     const productData = {
