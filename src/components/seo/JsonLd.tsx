@@ -89,6 +89,16 @@ export function ProductJsonLd({
   locale?: string;
   nonce?: string;
 }) {
+  // Sitede vitrin/katalog modeli uygulandığı ve fiyatlar gizlendiği için (veya ruhsatlı ürünlerde),
+  // Google Product Rich Result (Ürün Snippet'i) kuralları gereği offers veya review gereklidir.
+  // Fiyatı olmayan veya gizlenen ürünlerde Product şeması basmak GSC'de "offers veya review eksik"
+  // kritik hatası üretir. Sadece geçerli ve açık bir fiyat olduğunda Product şeması basılır.
+  const hasValidOffer = !product.requires_license && product.price && !STORE_INFO.hidePrices;
+
+  if (!hasValidOffer) {
+    return null;
+  }
+
   const isTr = locale === "tr";
   const name = isTr ? product.name_tr : product.name_en;
   const description = isTr ? product.description_tr : product.description_en;
@@ -107,29 +117,28 @@ export function ProductJsonLd({
       "@type": "Brand",
       "name": "Güner AV",
     },
-    ...(!product.requires_license && product.price && !STORE_INFO.hidePrices
-      ? {
-          "offers": {
-            "@type": "Offer",
-            "url": `${STORE_INFO.siteUrl}/${locale}/products/${slug}`,
-            "priceCurrency": "TRY",
-            "price": product.price,
-            "availability": product.in_stock
-              ? "https://schema.org/InStock"
-              : "https://schema.org/OutOfStock",
-            "seller": {
-              "@type": "Organization",
-              "name": STORE_INFO.name,
-            },
-          },
-        }
-      : {}),
+    "offers": {
+      "@type": "Offer",
+      "url": `${STORE_INFO.siteUrl}/${locale}/products/${slug}`,
+      "priceCurrency": "TRY",
+      "price": product.price,
+      "availability": product.in_stock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": STORE_INFO.name,
+      },
+    },
   };
 
   return (
     <script
+      key={`product-jsonld-${product.id}`}
+      id={`product-jsonld-${product.id}`}
       nonce={nonce}
       type="application/ld+json"
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
     />
   );
