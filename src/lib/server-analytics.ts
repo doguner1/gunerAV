@@ -2,9 +2,13 @@ import { NextRequest } from "next/server";
 import { getSupabaseAdminClient, hashIp } from "@/lib/server-supabase";
 import { detectDeviceType } from "@/lib/device-detect";
 import { isDeviceIgnored } from "@/lib/device-settings";
+import { sendVisitorSessionWhatsAppAlert } from "@/lib/server-whatsapp";
 
 // In-memory cache to deduplicate identical events arriving within 1200ms
 const recentServerEvents = new Map<string, number>();
+
+// In-memory cache to track sessions that have already triggered a WhatsApp alert (30-min window)
+const notifiedSessions = new Map<string, number>();
 
 /**
  * Core event ingestion engine.
@@ -78,6 +82,58 @@ export async function recordAnalyticsEvent(
   if (!supabase) {
     console.error("[analytics] Supabase client kurulamadı — SUPABASE_SERVICE_ROLE_KEY veya URL tanımlı değil!");
     return { success: false, persisted: "none" };
+  }
+
+  // 30 Dakikalık Oturum (Session) WhatsApp Bildirim Motoru
+  // Admin kapalı olsa bile ilk tıklama/girişte mesaj atar, 30 dk boyunca sessiz kalır, 30 dk sonra tekrar girerse bildirir.
+  const sessionId = p.session_id;
+  if (sessionId && visitorId && visitorId !== "anon") {
+    const nowMs = Date.now();
+    const lastNotified = notifiedSessions.get(sessionId) || 0;
+    const isLocallyFresh = !lastNotified || (nowMs - lastNotified > 30 * 60 * 1000);
+
+    if (isLocallyFresh) {
+      notifiedSessions.set(sessionId, nowMs);
+
+      // Asenkron ve non-blocking: API yanıt süresini geciktirmeden arka planda çalışır
+      (async () => {
+        try {
+          const { count: sessionEventCount } = await supabase
+            .from("analytics_events")
+            .select("*", { count: "exact", head: true })
+            .eq("session_id", sessionId);
+
+          if (!sessionEventCount || sessionEventCount === 0) {
+            // Ziyaretçinin daha önce sitemize gelip gelmediğini kontrol et
+            const { count: priorVisitorEvents } = await supabase
+              .from("analytics_events")
+              .select("*", { count: "exact", head: true })
+              .eq("visitor_id", visitorId);
+
+            const isReturning = Boolean(priorVisitorEvents && priorVisitorEvents > 0);
+
+            await sendVisitorSessionWhatsAppAlert({
+              visitorId,
+              isReturning,
+              path: p.path || "/",
+              productName: p.item_name || p.name || null,
+              deviceType,
+              referrer: p.referrer || referrer,
+            });
+          }
+        } catch (waErr) {
+          console.error("[Visitor Session WA Dispatch Error]:", waErr);
+        }
+      })();
+    }
+
+    // Periyodik hafıza temizliği (30 dakikadan eski oturumları temizle)
+    if (notifiedSessions.size > 500) {
+      const cutoff = Date.now() - 30 * 60 * 1000;
+      notifiedSessions.forEach((ts, sid) => {
+        if (ts < cutoff) notifiedSessions.delete(sid);
+      });
+    }
   }
 
   const { error } = await supabase.from("analytics_events").insert({

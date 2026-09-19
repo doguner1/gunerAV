@@ -29,42 +29,4 @@ export function notifyWhatsAppInquiry(payload: WhatsAppNotifyPayload) {
   }
 }
 
-export interface ActiveVisitorsNotifyPayload {
-  activeCount: number;
-  previousCount: number;
-  path?: string;
-  deviceType?: string;
-}
-
-/**
-  * Fires a notification to the backend to notify the store owner via Meta WhatsApp Cloud API
-  * when live active visitors count increases.
-  */
-export async function notifyActiveVisitorsIncrease(payload: ActiveVisitorsNotifyPayload): Promise<{ success: boolean; error?: string }> {
-  try {
-    if (typeof window === "undefined") return { success: false, error: "SSR" };
-
-    const res = await fetch("/api/whatsapp/notify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        type: "active_visitors",
-        ...payload,
-      }),
-      keepalive: true,
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.success) {
-      console.warn("[WhatsApp Notify] Active visitors notify error:", data);
-      return { success: false, error: data.error || data.reason || "Bilinmeyen hata" };
-    }
-    return { success: true };
-  } catch (err: any) {
-    console.warn("[WhatsApp Notify] Active visitors dispatch exception:", err);
-    return { success: false, error: err?.message || "Bağlantı hatası" };
-  }
-}
 

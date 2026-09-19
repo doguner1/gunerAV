@@ -1,11 +1,10 @@
 "use client";
 import ImportOzlerAvClient from "./ImportOzlerAvClient";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Product } from "@/types/product";
 import { ContactMessage } from "@/types/message";
-import { notifyActiveVisitorsIncrease } from "@/lib/whatsapp-notify";
 import {
   Package,
   BarChart3,
@@ -494,27 +493,6 @@ export default function AdminClient() {
   const [isRevalidating, setIsRevalidating] = useState<boolean>(false);
   const [revalidateMsg, setRevalidateMsg] = useState<string | null>(null);
 
-  // WhatsApp active visitors alert state
-  const [wpActiveNotifyEnabled, setWpActiveNotifyEnabled] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("gunerav_wp_notify_active");
-      return saved !== "false"; // Varsayılan: Açık
-    }
-    return true;
-  });
-  const [lastWpNotifyStatus, setLastWpNotifyStatus] = useState<string | null>(null);
-  const prevActiveCountRef = useRef<number | null>(null);
-
-  const handleToggleWpNotify = () => {
-    setWpActiveNotifyEnabled((prev) => {
-      const next = !prev;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("gunerav_wp_notify_active", String(next));
-      }
-      return next;
-    });
-  };
-
   // Device settings (custom naming & ignore/opt-out)
   const [deviceSettings, setDeviceSettings] = useState<Record<string, {
     visitorId: string;
@@ -530,9 +508,9 @@ export default function AdminClient() {
   } | null>(null);
   const [isSavingDevice, setIsSavingDevice] = useState(false);
 
-  // Active visitors live polling (every 6s) - runs whenever authenticated
+  // Active visitors live polling (every 6s)
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || activeTab !== "analytics") return;
 
     let isMounted = true;
     const fetchActive = async () => {
@@ -542,38 +520,8 @@ export default function AdminClient() {
         const res = await fetch("/api/admin/active-visitors", { headers });
         const data = await res.json();
         if (isMounted && data.success) {
-          const newCount = data.count ?? 0;
-          setActiveCount(newCount);
+          setActiveCount(data.count ?? 0);
           setActiveVisitors(data.activeVisitors || []);
-
-          // Aktif kullanıcı artışı kontrolü (Her artış adımında bildirim, azalmada bildirim yok)
-          if (prevActiveCountRef.current === null) {
-            // İlk yükleme: mevcut sayıyı başlangıç referansı yap, bildirim gönderme
-            prevActiveCountRef.current = newCount;
-          } else {
-            const prevCount = prevActiveCountRef.current;
-            if (newCount > prevCount) {
-              // SAYI ARTTI: 2'den 3'e veya daha üstü her adımda bildirim gönder!
-              if (wpActiveNotifyEnabled) {
-                const latest = (data.activeVisitors && data.activeVisitors[0]) || null;
-                notifyActiveVisitorsIncrease({
-                  activeCount: newCount,
-                  previousCount: prevCount,
-                  path: latest?.path,
-                  deviceType: latest?.device_type,
-                }).then((res) => {
-                  if (res.success && isMounted) {
-                    setLastWpNotifyStatus(`WhatsApp bildirimi gönderildi: ${prevCount} ➔ ${newCount} kişi`);
-                    setTimeout(() => {
-                      if (isMounted) setLastWpNotifyStatus(null);
-                    }, 8000);
-                  }
-                });
-              }
-            }
-            // Sadece düşünce bildirim gitmez, referans güncellenir
-            prevActiveCountRef.current = newCount;
-          }
         }
       } catch {}
     };
@@ -584,7 +532,7 @@ export default function AdminClient() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [isAuthenticated, password, wpActiveNotifyEnabled]);
+  }, [isAuthenticated, activeTab, password]);
 
   // Restore admin session if already logged in within the browser session via HttpOnly cookie
   useEffect(() => {
@@ -2137,21 +2085,6 @@ export default function AdminClient() {
                     </div>
                   )}
 
-                  {/* WhatsApp Active Increase Alert Toggle */}
-                  <button
-                    type="button"
-                    onClick={handleToggleWpNotify}
-                    title={wpActiveNotifyEnabled ? "Aktif kullanıcı arttığında WhatsApp bildirimi açık (Tıklayarak kapatabilirsiniz)" : "Aktif kullanıcı arttığında WhatsApp bildirimi kapalı (Tıklayarak açabilirsiniz)"}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-                      wpActiveNotifyEnabled
-                        ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/30"
-                        : "bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-neutral-200"
-                    }`}
-                  >
-                    <MessageCircle className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>WP Bildirimi: {wpActiveNotifyEnabled ? "Açık" : "Kapalı"}</span>
-                  </button>
-
                   <button
                     type="button"
                     onClick={() => setShowActiveVisitorsTable(!showActiveVisitorsTable)}
@@ -2163,17 +2096,6 @@ export default function AdminClient() {
                   </button>
                 </div>
               </div>
-
-              {/* Real-time WhatsApp Notification Sent Banner */}
-              {lastWpNotifyStatus && (
-                <div className="mt-3 pt-2.5 border-t border-emerald-500/20 flex items-center justify-between text-xs text-emerald-400 animate-in fade-in duration-300">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Check className="h-4 w-4" />
-                    {lastWpNotifyStatus}
-                  </span>
-                  <span className="text-[10px] text-emerald-500/80 font-mono">Otomatik İletildi</span>
-                </div>
-              )}
 
               {/* Expandable Active Visitors Table */}
               {showActiveVisitorsTable && (
